@@ -1,0 +1,2788 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Simon Dixon’s Debt-Power Map</title>
+<style>
+    :root{
+      --bg:#efe5d4;
+      --paper:#fbf6ed;
+      --paper2:#f6ecdd;
+      --ink:#2e2923;
+      --muted:#675d51;
+      --quiet:#817467;
+      --border:#dbc9ae;
+      --strong-border:#c4aa84;
+      --green:#e3f0df;
+      --green-border:#9fbe8a;
+      --blue:#e1edf2;
+      --blue-border:#9fb8c9;
+      --amber:#f5e8c8;
+      --amber-border:#d2b36b;
+      --rose:#f0dedb;
+      --rose-border:#cb9992;
+      --quote:#f7e3c3;
+      --quote-border:#c8914c;
+      --shadow:0 12px 28px rgba(74,55,32,.09);
+      --radius:20px;
+      --radius-sm:13px;
+      --measure:76ch;
+      --sidebar:286px;
+      --base:18px;
+      --lh:1.72;
+      --font-latin:"Comic Sans MS", "Comic Sans", "Comic Neue", "OpenDyslexic", "Atkinson Hyperlegible", Verdana, Arial, sans-serif;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth; overflow-x:clip; overscroll-behavior-x:none;}
+    body{
+      margin:0;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(255,255,255,.62), transparent 30rem),
+        radial-gradient(circle at 90% 20%, rgba(232,218,194,.55), transparent 26rem),
+        linear-gradient(180deg,#f3eadc 0%,var(--bg) 48%,#eadcca 100%);
+      color:var(--ink);
+      font-family:var(--font-latin);
+      font-size:var(--base);
+      line-height:var(--lh);
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      font-variant-ligatures:none;
+    }
+    body.large-text{--base:20px; --measure:72ch;}
+    body.extra-space{--lh:1.95;}
+    body.focus-mode .optional-soft{display:none !important;}
+    body.focus-mode .deep-extra{display:none !important;}
+    body.focus-mode section, body.focus-mode .panel, body.focus-mode .hero{box-shadow:none;}
+
+    a{color:#4d3d2c; text-decoration-color:rgba(77,61,44,.35); text-underline-offset:.17em;}
+    a:hover, a:focus{color:#241a13; text-decoration-color:rgba(36,26,19,.85);}
+    button, summary{font:inherit;}
+    a:focus-visible, button:focus-visible, summary:focus-visible{outline:3px solid rgba(79,121,138,.55); outline-offset:3px; border-radius:9px;}
+
+    .skip{position:absolute; left:-999px; top:10px; z-index:100; background:#fff; color:#000; padding:.6rem .9rem; border-radius:10px;}
+    .skip:focus{left:10px;}
+    .progress{position:fixed; top:0; left:0; height:4px; width:0%; background:#8b6d42; z-index:90;}
+
+    .shell{
+      width:min(1200px, calc(100% - 42px));
+      margin:0 auto;
+      display:grid;
+      grid-template-columns:var(--sidebar) minmax(0,1fr);
+      gap:28px;
+      padding:24px 0 230px;
+      align-items:start;
+    }
+    aside{
+      position:sticky;
+      top:18px;
+      max-height:calc(100vh - 36px);
+      overflow:auto;
+      background:rgba(251,246,237,.91);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:15px;
+    }
+    main{min-width:0;}
+    .mobile-nav{display:none;}
+
+    .side-cue{
+      background:var(--blue);
+      border:1px solid var(--blue-border);
+      border-radius:15px;
+      padding:.78rem .82rem;
+      font-size:.94rem;
+      line-height:1.45;
+      margin-bottom:14px;
+    }
+    .side-cue strong{display:block; margin-bottom:.18rem;}
+    .side-title{font-size:.95rem; color:var(--muted); margin:.2rem 0 .55rem; font-weight:800;}
+    .nav-list{display:grid; gap:8px; margin:0; padding:0; list-style:none;}
+    .nav-list a{
+      display:block;
+      padding:.56rem .68rem;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:rgba(255,255,255,.35);
+      text-decoration:none;
+      color:var(--ink);
+      line-height:1.25;
+      font-size:.93rem;
+    }
+    .nav-list a:hover{background:rgba(255,255,255,.75); border-color:var(--strong-border);}
+    .nav-list a.active{background:var(--green); border-color:var(--green-border); font-weight:800;}
+
+    .tools{display:grid; gap:8px; margin:14px 0 6px;}
+    .tool-btn{
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#fff8ed;
+      color:var(--ink);
+      padding:.5rem .58rem;
+      cursor:pointer;
+      text-align:left;
+      line-height:1.25;
+      font-size:.92rem;
+    }
+    .tool-btn[aria-pressed="true"]{background:var(--green); border-color:var(--green-border); font-weight:800;}
+
+    .hero, section, .panel, details.panel{
+      background:rgba(251,246,237,.93);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      margin:18px 0;
+      padding:clamp(1rem,2vw,1.45rem);
+      scroll-margin-top:18px;
+    }
+    .hero{padding:clamp(1.15rem,2.4vw,2rem); margin-top:0; border-radius:25px;}
+    .hero-grid{display:grid; grid-template-columns:minmax(0,1.15fr) minmax(260px,.85fr); gap:20px; align-items:center;}
+    .eyebrow{
+      display:inline-flex; align-items:center; gap:.4rem;
+      padding:.28rem .66rem; border-radius:999px;
+      border:1px solid var(--border); background:var(--paper2); color:var(--muted);
+      font-weight:800; font-size:.86rem; line-height:1.25;
+    }
+    h1{
+      margin:.72rem 0 .78rem;
+      font-size:clamp(2.08rem,5vw,3.55rem);
+      line-height:1.05;
+      letter-spacing:-.01em;
+      max-width:13ch;
+    }
+    .lede{max-width:var(--measure); margin:0 0 .8rem; font-size:1.08rem; color:#443a31;}
+    .quiet-line{margin:.42rem 0 0; color:var(--muted); font-size:.96rem; line-height:1.45;}
+    .chip-row{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px;}
+    .chip{
+      display:inline-flex; align-items:center; gap:.35rem;
+      border:1px solid var(--border); background:#fff8ed; border-radius:999px;
+      padding:.28rem .64rem; font-size:.88rem; color:#4a4036; line-height:1.2;
+    }
+
+    h2{margin:.1rem 0 .78rem; font-size:clamp(1.42rem,2.25vw,2rem); line-height:1.2; letter-spacing:0;}
+    h3{margin:0 0 .45rem; font-size:1.13rem; line-height:1.25;}
+    p{max-width:var(--measure); margin:.55rem 0;}
+    .mini{font-size:.96rem; color:var(--muted); line-height:1.5;}
+    .big{font-size:1.08rem;}
+    .tight{margin-top:.2rem;}
+    .no-top{margin-top:0;}
+
+    .callout{
+      border-radius:17px;
+      border:1px solid var(--border);
+      padding:.92rem 1rem;
+      margin:.86rem 0;
+      max-width:var(--measure);
+    }
+    .callout strong{display:block; margin-bottom:.2rem;}
+    .green{background:var(--green); border-color:var(--green-border);}
+    .blue{background:var(--blue); border-color:var(--blue-border);}
+    .amber{background:var(--amber); border-color:var(--amber-border);}
+    .rose{background:var(--rose); border-color:var(--rose-border);}
+
+    .grid{display:grid; gap:14px; margin:.9rem 0;}
+    .two{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .three{grid-template-columns:repeat(3,minmax(0,1fr));}
+    .four{grid-template-columns:repeat(4,minmax(0,1fr));}
+    .card{
+      background:rgba(255,250,242,.75);
+      border:1px solid var(--border);
+      border-radius:17px;
+      padding:1rem;
+      min-width:0;
+    }
+    .card p{margin:.35rem 0 0; line-height:1.55;}
+    .card strong{font-weight:850;}
+    .card.green{background:var(--green); border-color:var(--green-border);}
+    .card.blue{background:var(--blue); border-color:var(--blue-border);}
+    .card.amber{background:var(--amber); border-color:var(--amber-border);}
+    .label{
+      display:inline-flex; align-items:center;
+      border:1px solid var(--border);
+      background:#fff8ed;
+      border-radius:999px;
+      padding:.18rem .52rem;
+      color:#5f5142;
+      font-size:.82rem;
+      font-weight:850;
+      line-height:1.2;
+      margin-bottom:.5rem;
+    }
+    .step-num{
+      display:grid; place-items:center;
+      width:2rem; height:2rem; flex:0 0 2rem;
+      border-radius:50%; background:#e8dbc7; border:1px solid var(--border);
+      font-weight:900; margin-right:.45rem; line-height:1; text-align:center;
+      font-variant-numeric:lining-nums tabular-nums; padding-bottom:0;
+    }
+
+    figure{margin:1rem 0; max-width:100%;}
+    figcaption{font-size:.95rem; color:var(--muted); line-height:1.45; margin:.45rem 0 0; max-width:var(--measure);}
+    .visual{
+      background:linear-gradient(180deg,#fffaf2 0%,#f8ecdb 100%);
+      border:1px solid var(--border);
+      border-radius:20px;
+      padding:.85rem;
+      box-shadow:0 8px 18px rgba(74,55,32,.06);
+      overflow:hidden;
+    }
+    .visual svg{width:100%; height:auto; display:block;}
+    .visual-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:1rem 0;}
+    .wide-visual{overflow:hidden;}
+    .visual.small{padding:.65rem; border-radius:16px;}
+
+    .loop-card{display:grid; grid-template-columns:auto 1fr; gap:.75rem; align-items:start; padding:.9rem; border:1px solid var(--border); border-radius:16px; background:rgba(255,250,242,.72);}
+    .loop-card + .loop-card{margin-top:8px;}
+    .loop-card .num{width:2.05rem; height:2.05rem; flex:0 0 2.05rem; border-radius:50%; background:#eadbc5; border:1px solid var(--border); display:grid; place-items:center; font-weight:900; line-height:1; text-align:center; font-variant-numeric:lining-nums tabular-nums; padding-bottom:0;}
+    .loop-card > div > span{display:block; color:var(--muted); line-height:1.48; margin-top:.1rem;}
+
+    .quote{
+      background:var(--quote);
+      border:1px solid var(--quote-border);
+      border-left:6px solid var(--quote-border);
+      border-radius:16px;
+      padding:1rem 1rem 1rem 1.05rem;
+      margin:1rem 0;
+      max-width:var(--measure);
+      font-weight:700;
+    }
+
+    details.panel{padding:0; overflow:hidden;}
+    details.panel > summary{
+      list-style:none;
+      cursor:pointer;
+      padding:1rem 1.15rem;
+      font-weight:850;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    details.panel > summary::-webkit-details-marker{display:none;}
+    details.panel > summary::after{content:"+"; font-size:1.35rem; line-height:1; color:var(--muted);}
+    details.panel[open] > summary::after{content:"−";}
+    .details-body{padding:0 1.15rem 1.15rem; border-top:1px solid var(--border);}
+
+    .stack-list{display:grid; gap:10px; margin:.9rem 0; max-width:var(--measure);}
+    .stack-row{display:grid; grid-template-columns:minmax(150px,.55fr) minmax(0,1fr); gap:12px; border:1px solid var(--border); border-radius:15px; background:rgba(255,250,242,.72); padding:.85rem;}
+    .stack-row strong{line-height:1.25;}
+    .stack-row p{margin:0; line-height:1.5;}
+
+    .flowline{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:1rem 0; max-width:var(--measure);}
+    .flowline > span:not(.arr){border:0; border-radius:0; padding:0; background:transparent; line-height:inherit;}
+    .flowline .arr{color:#7b654b; font-weight:900;}
+
+    .action-ladder{display:grid; gap:12px; counter-reset:ladder; margin:1rem 0; max-width:var(--measure);}
+    .action-step{counter-increment:ladder; display:grid; grid-template-columns:auto 1fr; gap:.75rem; align-items:start; border:1px solid var(--border); border-radius:17px; background:rgba(255,250,242,.72); padding:.9rem;}
+    .action-step::before{content:counter(ladder); width:2rem; height:2rem; flex:0 0 2rem; border-radius:50%; display:grid; place-items:center; background:#e8dbc7; border:1px solid var(--border); font-weight:900; line-height:1; text-align:center; font-variant-numeric:lining-nums tabular-nums; padding-bottom:0;}
+    .action-step p{margin:.25rem 0 0; line-height:1.5;}
+
+    .teachback{
+      background:#f8ead3;
+      border:1px solid #d4ad72;
+      border-radius:18px;
+      padding:1rem;
+      max-width:var(--measure);
+      margin:1rem 0;
+    }
+    .teachback p{margin:.35rem 0;}
+
+    .quiz-item{border:1px solid var(--border); border-radius:16px; padding:1rem; background:rgba(255,250,242,.72); margin:.8rem 0; max-width:var(--measure);}
+    .quiz-item strong{display:block; margin-bottom:.45rem;}
+    .quiz-answer{display:none; margin-top:.65rem; padding:.75rem .85rem; border-radius:13px; background:var(--green); border:1px solid var(--green-border);}
+    .quiz-item.revealed .quiz-answer{display:block;}
+    .button-row{display:flex; flex-wrap:wrap; gap:10px; margin:.85rem 0 0;}
+    button{
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#fff8ed;
+      color:var(--ink);
+      padding:.52rem .72rem;
+      cursor:pointer;
+      line-height:1.25;
+    }
+    button:hover{border-color:var(--strong-border); background:#fffdf8;}
+
+    .footnote-list{margin:.75rem 0 0; padding-left:1.3rem;}
+    .footnote-list li{margin:.35rem 0; line-height:1.45;}
+
+    .recap{
+      border:1px solid #d0b48a;
+      background:#f8ead3;
+      border-radius:16px;
+      padding:.78rem .9rem;
+      margin:.9rem 0 0;
+      max-width:var(--measure);
+    }
+    .recap strong{display:block; margin-bottom:.15rem;}
+
+    .section-kicker{color:var(--muted); font-weight:850; margin:0 0 .25rem;}
+    .divider{height:1px; background:var(--border); margin:1.05rem 0;}
+
+
+
+    /* Clean, non-overlapping diagram system. */
+    .visual{font-family:var(--font-latin);}
+    .visual *{font-family:inherit;}
+    .diagram-title{font-weight:900; color:var(--ink); line-height:1.2; margin:0 0 .65rem;}
+    .diagram-sub{font-size:.92rem; color:var(--muted); line-height:1.45; margin:.45rem 0 0;}
+    .hero-visual{padding:1rem;}
+    .node-chain{display:grid; grid-template-columns:1fr auto 1fr auto 1fr; gap:.65rem; align-items:center; margin:.2rem 0 .9rem;}
+    .hero-visual .node-chain{grid-template-columns:1fr; gap:.45rem;}
+    .hero-visual .chain-arrow{transform:rotate(90deg); justify-self:center; font-size:1.35rem;}
+    .map-node{min-height:86px; border:1px solid var(--border); border-radius:18px; display:grid; place-items:center; text-align:center; padding:.72rem; box-shadow:0 8px 17px rgba(74,55,32,.06);}
+    .hero-visual .map-node{min-height:72px;}
+    .map-node b{display:block; font-size:1.1rem; line-height:1.15;}
+    .map-node span{display:block; color:var(--muted); font-size:.86rem; line-height:1.3; margin-top:.18rem;}
+    .map-node.blue{background:var(--blue); border-color:var(--blue-border);}
+    .map-node.amber{background:var(--amber); border-color:var(--amber-border);}
+    .map-node.green{background:var(--green); border-color:var(--green-border);}
+    .chain-arrow{font-size:1.85rem; font-weight:900; color:#7b654b; line-height:1;}
+    .loop-note{border:1px dashed #b79b73; background:#fff9f1; border-radius:14px; text-align:center; padding:.58rem .7rem; color:#4a4036; font-weight:850; margin:.65rem 0;}
+    .exit-strip{background:var(--green); border:1px solid var(--green-border); border-radius:16px; padding:.7rem .8rem; text-align:center;}
+    .exit-strip strong{display:block; line-height:1.18;}
+    .exit-strip span{display:block; color:#4f5d47; font-size:.9rem; line-height:1.35; margin-top:.18rem;}
+
+    .mini-flow{display:flex; flex-wrap:wrap; gap:.45rem; align-items:center; justify-content:center; min-height:215px; padding:.8rem; border:1px solid var(--border); border-radius:18px; background:#fff9f1;}
+    .mini-flow .pill{border:1px solid var(--border); background:#fff; border-radius:999px; padding:.42rem .72rem; font-weight:850; line-height:1.2; white-space:nowrap;}
+    .mini-flow .core{border-radius:50%; width:120px; height:120px; display:grid; place-items:center; text-align:center; background:var(--blue); border:1px solid var(--blue-border); margin:.25rem .5rem; box-shadow:0 7px 16px rgba(74,55,32,.07);}
+    .mini-flow .core b{font-size:1.2rem; display:block; line-height:1.1;}
+    .mini-flow .core span{display:block; font-size:.78rem; color:var(--muted); line-height:1.2; margin-top:.15rem;}
+    .mini-flow .arr{font-weight:900; color:#7b654b; font-size:1.25rem; line-height:1;}
+
+    .k-chart{padding:.85rem; min-height:215px; border:1px solid var(--border); border-radius:18px; background:#fff9f1; display:grid; grid-template-rows:auto auto; gap:.7rem;}
+    .k-plot{height:165px; min-height:0; margin:.1rem .35rem 0; overflow:hidden;}
+    .k-plot svg{width:100%; height:100%; display:block;}
+    .k-axis{stroke:#c4aa84; stroke-width:3; vector-effect:non-scaling-stroke;}
+    .k-up{stroke:#668957; stroke-width:7; stroke-linecap:round; vector-effect:non-scaling-stroke;}
+    .k-down{stroke:#b36f64; stroke-width:7; stroke-linecap:round; vector-effect:non-scaling-stroke;}
+    .k-legend{display:grid; gap:.5rem;}
+    .k-legend div{border:1px solid var(--border); border-radius:13px; background:#fff; padding:.52rem .65rem; line-height:1.25;}
+    .k-legend strong{display:block;}
+    .k-legend span{font-size:.85rem; color:var(--muted);}
+
+    .stack-diagram{display:grid; gap:.65rem; min-height:215px; padding:.85rem; border:1px solid var(--border); border-radius:18px; background:#fff9f1; align-content:center;}
+    .stack-layer{border:1px solid var(--border); border-radius:16px; padding:.7rem .8rem; text-align:center; line-height:1.2; font-weight:900;}
+    .stack-layer span{display:block; font-weight:500; color:var(--muted); font-size:.84rem; margin-top:.18rem;}
+    .stack-layer.green{background:var(--green); border-color:var(--green-border);}
+    .stack-layer.amber{background:var(--amber); border-color:var(--amber-border);}
+    .stack-layer.blue{background:var(--blue); border-color:var(--blue-border);}
+
+    .ladder-visual{display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:.65rem; align-items:stretch; justify-content:stretch; min-height:auto; padding:.85rem; border:1px solid var(--border); border-radius:18px; background:#fff9f1; overflow:visible;}
+    .ladder-bar{height:auto !important; max-width:none; min-width:0; min-height:82px; border:1px solid var(--border); border-radius:15px; padding:.58rem .45rem; display:flex !important; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:.14rem; font-weight:900; line-height:1.12;}
+    .ladder-bar span{display:block !important; width:100%; margin-top:.08rem !important; font-size:.76rem !important; line-height:1.18 !important; font-weight:500 !important; color:var(--muted) !important;}
+    .ladder-bar.one{background:var(--rose); border-color:var(--rose-border);}
+    .ladder-bar.two{background:var(--amber); border-color:var(--amber-border);}
+    .ladder-bar.three{background:var(--blue); border-color:var(--blue-border);}
+    .ladder-bar.four{background:var(--green); border-color:var(--green-border);}
+
+    .flow-diagram{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.7rem; align-items:stretch;}
+    .flow-diagram.three-step{grid-template-columns:repeat(3,minmax(0,1fr));}
+    .flow-box{position:relative; border:1px solid var(--border); border-radius:17px; background:#fff9f1; padding:.85rem .75rem; min-height:92px; text-align:center; display:grid; align-content:center; box-shadow:0 7px 16px rgba(74,55,32,.045);}
+    .flow-box:not(:last-child)::after{content:"→"; position:absolute; right:-.76rem; top:50%; transform:translateY(-50%); font-weight:900; color:#7b654b; font-size:1.25rem; z-index:2;}
+    .flow-box b{display:block; line-height:1.18; font-size:1rem;}
+    .flow-box span{display:block; color:var(--muted); font-size:.86rem; line-height:1.3; margin-top:.2rem;}
+    .flow-box.blue{background:var(--blue); border-color:var(--blue-border);}
+    .flow-box.green{background:var(--green); border-color:var(--green-border);}
+    .flow-box.amber{background:var(--amber); border-color:var(--amber-border);}
+    .flow-box.rose{background:var(--rose); border-color:var(--rose-border);}
+    .diagram-note{margin:.8rem 0 0; border:1px solid #d0b48a; background:#fff1dc; border-radius:15px; padding:.7rem .85rem; text-align:center; font-weight:750; color:#4a4036; line-height:1.35;}
+
+    .crisis-diagram .flow-diagram{grid-template-columns:repeat(4,minmax(0,1fr));}
+    .country-diagram .flow-diagram{grid-template-columns:repeat(3,minmax(0,1fr));}
+    .btc-diagram{display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:.9rem; align-items:stretch;}
+    .btc-center{width:112px; min-height:112px; border-radius:50%; border:1px solid var(--amber-border); background:var(--amber); display:grid; place-items:center; text-align:center; align-self:center; box-shadow:0 7px 16px rgba(74,55,32,.07);}
+    .btc-center b{font-size:1.35rem; line-height:1;}
+    .btc-center span{display:block; font-size:.78rem; color:var(--muted); margin-top:.15rem;}
+    .btc-side{display:grid; gap:.65rem;}
+    .btc-side .flow-box{min-height:82px;}
+    .btc-side .flow-box::after{display:none;}
+    .btc-caption{display:grid; grid-template-columns:1fr 1fr; gap:.9rem; margin-top:.8rem;}
+    .btc-caption div{border:1px solid var(--border); border-radius:15px; padding:.72rem .85rem; background:#fff9f1; line-height:1.35;}
+
+    .study-strip{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.6rem; max-width:var(--measure); margin:1rem 0 0;}
+    .study-check{display:flex; gap:.5rem; align-items:flex-start; border:1px solid var(--border); border-radius:14px; background:#fff9f1; padding:.65rem .72rem; line-height:1.25; font-weight:750;}
+    .study-check input{accent-color:#8b6d42; inline-size:1.05rem; block-size:1.05rem; margin-top:.15rem; flex:0 0 auto;}
+    .study-check > span{display:block;}
+    .study-check > span > span{display:block; color:var(--muted); font-size:.82rem; font-weight:500; margin-top:.12rem;}
+
+    .term{display:inline !important; border-bottom:2px dotted #9b8058; background:linear-gradient(transparent 58%, rgba(245,232,200,.62) 58%); border-radius:.08em; padding:0 .015em; cursor:help; box-decoration-break:clone; -webkit-box-decoration-break:clone; line-height:inherit; white-space:normal;}
+    .term:focus{outline:2px solid rgba(79,121,138,.45); outline-offset:2px;}
+    body.gloss-off .term{border-bottom:0; background:transparent; cursor:inherit; padding:0;}
+    p .term, li .term, .callout .term, .quote .term, .recap .term, .card p .term, .loop-card .term, .flowline .term{display:inline !important; width:auto !important; min-width:0 !important; max-width:none !important;}
+
+    .term, strong .term, h2 .term, h3 .term, h4 .term, .stack-row .term{
+      display:inline !important;
+      width:auto !important;
+      min-width:0 !important;
+      max-width:none !important;
+      font:inherit;
+      font-weight:inherit;
+      letter-spacing:inherit;
+      vertical-align:baseline;
+    }
+    .gloss-tooltip{position:fixed; z-index:999; max-width:min(380px, calc(100vw - 24px)); background:#2e2923; color:#fffaf2; border:1px solid rgba(255,250,242,.35); border-radius:14px; padding:.72rem .82rem; box-shadow:0 16px 35px rgba(0,0,0,.28); opacity:0; transform:translateY(4px); pointer-events:none; transition:opacity .12s ease, transform .12s ease; line-height:1.38; font-size:.94rem;}
+    .gloss-tooltip.show{opacity:1; transform:translateY(0);}
+    .gloss-tooltip strong{display:block; margin-bottom:.18rem; color:#fff1dc;}
+    .gloss-tooltip span{display:block; color:#f5ead9;}
+    .gloss-cue{border:1px solid var(--blue-border); background:var(--blue); border-radius:15px; padding:.72rem .85rem; max-width:var(--measure); margin:.8rem 0; line-height:1.4;}
+    .gloss-cue strong{display:block; margin-bottom:.15rem;}
+
+
+
+
+    .hero-actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:16px;}
+    .jump-btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      min-height:2.35rem;
+      padding:.45rem .78rem;
+      border:1px solid var(--green-border);
+      border-radius:999px;
+      background:var(--green);
+      color:var(--ink);
+      text-decoration:none;
+      font-weight:900;
+      line-height:1.2;
+      box-shadow:0 8px 16px rgba(74,55,32,.06);
+    }
+    .jump-btn.secondary{background:#fff8ed; border-color:var(--border); font-weight:800;}
+    .jump-btn:hover,.jump-btn:focus{background:#eef8ea; border-color:#7ca86d; text-decoration:none;}
+    .jump-btn.secondary:hover,.jump-btn.secondary:focus{background:#fffdf8; border-color:var(--strong-border);}
+
+
+    .map-gateway .gateway-actions{margin-top:1rem;}
+    .map-gateway .jump-btn{display:inline-flex;}
+
+    /* Editable mind map: spatial retrieval and restructuring workspace. */
+    .mind-intro{max-width:var(--measure);}
+    .mind-instructions{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+      margin:.8rem 0 1rem;
+    }
+    .mind-instructions .mini-step{
+      border:1px solid var(--border);
+      background:rgba(255,250,242,.7);
+      border-radius:14px;
+      padding:.58rem .68rem;
+      line-height:1.42;
+      font-size:.94rem;
+    }
+    .mind-instructions strong{display:block; font-weight:900; margin-bottom:.08rem;}
+    .mind-map-area{
+      border:1px solid var(--border);
+      background:linear-gradient(180deg,rgba(255,250,242,.9),rgba(246,236,221,.9));
+      border-radius:18px;
+      padding:.75rem;
+      margin-top:1rem;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.65);
+      overflow:hidden;
+    }
+    .mind-toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:8px;
+      margin-bottom:.65rem;
+    }
+    .mind-toolbar button,.mind-toolbar label,.mind-toolbar summary{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:2.16rem;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:#fff8ed;
+      color:var(--ink);
+      padding:.34rem .64rem;
+      cursor:pointer;
+      line-height:1.2;
+      font-weight:800;
+      font-size:.9rem;
+      text-decoration:none;
+      user-select:none;
+    }
+    .mind-toolbar button:hover,.mind-toolbar label:hover,.mind-toolbar summary:hover{background:#fffdf8; border-color:var(--strong-border);}
+    .mind-toolbar .primary-map-btn{background:var(--green); border-color:var(--green-border);}
+    .mind-toolbar button[aria-pressed="true"]{background:var(--blue); border-color:var(--blue-border);}
+    .mind-toolbar details{position:relative;}
+    .mind-toolbar summary::-webkit-details-marker{display:none;}
+    .mind-options-panel{
+      position:absolute;
+      right:0;
+      top:calc(100% + 8px);
+      width:min(360px, calc(100vw - 40px));
+      background:rgba(251,246,237,.98);
+      border:1px solid var(--strong-border);
+      border-radius:16px;
+      padding:.75rem;
+      box-shadow:0 18px 42px rgba(60,43,24,.2);
+      z-index:8;
+    }
+    .mind-options-panel p{margin:.25rem 0 .65rem; max-width:none; font-size:.86rem; line-height:1.45; color:var(--muted);}
+    .mind-options-panel .option-row{display:flex; flex-wrap:wrap; gap:8px;}
+    .mind-options-panel input[type="file"]{display:none;}
+    .mind-status{
+      margin-left:auto;
+      color:var(--quiet);
+      font-size:.84rem;
+      font-weight:800;
+      padding:.25rem .5rem;
+      border-radius:999px;
+      background:rgba(255,255,255,.44);
+      border:1px solid rgba(219,201,174,.65);
+    }
+    .mind-viewport{
+      position:relative;
+      border:1px solid var(--border);
+      border-radius:16px;
+      background:
+        linear-gradient(rgba(139,109,66,.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139,109,66,.045) 1px, transparent 1px),
+        rgba(255,253,248,.72);
+      background-size:32px 32px;
+      overflow:auto;
+      min-height:620px;
+      max-height:78vh;
+      overscroll-behavior:contain;
+      scrollbar-gutter:stable both-edges;
+    }
+    .mind-board{
+      position:relative;
+      width:100%;
+      min-width:820px;
+      height:1120px;
+      user-select:none;
+    }
+    .mind-svg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+      z-index:1;
+    }
+    .mind-edge{stroke:#8b7965; stroke-width:2.4; fill:none; opacity:.7;}
+    .mind-edge.loop{stroke:#9a7449; stroke-dasharray:7 7; opacity:.82;}
+    .mind-node{
+      position:absolute;
+      z-index:2;
+      width:220px;
+      min-height:116px;
+      border:1px solid var(--border);
+      border-radius:16px;
+      background:rgba(255,250,242,.96);
+      box-shadow:0 10px 22px rgba(74,55,32,.08);
+      padding:.62rem .68rem .7rem;
+      transition:box-shadow .14s ease, transform .14s ease, border-color .14s ease;
+    }
+    .mind-node.blue{background:var(--blue); border-color:var(--blue-border);}
+    .mind-node.amber{background:var(--amber); border-color:var(--amber-border);}
+    .mind-node.green{background:var(--green); border-color:var(--green-border);}
+    .mind-node.rose{background:var(--rose); border-color:var(--rose-border);}
+    .mind-node.selected{outline:3px solid rgba(139,109,66,.28); border-color:#8b6d42; box-shadow:0 14px 30px rgba(74,55,32,.16);}
+    .mind-node.connect-source{outline:3px solid rgba(79,121,138,.35); border-color:#557b88;}
+    .mind-head{display:grid; grid-template-columns:1fr auto; gap:6px; align-items:start; margin-bottom:.28rem;}
+    .mind-title{
+      font-weight:900;
+      line-height:1.18;
+      font-size:1rem;
+      outline:none;
+      border-radius:8px;
+      min-height:1.3rem;
+    }
+    .mind-title:focus,.mind-body:focus{background:rgba(255,255,255,.55); box-shadow:0 0 0 2px rgba(139,109,66,.17);}
+    .mind-handle{
+      width:1.85rem;
+      height:1.85rem;
+      border:1px solid rgba(139,109,66,.32);
+      border-radius:999px;
+      background:rgba(255,255,255,.58);
+      color:#574939;
+      display:grid;
+      place-items:center;
+      cursor:grab;
+      font-size:.95rem;
+      line-height:1;
+      touch-action:none;
+      padding:0;
+    }
+    .mind-handle:active{cursor:grabbing;}
+    .mind-body{
+      color:#54493d;
+      font-size:.88rem;
+      line-height:1.42;
+      outline:none;
+      border-radius:8px;
+      min-height:2.7rem;
+      white-space:pre-wrap;
+      user-select:text;
+    }
+    .mind-tag{
+      display:inline-flex;
+      margin-top:.5rem;
+      border:1px solid rgba(139,109,66,.22);
+      background:rgba(255,255,255,.36);
+      border-radius:999px;
+      padding:.1rem .44rem;
+      font-size:.73rem;
+      color:#675d51;
+      font-weight:850;
+      line-height:1.25;
+    }
+    .mind-mobile-note{display:none; margin:.5rem 0 0; font-size:.86rem; color:var(--muted); line-height:1.45;}
+    .mind-quick-prompt{
+      margin:.75rem 0 0;
+      border:1px dashed var(--strong-border);
+      border-radius:14px;
+      padding:.58rem .72rem;
+      background:rgba(255,255,255,.38);
+      color:#514638;
+      font-size:.92rem;
+      line-height:1.45;
+    }
+
+    @media (max-width:820px){
+      .mind-instructions{grid-template-columns:1fr;}
+      .mind-map-area{padding:.55rem;}
+      .mind-toolbar{gap:6px;}
+      .mind-toolbar button,.mind-toolbar label,.mind-toolbar summary{font-size:.84rem; min-height:2.04rem; padding:.3rem .5rem;}
+      .mind-status{width:100%; margin-left:0; text-align:center;}
+      .mind-viewport{min-height:560px; max-height:72vh; overflow:auto;}
+      .mind-board{width:920px; height:1120px; min-width:920px;}
+      .mind-node{width:210px;}
+      .mind-options-panel{right:auto; left:0;}
+      .mind-mobile-note{display:block;}
+    }
+    @media (max-width:520px){
+      .hero-actions{gap:8px;}
+      .jump-btn{width:100%;}
+      .mind-toolbar .texty{display:none;}
+      .mind-viewport{min-height:520px;}
+      .mind-node{width:206px; min-height:112px;}
+    }
+
+    /* Speechify-style read-aloud layer: sentence hover starts, toolbar continues. */
+    .read-sentence{
+      display:inline !important;
+      border-radius:.14em;
+      box-decoration-break:clone;
+      -webkit-box-decoration-break:clone;
+      transition:background .12s ease, box-shadow .12s ease, opacity .12s ease;
+    }
+    .read-sentence:hover:not(.is-reading){
+      background:rgba(245,232,200,.44);
+      cursor:pointer;
+    }
+    body.reader-active .read-sentence.is-reading{
+      background:linear-gradient(transparent 16%, rgba(255,228,144,.88) 16%, rgba(255,228,144,.88) 88%, transparent 88%);
+      box-shadow:0 0 0 .14em rgba(255,228,144,.22);
+    }
+    body.reader-paused .read-sentence.is-reading{
+      background:linear-gradient(transparent 16%, rgba(227,240,223,.95) 16%, rgba(227,240,223,.95) 88%, transparent 88%);
+      box-shadow:0 0 0 .14em rgba(159,190,138,.18);
+    }
+    body.reader-active .read-sentence.is-reading .term{
+      background:transparent;
+    }
+    body.reader-lens.reader-active main .read-sentence:not(.is-reading){opacity:.50;}
+    body.reader-lens.reader-active main .read-sentence.is-reading{opacity:1;}
+
+    .read-bubble{
+      position:fixed;
+      z-index:998;
+      width:2.35rem;
+      height:2.35rem;
+      display:grid;
+      place-items:center;
+      border-radius:50%;
+      border:1px solid var(--strong-border);
+      background:#fff8ed;
+      color:var(--ink);
+      box-shadow:0 10px 22px rgba(74,55,32,.20);
+      opacity:0;
+      transform:translateY(4px) scale(.96);
+      pointer-events:none;
+      cursor:pointer;
+      font-weight:900;
+      line-height:1;
+      transition:opacity .12s ease, transform .12s ease;
+    }
+    .read-bubble.show{
+      opacity:1;
+      transform:translateY(0) scale(1);
+      pointer-events:auto;
+    }
+    .read-bubble:hover{background:var(--green); border-color:var(--green-border);}
+
+    .sr-only{
+      position:absolute !important;
+      width:1px !important;
+      height:1px !important;
+      padding:0 !important;
+      margin:-1px !important;
+      overflow:hidden !important;
+      clip:rect(0,0,0,0) !important;
+      white-space:nowrap !important;
+      border:0 !important;
+    }
+
+    .speech-panel{
+      position:fixed;
+      right:14px;
+      top:50%;
+      bottom:auto;
+      transform:translateY(-50%);
+      z-index:88;
+      width:3.55rem;
+      max-width:calc(100vw - 20px);
+      background:rgba(251,246,237,.97);
+      border:1px solid var(--strong-border);
+      border-radius:999px;
+      box-shadow:0 14px 34px rgba(60,43,24,.20);
+      padding:.58rem .44rem .70rem;
+      backdrop-filter:blur(6px);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:.38rem;
+      overflow:visible;
+    }
+    body.reader-active .speech-panel{
+      border-color:#b7cfa8;
+      box-shadow:0 16px 38px rgba(74,94,54,.22);
+    }
+    .speech-title{font-weight:900; line-height:1.1; font-size:1rem; white-space:nowrap;}
+    .speech-status{display:block; color:var(--muted); font-size:.84rem; line-height:1.28; margin-top:.2rem;}
+    .speech-panel.speech-error{
+      border-radius:18px;
+      width:min(330px, calc(100vw - 32px));
+      padding:.68rem;
+      display:block;
+    }
+    .speech-panel.speech-error .speech-title{
+      position:static !important;
+      width:auto !important;
+      height:auto !important;
+      margin:0 0 .35rem !important;
+      clip:auto !important;
+      overflow:visible !important;
+      white-space:normal !important;
+      border:0 !important;
+    }
+    .speech-panel.speech-error .speech-status{
+      position:static !important;
+      width:auto !important;
+      height:auto !important;
+      margin:.35rem 0 0 !important;
+      clip:auto !important;
+      overflow:visible !important;
+      white-space:normal !important;
+      border:0 !important;
+    }
+    .speech-controls{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:.34rem;
+      margin:0;
+      order:1;
+    }
+    .speech-btn, .speech-toggle, .speech-more summary, .speech-collapse{
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:#fff8ed;
+      color:var(--ink);
+      cursor:pointer;
+      line-height:1;
+      font-weight:900;
+      width:2.36rem;
+      height:2.36rem;
+      min-height:2.36rem;
+      display:grid;
+      place-items:center;
+      user-select:none;
+      padding:0;
+    }
+    .speech-btn{font-size:1.05rem;}
+    .speech-btn.primary{
+      width:2.58rem;
+      height:2.58rem;
+      min-height:2.58rem;
+      font-size:1.22rem;
+      background:var(--green);
+      border-color:var(--green-border);
+    }
+    .speech-btn:hover, .speech-toggle:hover, .speech-collapse:hover, .speech-more summary:hover{background:#fffdf8; border-color:var(--strong-border);}
+    .speech-btn.primary:hover{background:#eef8ea;}
+    .speech-btn:focus-visible, .speech-toggle:focus-visible, .speech-collapse:focus-visible, .speech-more summary:focus-visible{
+      outline:3px solid rgba(139,109,66,.32);
+      outline-offset:2px;
+    }
+    .speech-collapse{font-size:1.12rem; flex:0 0 auto;}
+    .speech-meter{
+      position:absolute;
+      left:.23rem;
+      top:.70rem;
+      bottom:.70rem;
+      width:.18rem;
+      height:auto;
+      border:0;
+      border-radius:999px;
+      overflow:hidden;
+      background:rgba(139,109,66,.16);
+      margin:0;
+      pointer-events:none;
+    }
+    .speech-meter span{
+      position:absolute;
+      left:0;
+      right:0;
+      bottom:0;
+      width:100%;
+      height:var(--tts-progress, 0%);
+      background:#9fbe8a;
+      transition:height .18s ease;
+    }
+    .speech-more{margin:0; position:relative; flex:0 0 auto; order:2;}
+    .speech-more summary{list-style:none; font-size:1.02rem;}
+    .speech-more summary::-webkit-details-marker{display:none;}
+    .speech-more summary::before{content:none;}
+    .speech-extra{
+      position:absolute;
+      right:calc(100% + .72rem);
+      top:50%;
+      transform:translateY(-50%);
+      width:min(330px, calc(100vw - 104px));
+      max-height:min(560px, calc(100vh - 32px));
+      overflow:auto;
+      padding:.76rem;
+      border:1px solid var(--strong-border);
+      border-radius:17px;
+      background:rgba(251,246,237,.98);
+      box-shadow:0 18px 42px rgba(60,43,24,.24);
+    }
+    .speech-extra::before{
+      content:"";
+      position:absolute;
+      right:-.43rem;
+      top:50%;
+      width:.78rem;
+      height:.78rem;
+      transform:translateY(-50%) rotate(45deg);
+      background:rgba(251,246,237,.98);
+      border-right:1px solid var(--strong-border);
+      border-top:1px solid var(--strong-border);
+    }
+    .speech-row{display:grid; grid-template-columns:auto 1fr; gap:.55rem; align-items:center; margin:.48rem 0;}
+    .speech-row:first-child{margin-top:0;}
+    .speech-row label{font-size:.86rem; color:var(--muted); font-weight:900; white-space:nowrap;}
+    .speech-row output{font-weight:900; color:var(--ink); margin-left:.25rem;}
+    .speech-row input[type="range"]{width:100%; accent-color:#8b6d42;}
+    .speech-select{display:grid; grid-template-columns:auto 1fr; gap:.55rem; align-items:center; margin:.48rem 0; font-size:.86rem; color:var(--muted); font-weight:900;}
+    .speech-select select{min-width:0; border:1px solid var(--border); border-radius:11px; background:#fff8ed; color:var(--ink); padding:.42rem .48rem; font:inherit; font-size:.9rem;}
+    .speech-toggles{display:grid; grid-template-columns:1fr 1fr; gap:.45rem; margin:.55rem 0 .15rem;}
+    .speech-toggle{font-size:.9rem; min-height:2.12rem; width:auto; height:auto; padding:.38rem .55rem;}
+    .speech-toggle.replay{grid-column:1 / -1;}
+    .speech-toggle[aria-pressed="true"]{background:var(--blue); border-color:var(--blue-border); font-weight:900;}
+    .speech-help{margin:.42rem .04rem 0; color:var(--quiet); font-size:.78rem; line-height:1.35; max-width:none;}
+    .speech-panel.minimized{
+      width:auto;
+      max-width:none;
+      padding:.4rem;
+      border-radius:50%;
+      min-height:0;
+    }
+    .speech-panel.minimized .speech-controls,
+    .speech-panel.minimized .speech-meter,
+    .speech-panel.minimized .speech-more,
+    .speech-panel.minimized .speech-title{display:none !important;}
+
+    @media (max-width:820px){
+      .speech-panel{
+        right:10px;
+        left:auto;
+        top:50%;
+        bottom:auto;
+        transform:translateY(-50%);
+        width:3.28rem;
+        max-width:calc(100vw - 18px);
+        border-radius:999px;
+        padding:.46rem .34rem .58rem;
+        flex-direction:column;
+        gap:.34rem;
+      }
+      .speech-controls{flex-direction:column; gap:.32rem;}
+      .speech-btn, .speech-more summary, .speech-collapse{width:2.28rem; height:2.28rem; min-height:2.28rem;}
+      .speech-btn.primary{width:2.42rem; height:2.42rem; min-height:2.42rem; font-size:1.16rem;}
+      .speech-meter{
+        left:.18rem;
+        right:auto;
+        top:.70rem;
+        bottom:.70rem;
+        width:.18rem;
+        height:auto;
+      }
+      .speech-meter span{
+        left:0;
+        right:0;
+        top:auto;
+        bottom:0;
+        width:100%;
+        height:var(--tts-progress, 0%);
+        transition:height .18s ease;
+      }
+      .speech-extra{
+        left:auto;
+        right:calc(100% + .55rem);
+        top:50%;
+        bottom:auto;
+        transform:translateY(-50%);
+        width:min(300px, calc(100vw - 76px));
+        max-height:72vh;
+        overflow:auto;
+      }
+      .speech-extra::before{
+        right:-.43rem;
+        left:auto;
+        top:50%;
+        bottom:auto;
+        transform:translateY(-50%) rotate(45deg);
+        border-right:1px solid var(--strong-border);
+        border-top:1px solid var(--strong-border);
+      }
+      .speech-help{font-size:.78rem;}
+      .read-bubble{display:none;}
+    }
+
+
+    @media (max-width:460px){
+      .speech-panel{right:5px; width:3rem;}
+      .speech-extra{right:3.9rem; width:min(286px, calc(100vw - 72px)); padding:.66rem;}
+      .speech-btn, .speech-more summary, .speech-collapse{width:2.06rem; height:2.06rem; min-height:2.06rem;}
+      .speech-btn.primary{width:2.22rem; height:2.22rem; min-height:2.22rem;}
+    }
+
+    @media (max-width:820px){
+      .node-chain{grid-template-columns:1fr; gap:.42rem;}
+      .chain-arrow{transform:rotate(90deg); justify-self:center;}
+      .flow-diagram,.flow-diagram.three-step,.crisis-diagram .flow-diagram,.country-diagram .flow-diagram{grid-template-columns:1fr;}
+      .flow-box:not(:last-child)::after{content:"↓"; right:auto; left:50%; top:auto; bottom:-.92rem; transform:translateX(-50%);}
+      .flow-box{min-height:78px;}
+      .btc-diagram{grid-template-columns:1fr;}
+      .btc-center{justify-self:center; width:96px; min-height:96px;}
+      .btc-caption{grid-template-columns:1fr;}
+      .study-strip{grid-template-columns:1fr 1fr;}
+      .ladder-visual{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+      .wide-visual svg{min-width:0;}
+    }
+    @media (max-width:520px){
+      .study-strip{grid-template-columns:1fr;}
+      .mini-flow{justify-content:flex-start;}
+      .mini-flow .core{width:104px; height:104px;}
+      .map-node{min-height:74px;}
+      .ladder-visual{grid-template-columns:1fr !important;}
+    }
+
+    @media (max-width:980px){
+      .three,.four{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .hero-grid{grid-template-columns:1fr;}
+    }
+    @media (max-width:820px){
+      .shell{display:block; width:min(100% - 24px, 760px); padding-top:14px; padding-bottom:260px;}
+      aside{display:none;}
+      .mobile-nav{display:block; margin-top:0;}
+      .mobile-nav[open] .nav-list{padding-bottom:1rem;}
+      .hero{margin-top:14px;}
+      .two,.three,.four,.visual-grid{grid-template-columns:1fr;}
+      .stack-row{grid-template-columns:1fr; gap:4px;}
+      h1{max-width:none;}
+      .flowline{align-items:flex-start;}
+      .flowline .arr{width:100%; padding-left:.5rem;}
+      .wide-visual{overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; scrollbar-gutter:stable both-edges;}
+      .wide-visual svg{min-width:680px;}
+    }
+    @media (max-width:520px){
+      body{font-size:17px;}
+      body.large-text{--base:19px;}
+      .shell{width:calc(100% - 18px);}
+      .hero, section, .panel, details.panel{border-radius:16px;}
+      .visual{padding:.55rem; border-radius:15px;}
+      .chip{font-size:.84rem;}
+    }
+    @media print{
+      .progress, aside, .mobile-nav, .button-row, .tools, .speech-panel, .read-bubble{display:none !important;}
+      body{background:#fff; color:#111;}
+      .shell{display:block; width:100%; padding:0;}
+      .hero, section, .panel, details.panel{box-shadow:none; break-inside:avoid;}
+      details.panel{padding:1rem;}
+      details.panel > summary::after{display:none;}
+      details.panel > .details-body{border:0; padding:0;}
+    }
+    @media (prefers-reduced-motion:reduce){
+      html{scroll-behavior:auto;}
+      *{transition:none !important; animation:none !important;}
+    }
+  </style>
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<div class="progress" id="progress"></div>
+<div aria-label="Read aloud controls" class="speech-panel no-read" id="speechPanel" role="region">
+  <strong class="speech-title sr-only">Read aloud</strong>
+  <span aria-live="polite" class="speech-status sr-only" id="ttsStatus">Ready.</span>
+  <div aria-label="Playback controls" class="speech-controls">
+    <button aria-label="Previous sentence" class="speech-btn" id="ttsPrev" title="Previous sentence" type="button">↑</button>
+    <button aria-label="Play reading" class="speech-btn primary" id="ttsPlay" title="Play / pause" type="button">▶</button>
+    <button aria-label="Next sentence" class="speech-btn" id="ttsNext" title="Next sentence" type="button">↓</button>
+    <button aria-label="Stop reading" class="speech-btn" id="ttsStop" title="Stop" type="button">⏹</button>
+  </div>
+  <details class="speech-more" id="ttsMore">
+    <summary aria-label="Read-aloud options" title="Options"><span aria-hidden="true">⚙</span><span class="sr-only">Options</span></summary>
+    <div class="speech-extra">
+      <div class="speech-row">
+        <label for="ttsRate">Speed <output id="ttsRateLabel">1.00×</output></label>
+        <input id="ttsRate" max="1.60" min="0.75" step="0.05" type="range" value="1.00"/>
+      </div>
+      <label class="speech-select" for="ttsVoice">Voice
+        <select id="ttsVoice">
+          <option value="ava">Ava Natural Multilingual</option>
+          <option value="andrew">Andrew Natural Multilingual</option>
+        </select>
+      </label>
+      <div class="speech-toggles">
+        <button aria-pressed="true" class="speech-toggle" id="ttsAutoScroll" type="button">Auto-scroll</button>
+        <button aria-pressed="false" class="speech-toggle" id="ttsLens" type="button">Focus lens</button>
+        <button aria-label="Replay current sentence" class="speech-toggle replay" id="ttsReplay" type="button">↻ Replay</button>
+      </div>
+      <p class="speech-help">Tip: hover any sentence to start there. Use ↑ and ↓ to move one sentence at a time.</p>
+    </div>
+  </details>
+  <button aria-expanded="true" aria-label="Minimize read-aloud controls" class="speech-collapse" id="ttsCollapse" title="Minimize" type="button">−</button>
+  <div aria-hidden="true" class="speech-meter"><span id="ttsBar"></span></div>
+</div>
+<button aria-label="Read from this sentence" class="read-bubble no-read" id="readBubble" type="button">▶</button>
+<div class="shell">
+<aside aria-label="Page outline">
+<div class="side-cue"><strong>Memory loop</strong> Debt creates dependence. Cheap capital buys assets. Assets create power. Power shapes policy. Policy creates more debt.</div>
+<p class="side-title">Reader controls</p>
+<div aria-label="Reader controls" class="tools">
+<button aria-pressed="false" class="tool-btn" data-storage-key="sd-focus" data-toggle-class="focus-mode" type="button">Focus mode</button>
+<button aria-pressed="false" class="tool-btn" data-storage-key="sd-large" data-toggle-class="large-text" type="button">Bigger text</button>
+<button aria-pressed="false" class="tool-btn" data-storage-key="sd-space" data-toggle-class="extra-space" type="button">More spacing</button>
+<button aria-pressed="true" class="tool-btn" data-invert-pressed="true" data-storage-key="sd-gloss-off" data-toggle-class="gloss-off" type="button">Glossary hints</button>
+</div>
+<p class="side-title">On this page</p>
+<nav>
+<ol class="nav-list">
+<li><a href="#quick-map">Core thesis</a></li>
+<li><a href="simon_dixon_debt_power_mindmap_v13.html">Editable learning map page</a></li>
+<li><a href="#pictures">Four visual anchors</a></li>
+<li><a href="#loop">Six-stage loop</a></li>
+<li><a href="#primer">Five key terms</a></li>
+<li><a href="#loan">£100 loan</a></li>
+<li><a href="#players">Power players</a></li>
+<li><a href="#glossary">Glossary</a></li>
+<li><a href="#deep">Step-by-step model</a></li>
+<li><a href="#applications">Interview examples</a></li>
+<li><a href="#bitcoin">Bitcoin/gold exit</a></li>
+<li><a href="#playbook">Resilience plan</a></li>
+<li><a href="#learn">Study plan</a></li>
+<li><a href="#checks">Closed-book checks</a></li>
+<li><a href="#sources">References</a></li>
+</ol>
+</nav>
+</aside>
+<main id="content">
+<details class="mobile-nav panel">
+<summary>On this page</summary>
+<ol class="nav-list">
+<li><a href="#quick-map">Core thesis</a></li>
+<li><a href="simon_dixon_debt_power_mindmap_v13.html">Editable learning map page</a></li>
+<li><a href="#pictures">Four visual anchors</a></li>
+<li><a href="#loop">Six-stage loop</a></li>
+<li><a href="#primer">Five key terms</a></li>
+<li><a href="#loan">£100 loan</a></li>
+<li><a href="#players">Power players</a></li>
+<li><a href="#glossary">Glossary</a></li>
+<li><a href="#deep">Step-by-step model</a></li>
+<li><a href="#applications">Interview examples</a></li>
+<li><a href="#bitcoin">Bitcoin/gold exit</a></li>
+<li><a href="#playbook">Resilience plan</a></li>
+<li><a href="#learn">Study plan</a></li>
+<li><a href="#checks">Closed-book checks</a></li>
+<li><a href="#sources">References</a></li>
+</ol>
+<p class="side-title mobile-tools">Reader controls</p>
+<div aria-label="Reader controls" class="tools mobile-tools">
+<button aria-pressed="false" class="tool-btn" data-storage-key="sd-focus" data-toggle-class="focus-mode" type="button">Focus mode</button>
+<button aria-pressed="false" class="tool-btn" data-storage-key="sd-large" data-toggle-class="large-text" type="button">Bigger text</button>
+<button aria-pressed="false" class="tool-btn" data-storage-key="sd-space" data-toggle-class="extra-space" type="button">More spacing</button>
+<button aria-pressed="true" class="tool-btn" data-invert-pressed="true" data-storage-key="sd-gloss-off" data-toggle-class="gloss-off" type="button">Glossary hints</button>
+</div></details>
+<header class="hero">
+<div class="hero-grid">
+<div>
+<span class="eyebrow">Debt, assets, power, and exit</span>
+<h1>Simon Dixon’s debt-power map</h1>
+<p class="lede">A beginner-friendly map of the worldview in the interview: modern politics sits underneath capital allocation, and the real leverage is debt, cheap money, assets, institutions, and attention.</p>
+<p class="quiet-line"><a href="https://www.youtube.com/watch?v=C9PSM3hpsaU&amp;t=47s" rel="noopener" target="_blank">Peter McCormack with Simon Dixon</a> · <a href="https://www.simondixon.com/blog/who-really-runs-the-world-peter-mccormack-simon-dixon" rel="noopener" target="_blank">Simon Dixon episode notes</a></p>
+<div aria-label="Main themes" class="chip-row">
+<span class="chip">debt money</span>
+<span class="chip">cheap capital</span>
+<span class="chip">asset owners</span>
+<span class="chip">crisis spending</span>
+<span class="chip">self-custody</span>
+<span class="chip">local resilience</span>
+</div>
+<div class="hero-actions no-read no-gloss" aria-label="Main study shortcuts">
+<a class="jump-btn" href="simon_dixon_debt_power_mindmap_v13.html">Open editable learning map</a>
+<a class="jump-btn secondary" href="#loop">Study the six-stage loop</a>
+</div>
+</div>
+<figure aria-label="Debt becomes assets, assets become power, and the exit path reduces dependence." class="visual hero-visual" role="img">
+<div class="node-chain">
+<div class="map-node blue"><b>Debt</b><span>new claims and obligations</span></div>
+<div aria-hidden="true" class="chain-arrow">→</div>
+<div class="map-node amber"><b>Assets</b><span>ownership and collateral</span></div>
+<div aria-hidden="true" class="chain-arrow">→</div>
+<div class="map-node green"><b>Power</b><span>policy, contracts, influence</span></div>
+</div>
+<div class="loop-note">Power shapes policy. Policy creates more debt. The loop repeats.</div>
+<div class="exit-strip"><strong>Exit path</strong><span>reduce bad debt · own scarce assets · self-custody · buy local · build community</span></div>
+</figure>
+</div>
+</header>
+<section id="quick-map">
+<h2>Simon Dixon’s core claim: debt becomes power</h2>
+<div class="callout green big">
+<strong>Debt-to-power loop in plain English</strong>
+          Modern money is largely created through debt. Debt creates dependence. The people closest to cheap money buy assets. Assets create wealth and influence. Governments borrow in the public’s name and absorb the blame. Crises, wars, bailouts, and reconstruction projects speed up the transfer from wage-earners to asset-owners. The practical escape is to reduce dependence: less bad debt, more resilient assets, self-custody where possible, local spending, family, and community.
+        </div>
+<p>Do not read this as a normal left-versus-right political argument. Read it as a <strong>leverage map</strong>: before a politician speaks, someone already controls credit, asset prices, refinancing, lobbying, contracts, media incentives, and institutional survival.</p>
+<div class="quote">Memory sentence: <span>Debt creates dependence; cheap capital buys assets; assets create power; power shapes policy; policy creates more debt.</span></div><div aria-label="Study path checklist" class="study-strip">
+<label class="study-check"><input data-study="pictures" type="checkbox"/><span><strong>1. Diagrams</strong><span>Build the mental map.</span></span></label>
+<label class="study-check"><input data-study="loan" type="checkbox"/><span><strong>2. Loan</strong><span>Understand the seed.</span></span></label>
+<label class="study-check"><input data-study="players" type="checkbox"/><span><strong>3. Power players</strong><span>Name the power nodes.</span></span></label>
+<label class="study-check"><input data-study="quiz" type="checkbox"/><span><strong>4. Quiz</strong><span>Test recall, do not reread.</span></span></label>
+</div>
+</section>
+
+<section id="mind-map-link" class="map-gateway">
+<h2>Editable learning map page for restructuring the debt-power model</h2>
+<p>Open the separate canvas page when you want to reorganize the blocks, add new ideas, change link types and strengths, and test how the system fits together in your own head.</p>
+<div class="grid two no-read no-gloss" aria-label="Mind map page benefits">
+<div class="card blue">
+<span class="label">Spatial learning</span>
+<h3>Move ideas until the structure feels obvious</h3>
+<p>Dragging, grouping, and reconnecting blocks creates retrieval practice. You are not just reading the model; you are rebuilding it.</p>
+</div>
+<div class="card green">
+<span class="label">Editable canvas</span>
+<h3>Add linked blocks and relationship-coded links</h3>
+<p>The map page has an infinite pan/zoom canvas, right-click menus, movable and resizable blocks, editable text, relationship-coded links, focus mode, export/import, and a recenter button in case you get lost.</p>
+</div>
+</div>
+<p class="gateway-actions no-read no-gloss"><a class="jump-btn" href="simon_dixon_debt_power_mindmap_v13.html">Open the editable learning map</a></p>
+</section>
+
+<section id="pictures">
+<h2>Four visual anchors for the debt-power system</h2>
+<p>These four diagrams are the fastest way to remember the system: debt keeps moving, asset owners pull away, capital sits above politics, and the exit path reduces dependence.</p>
+<div class="visual-grid">
+<figure aria-label="Debt loop: borrow, spend, pay interest, refinance, repeat." class="visual small" role="img">
+<div class="diagram-title">Picture 1 · The debt loop</div>
+<div class="mini-flow">
+<span class="pill">Borrow</span><span class="arr">→</span>
+<span class="pill">Spend</span><span class="arr">→</span>
+<span class="pill">Pay interest</span><span class="arr">→</span>
+<span class="pill">Refinance</span><span class="arr">↺</span>
+<div class="core"><div><b>Debt</b><span>keeps the game moving</span></div></div>
+</div>
+<figcaption><strong>Picture 1:</strong> the system survives by rolling debt forward.</figcaption>
+</figure>
+<figure aria-label="K-shaped economy: asset owners rise and wage-only households fall behind." class="visual small" role="img">
+<div class="diagram-title">Picture 2 · The K-shape</div>
+<div class="k-chart">
+<div aria-hidden="true" class="k-plot">
+<svg viewBox="0 0 640 210" preserveAspectRatio="none" role="presentation" focusable="false">
+<line class="k-axis" x1="55" y1="22" x2="55" y2="186"></line>
+<line class="k-axis" x1="55" y1="186" x2="612" y2="186"></line>
+<line class="k-up" x1="120" y1="145" x2="560" y2="35"></line>
+<line class="k-down" x1="120" y1="145" x2="560" y2="178"></line>
+</svg>
+</div>
+<div class="k-legend">
+<div><strong>Asset owners ↑</strong><span>stocks · property · businesses · scarce assets</span></div>
+<div><strong>Wage-only households ↓</strong><span>rent · bills · taxes · expensive credit</span></div>
+</div>
+</div>
+<figcaption><strong>Picture 2:</strong> asset owners rise while wage-only people fall behind.</figcaption>
+</figure>
+<figure aria-label="Power stack: capital allocation sits above government and public costs." class="visual small" role="img">
+<div class="diagram-title">Picture 3 · The power stack</div>
+<div class="stack-diagram">
+<div class="stack-layer green">Capital allocation<span>who gets money, credit, and market access</span></div>
+<div class="stack-layer amber">Government and policy<span>borrowing, contracts, regulation, taxes</span></div>
+<div class="stack-layer blue">Public costs<span>prices, rent, debt service, insecurity</span></div>
+</div>
+<figcaption><strong>Picture 3:</strong> finance sets constraints; politics manages the visible story.</figcaption>
+</figure>
+<figure aria-label="Exit ladder: less debt, assets, custody, local life." class="visual small" role="img">
+<div class="diagram-title">Picture 4 · Practical exit</div>
+<div class="ladder-visual">
+<div class="ladder-bar one">Less debt<span>remove leashes</span></div>
+<div class="ladder-bar two">Assets<span>scarce/productive</span></div>
+<div class="ladder-bar three">Custody<span>fewer middlemen</span></div>
+<div class="ladder-bar four">Local life<span>real network</span></div>
+</div>
+<figcaption><strong>Picture 4:</strong> the answer is incremental independence, not a perfect escape.</figcaption>
+</figure>
+</div>
+</section>
+<section id="loop">
+<h2>The six-stage debt-to-power loop</h2>
+<p>The useful mental move is to stop beginning with politicians and start beginning with balance sheets.</p>
+<div class="grid two">
+<div>
+<div class="loop-card"><span class="num">1</span><div><strong>Credit expands.</strong><span>Banks, governments, and markets create new claims through loans, deficits, bonds, and refinancing.</span></div></div>
+<div class="loop-card"><span class="num">2</span><div><strong>Dependence grows.</strong><span>Households need mortgages. Firms need financing. States need bond buyers. Everyone needs rollover.</span></div></div>
+<div class="loop-card"><span class="num">3</span><div><strong>Cheap capital buys assets.</strong><span>The best-connected institutions can buy companies, property, infrastructure, resources, bonds, and equities.</span></div></div>
+</div>
+<div>
+<div class="loop-card"><span class="num">4</span><div><strong>Assets become leverage.</strong><span>Ownership gives cash flow, collateral, board influence, voting rights, lobbying power, and media reach.</span></div></div>
+<div class="loop-card"><span class="num">5</span><div><strong>Policy follows leverage.</strong><span>Government spending, bailout design, military budgets, regulation, and crisis management start to favor the capital network.</span></div></div>
+<div class="loop-card"><span class="num">6</span><div><strong>The public pays.</strong><span>Inflation, taxes, wage pressure, rent, debt service, insecurity, and lower opportunity land on ordinary people.</span></div></div>
+</div>
+</div>
+<div class="recap"><strong>Keep this:</strong> the interview is about leverage before voting. Elections happen inside a financial architecture that already rewards some players and weakens others.</div>
+</section>
+<section id="primer">
+<h2>Five key terms: debt, capital, assets, government, exit</h2>
+<p>Learn these first. They are the handles for the rest of the page.</p>
+<div class="grid five-ish two">
+<div class="card blue">
+<span class="label">1 · Debt</span>
+<h3>Debt as a future obligation</h3>
+<p>Debt is not only money owed. It is a future obligation. If you must repay, refinance, or roll over, someone else has leverage over your options.</p>
+</div>
+<div class="card amber">
+<span class="label">2 · Capital</span>
+<h3>Capital as buying power</h3>
+<p>Capital means money that can be deployed. Cheap capital is a superpower because it lets institutions buy assets before everyone else can.</p>
+</div>
+<div class="card green">
+<span class="label">3 · Assets</span>
+<h3>Assets as inflation shields</h3>
+<p>Assets are property, stocks, companies, bonds, land, gold, Bitcoin, infrastructure, and productive businesses. They can rise while wages lag.</p>
+</div>
+<div class="card">
+<span class="label">4 · State</span>
+<h3>State as borrower and blame sponge</h3>
+<p>The state borrows, spends, regulates, taxes, bails out, and fights wars. It is visible, so it absorbs public anger.</p>
+</div>
+<div class="card">
+<span class="label">5 · Exit</span>
+<h3>Exit as fewer weak points</h3>
+<p>Exit means fewer weak points: less bad debt, more useful assets, stronger custody, local supply chains, better health, and real relationships.</p>
+</div>
+<div class="card rose optional-soft">
+<span class="label">Clear-head rule</span>
+<h3>Evidence rule: profit is not proof of planning</h3>
+<p>If a weapons company profits from a war, that proves an incentive. It does not by itself prove the company caused the war. Follow the money, but do not skip the evidence step.</p>
+</div>
+</div>
+</section>
+<section id="loan">
+<h2>The £100 loan that explains the system</h2>
+<p>Start with one simple loan. The <a href="https://www.bankofengland.co.uk/quarterly-bulletin/2014/q1/money-creation-in-the-modern-economy" rel="noopener" target="_blank">Bank of England</a> explains that most modern money is created when commercial banks make loans. Simon uses this mechanism as the seed of the whole power map.</p>
+<figure aria-label="A bank loan becomes deposit money, then an obligation that creates dependence." class="visual loan-diagram" role="img">
+<div class="diagram-title">One loan, one dependency chain</div>
+<div class="flow-diagram">
+<div class="flow-box blue"><b>Bank lends £100</b><span>a new loan is created</span></div>
+<div class="flow-box green"><b>Deposit appears</b><span>new spendable money</span></div>
+<div class="flow-box amber"><b>Obligation remains</b><span>£100 plus interest</span></div>
+<div class="flow-box rose"><b>Need cash flow</b><span>earn, sell, cut, or refinance</span></div>
+</div>
+<div class="diagram-note">To repay, Alice must earn income, sell an asset, cut spending, or refinance. That is why debt becomes leverage.</div>
+</figure>
+<div class="recap"><strong>Keep this:</strong> debt is not just a number. It is a behavioral leash. At personal, corporate, and national scale, refinancing becomes power.</div>
+</section>
+<section id="players">
+<h2>Banks, asset managers, states, and ordinary people</h2>
+<p>These are not equal players. The closer a player is to cheap money, asset ownership, or state spending, the more leverage it has.</p>
+<div class="stack-list">
+<div class="stack-row"><strong>Commercial banks</strong><p>Create deposit money through lending; profit from interest, fees, and credit expansion.</p></div>
+<div class="stack-row"><strong>Central banks</strong><p>Influence rates, liquidity, QE, reserves, and crisis backstops. They stabilize the system when credit breaks.</p></div>
+<div class="stack-row"><strong>Government</strong><p>Borrower, spender, regulator, tax collector, military funder, bailout vehicle, and blame sponge.</p></div>
+<div class="stack-row"><strong>Investment banks and primary dealers</strong><p>Help issue, package, trade, and distribute government and corporate debt.</p></div>
+<div class="stack-row"><strong>Asset managers</strong><p>Manage pensions, ETFs, insurance pools, and institutional money. This gives them voting influence and capital-allocation power.</p></div>
+<div class="stack-row"><strong>Corporations</strong><p>Receive contracts, subsidies, bailouts, cheap financing, and market access when aligned with capital flows.</p></div>
+<div class="stack-row"><strong>Military-industrial complex</strong><p>Turns conflict, fear, and procurement budgets into revenue for defense and security firms.</p></div>
+<div class="stack-row"><strong>Technical-industrial complex</strong><p>Turns data, identity, cloud, AI, algorithms, digital money, and surveillance tools into infrastructure.</p></div>
+<div class="stack-row"><strong>Media and algorithms</strong><p>Shape attention: what people fear, hate, support, ignore, and repeat.</p></div>
+<div class="stack-row"><strong>Sovereign wealth funds</strong><p>State investment pools, often linked to energy or resource wealth, that partner with global capital.</p></div>
+<div class="stack-row"><strong>Ordinary people</strong><p>Workers, taxpayers, renters, mortgage holders, consumers, voters, savers, and data sources.</p></div>
+</div>
+</section>
+<details class="panel no-gloss" id="glossary">
+<summary>Beginner glossary</summary>
+<div class="gloss-cue"><strong>Hover or tap highlighted terms in the text.</strong> The first important terms now work in titles, bold labels, cards, and ordinary paragraphs. This list is the backup.</div>
+<div class="grid three">
+<div class="card"><h3>financial-industrial complex</h3><p>The finance power network: banks, asset managers, insurers, bond markets, private equity, hedge funds, and investment banks.</p></div>
+<div class="card"><h3>military-industrial complex</h3><p>The war-spending network: defense firms, security contractors, military budgets, and procurement systems.</p></div>
+<div class="card"><h3>technical-industrial complex</h3><p>The data-and-control network: big tech, cloud, AI, digital ID, surveillance, and digital money infrastructure.</p></div>
+<div class="card"><h3>K-shaped economy</h3><p>A split where asset owners move up while wage-only households fall behind.</p></div>
+<div class="card"><h3>sovereign wealth fund</h3><p>A state-owned investment fund, often built from oil, gas, or resource revenue.</p></div>
+<div class="card"><h3>sovereign wealth funds</h3><p>State-owned investment funds, often built from oil, gas, or resource revenue.</p></div>
+<div class="card"><h3>state investment pools</h3><p>Large pools of money owned or controlled by a government, often through a sovereign wealth fund.</p></div>
+<div class="card"><h3>resource wealth</h3><p>Value that comes from oil, gas, minerals, land, water, or other natural resources.</p></div>
+<div class="card"><h3>energy wealth</h3><p>Value that comes from controlling energy resources such as oil, gas, electricity, or nuclear capacity.</p></div>
+<div class="card"><h3>global capital</h3><p>Large pools of investable money moving across countries, markets, and companies.</p></div>
+<div class="card"><h3>commercial bank</h3><p>A normal bank that lends to people and businesses; lending can create deposit money.</p></div>
+<div class="card"><h3>commercial banks</h3><p>Normal banks that lend to people and businesses; lending can create deposit money.</p></div>
+<div class="card"><h3>central bank</h3><p>The bank for banks and monetary policy; it influences rates, liquidity, reserves, and crisis support.</p></div>
+<div class="card"><h3>central banks</h3><p>Banks for banks and monetary policy; they influence rates, liquidity, reserves, and crisis support.</p></div>
+<div class="card"><h3>investment bank</h3><p>A bank that helps governments and companies raise, package, trade, or sell financial products.</p></div>
+<div class="card"><h3>investment banks</h3><p>Banks that help governments and companies raise, package, trade, or sell financial products.</p></div>
+<div class="card"><h3>primary dealer</h3><p>A bank or broker expected to participate in government debt auctions and market-making.</p></div>
+<div class="card"><h3>primary dealers</h3><p>Banks or brokers expected to participate in government debt auctions and market-making.</p></div>
+<div class="card"><h3>asset manager</h3><p>A firm that manages money for others: pensions, ETFs, insurance pools, and institutional capital.</p></div>
+<div class="card"><h3>asset managers</h3><p>Firms that manage money for others: pensions, ETFs, insurance pools, and institutional capital.</p></div>
+<div class="card"><h3>fiat currency</h3><p>Government money such as pounds, dollars, and euros; not redeemable for a fixed amount of gold.</p></div>
+<div class="card"><h3>fiat money</h3><p>Government money such as pounds, dollars, and euros; not redeemable for a fixed amount of gold.</p></div>
+<div class="card"><h3>deposit money</h3><p>Money shown as bank deposits in accounts; commercial-bank lending can create it.</p></div>
+<div class="card"><h3>credit</h3><p>Borrowed purchasing power: someone can spend now because someone else accepts a promise to repay later.</p></div>
+<div class="card"><h3>credit expansion</h3><p>Growth in lending and debt, which increases spending power in the economy.</p></div>
+<div class="card"><h3>lending</h3><p>Providing money now in exchange for repayment later, usually with interest.</p></div>
+<div class="card"><h3>interest</h3><p>The extra amount paid for borrowing money.</p></div>
+<div class="card"><h3>interest rate</h3><p>The price of borrowing money. Higher rates make debt harder to carry.</p></div>
+<div class="card"><h3>interest rates</h3><p>The prices of borrowing money. Higher rates make debt harder to carry.</p></div>
+<div class="card"><h3>rates</h3><p>Shorthand here for interest rates: the price of borrowing money.</p></div>
+<div class="card"><h3>fees</h3><p>Extra charges paid to banks or financial firms for services, transactions, or accounts.</p></div>
+<div class="card"><h3>reserves</h3><p>Central-bank money held by commercial banks; it helps banks settle payments and meet requirements.</p></div>
+<div class="card"><h3>liquidity</h3><p>How easily something can be turned into cash without a big loss.</p></div>
+<div class="card"><h3>crisis backstop</h3><p>Emergency support used to stop a financial system from freezing or collapsing.</p></div>
+<div class="card"><h3>crisis backstops</h3><p>Emergency supports used to stop a financial system from freezing or collapsing.</p></div>
+<div class="card"><h3>deficit</h3><p>When a government spends more than it collects, usually filling the gap by borrowing.</p></div>
+<div class="card"><h3>deficits</h3><p>When governments spend more than they collect, usually filling the gap by borrowing.</p></div>
+<div class="card"><h3>bond</h3><p>An IOU: a government or company borrows and promises interest plus repayment.</p></div>
+<div class="card"><h3>bonds</h3><p>IOUs: governments or companies borrow and promise interest plus repayment.</p></div>
+<div class="card"><h3>bond market</h3><p>The market where government and company IOUs are bought and sold.</p></div>
+<div class="card"><h3>bond markets</h3><p>Markets where government and company IOUs are bought and sold.</p></div>
+<div class="card"><h3>bond buyers</h3><p>Investors who buy government or company IOUs, providing cash to the borrower.</p></div>
+<div class="card"><h3>government debt</h3><p>Money a government owes after borrowing.</p></div>
+<div class="card"><h3>corporate debt</h3><p>Money a company owes after borrowing.</p></div>
+<div class="card"><h3>gilt</h3><p>A UK government bond.</p></div>
+<div class="card"><h3>gilts</h3><p>UK government bonds.</p></div>
+<div class="card"><h3>Treasury</h3><p>A U.S. government bond.</p></div>
+<div class="card"><h3>Treasuries</h3><p>U.S. government bonds.</p></div>
+<div class="card"><h3>debt rollover</h3><p>Issuing new debt to repay old debt when it matures.</p></div>
+<div class="card"><h3>rollover</h3><p>Keeping debt alive by refinancing instead of fully paying it off.</p></div>
+<div class="card"><h3>roll over</h3><p>Keep debt alive by refinancing instead of fully paying it off.</p></div>
+<div class="card"><h3>rolling debt forward</h3><p>Keeping debt alive by refinancing instead of fully paying it off.</p></div>
+<div class="card"><h3>refinancing</h3><p>Replacing old debt with new debt, often to avoid paying everything back immediately.</p></div>
+<div class="card"><h3>refinance</h3><p>Replace old debt with new debt, often to avoid paying everything back immediately.</p></div>
+<div class="card"><h3>debt service</h3><p>The regular payments needed to keep debt current: interest and sometimes principal.</p></div>
+<div class="card"><h3>cheap capital</h3><p>Money that can be borrowed or raised at low cost; it lets big players buy assets more easily.</p></div>
+<div class="card"><h3>cheap money</h3><p>Money that can be borrowed cheaply; it gives powerful players more buying power.</p></div>
+<div class="card"><h3>cheap financing</h3><p>Borrowing or raising money at low cost.</p></div>
+<div class="card"><h3>asset</h3><p>Something that can hold or produce value: property, shares, land, gold, Bitcoin, a business, or tools.</p></div>
+<div class="card"><h3>assets</h3><p>Things that can hold or produce value: property, shares, land, gold, Bitcoin, businesses, or tools.</p></div>
+<div class="card"><h3>asset ownership</h3><p>Owning things that hold or produce value, such as property, shares, land, gold, Bitcoin, or a business.</p></div>
+<div class="card"><h3>asset owner</h3><p>Someone who owns things that can rise in price or produce income.</p></div>
+<div class="card"><h3>asset owners</h3><p>People or institutions that own things that can rise in price or produce income.</p></div>
+<div class="card"><h3>asset inflation</h3><p>When assets such as houses, shares, or land rise faster than wages.</p></div>
+<div class="card"><h3>inflation</h3><p>A rise in the general cost of living, meaning money buys less over time.</p></div>
+<div class="card"><h3>equities</h3><p>Company shares; owning equity means owning a piece of a company.</p></div>
+<div class="card"><h3>shares</h3><p>Pieces of ownership in a company.</p></div>
+<div class="card"><h3>stocks</h3><p>Company shares; owning stock means owning a piece of a company.</p></div>
+<div class="card"><h3>property</h3><p>Land or buildings that can be owned, rented, sold, or used as collateral.</p></div>
+<div class="card"><h3>collateral</h3><p>An asset pledged to a lender; if you fail to repay, the lender may take it.</p></div>
+<div class="card"><h3>cash flow</h3><p>Money coming in regularly, such as wages, rent, profits, or interest.</p></div>
+<div class="card"><h3>leverage</h3><p>Using borrowed money or obligations to control a bigger asset or position than you could with cash alone.</p></div>
+<div class="card"><h3>voting rights</h3><p>The right attached to shares to vote on company decisions.</p></div>
+<div class="card"><h3>voting influence</h3><p>Power over company decisions that comes from voting shares.</p></div>
+<div class="card"><h3>board influence</h3><p>Power to shape who runs a company and what decisions it makes.</p></div>
+<div class="card"><h3>capital-allocation power</h3><p>Power to decide where large amounts of money go.</p></div>
+<div class="card"><h3>capital flows</h3><p>The movement of investment money into and out of companies, sectors, or countries.</p></div>
+<div class="card"><h3>pension</h3><p>Long-term retirement money invested on behalf of workers or savers.</p></div>
+<div class="card"><h3>pensions</h3><p>Long-term retirement money invested on behalf of workers or savers.</p></div>
+<div class="card"><h3>ETF</h3><p>Exchange-traded fund: a basket of assets that trades like a share.</p></div>
+<div class="card"><h3>ETFs</h3><p>Exchange-traded funds: baskets of assets that trade like shares.</p></div>
+<div class="card"><h3>insurance pools</h3><p>Large pools of insurance money invested before claims are paid.</p></div>
+<div class="card"><h3>institutional money</h3><p>Money managed by large organizations such as pension funds, insurers, endowments, or asset managers.</p></div>
+<div class="card"><h3>proxy voting</h3><p>Voting on corporate matters through shares held by funds or asset managers.</p></div>
+<div class="card"><h3>government</h3><p>The state machinery that taxes, borrows, spends, regulates, and enforces rules.</p></div>
+<div class="card"><h3>state spending</h3><p>Government spending funded by taxes, borrowing, or money creation.</p></div>
+<div class="card"><h3>government spending</h3><p>Money spent by the state on services, contracts, benefits, debt interest, or war.</p></div>
+<div class="card"><h3>tax collector</h3><p>The part of the state that collects compulsory payments from people and businesses.</p></div>
+<div class="card"><h3>regulator</h3><p>A public authority that sets and enforces rules for an industry or market.</p></div>
+<div class="card"><h3>borrower</h3><p>A person, company, or government that takes money now and promises to repay later.</p></div>
+<div class="card"><h3>spender</h3><p>A person or institution that sends money into the economy by buying goods, services, or assets.</p></div>
+<div class="card"><h3>military funder</h3><p>A government role: paying for armed forces, weapons, intelligence, and defense contracts.</p></div>
+<div class="card"><h3>bailout</h3><p>Rescue money or support for a failing institution, often during a crisis.</p></div>
+<div class="card"><h3>bailouts</h3><p>Rescue money or support for failing institutions, often during crises.</p></div>
+<div class="card"><h3>bailout vehicle</h3><p>A channel used to move public or central-bank support into troubled institutions.</p></div>
+<div class="card"><h3>blame sponge</h3><p>A visible institution or politician that absorbs public anger while deeper incentives remain unchanged.</p></div>
+<div class="card"><h3>procurement</h3><p>The process of governments or large institutions buying goods and services.</p></div>
+<div class="card"><h3>procurement budgets</h3><p>Money set aside for buying equipment, services, weapons, or infrastructure.</p></div>
+<div class="card"><h3>subsidy</h3><p>Government support that lowers costs or increases income for a company, industry, or person.</p></div>
+<div class="card"><h3>subsidies</h3><p>Government supports that lower costs or increase income for companies, industries, or people.</p></div>
+<div class="card"><h3>contracts</h3><p>Agreements to provide goods or services, often valuable when issued by governments.</p></div>
+<div class="card"><h3>market access</h3><p>The ability to sell into a market or raise money from investors.</p></div>
+<div class="card"><h3>lobbying</h3><p>Trying to influence politicians, regulators, or policy decisions.</p></div>
+<div class="card"><h3>data</h3><p>Information about people, markets, behavior, payments, or systems.</p></div>
+<div class="card"><h3>identity</h3><p>The official or digital proof of who someone is.</p></div>
+<div class="card"><h3>cloud</h3><p>Remote computing infrastructure used to store data and run software.</p></div>
+<div class="card"><h3>AI</h3><p>Artificial intelligence: software that performs tasks requiring prediction, pattern recognition, or language ability.</p></div>
+<div class="card"><h3>algorithm</h3><p>A set of rules a computer follows to rank, recommend, sort, or decide something.</p></div>
+<div class="card"><h3>algorithms</h3><p>Computer rules that rank, recommend, sort, or decide what people see or how systems behave.</p></div>
+<div class="card"><h3>digital ID</h3><p>A digital way to prove identity to governments, banks, apps, or services.</p></div>
+<div class="card"><h3>digital money</h3><p>Money represented and moved through software rather than physical cash.</p></div>
+<div class="card"><h3>surveillance</h3><p>Monitoring people, money, movement, messages, or behavior.</p></div>
+<div class="card"><h3>surveillance tools</h3><p>Technologies used to monitor people, money, movement, messages, or behavior.</p></div>
+<div class="card"><h3>infrastructure</h3><p>Basic systems that other activity depends on: roads, energy, finance, internet, cloud, or payments.</p></div>
+<div class="card"><h3>attention</h3><p>What people notice and focus on; controlling attention can shape belief and behavior.</p></div>
+<div class="card"><h3>central bank digital currency</h3><p>Digital money issued directly by a central bank.</p></div>
+<div class="card"><h3>central-bank digital currency</h3><p>Digital money issued directly by a central bank.</p></div>
+<div class="card"><h3>CBDC</h3><p>Central bank digital currency: digital money issued directly by a central bank.</p></div>
+<div class="card"><h3>CBDCs</h3><p>Central bank digital currencies: digital money issued directly by central banks.</p></div>
+<div class="card"><h3>stablecoin</h3><p>A crypto token designed to track a normal currency such as the dollar.</p></div>
+<div class="card"><h3>stablecoins</h3><p>Crypto tokens designed to track normal currencies such as the dollar.</p></div>
+<div class="card"><h3>self-custody</h3><p>Holding your own keys or asset access instead of trusting an exchange, ETF, bank, or custodian.</p></div>
+<div class="card"><h3>self custody</h3><p>Holding your own keys or asset access instead of trusting an exchange, ETF, bank, or custodian.</p></div>
+<div class="card"><h3>custodian</h3><p>An institution that holds an asset for you.</p></div>
+<div class="card"><h3>counterparty risk</h3><p>The risk that the person or institution holding your asset or contract fails you.</p></div>
+<div class="card"><h3>margin call</h3><p>When a lender demands more collateral or repayment because a leveraged position has fallen in value.</p></div>
+<div class="card"><h3>margin calls</h3><p>Demands for more collateral or repayment because a leveraged position has fallen in value.</p></div>
+<div class="card"><h3>derivative</h3><p>A financial contract whose value depends on another asset, such as a stock, bond, currency, or Bitcoin.</p></div>
+<div class="card"><h3>derivatives</h3><p>Financial contracts whose value depends on another asset, such as a stock, bond, currency, or Bitcoin.</p></div>
+<div class="card"><h3>node</h3><p>A computer that checks and relays Bitcoin transactions and helps enforce the network rules.</p></div>
+<div class="card"><h3>nodes</h3><p>Computers that check and relay Bitcoin transactions and help enforce the network rules.</p></div>
+<div class="card"><h3>IMF</h3><p>International Monetary Fund: an institution that lends to countries in financial trouble, usually with policy conditions.</p></div>
+<div class="card"><h3>IMF conditionality</h3><p>Policy conditions attached to IMF lending.</p></div>
+<div class="card"><h3>privatization</h3><p>Moving assets or services from state ownership into private ownership.</p></div>
+<div class="card"><h3>privatize</h3><p>Move assets or services from state ownership into private ownership.</p></div>
+<div class="card"><h3>color revolution</h3><p>A protest movement that changes political power; the term is often used when outside influence is suspected.</p></div>
+<div class="card"><h3>multipolar world</h3><p>A world with several major power centers instead of one dominant empire or bloc.</p></div>
+<div class="card"><h3>sanctions</h3><p>Restrictions used to pressure a country, company, or person by limiting trade, finance, or access.</p></div>
+<div class="card"><h3>terms of trade</h3><p>The conditions under which a country trades with the world, including prices, currencies, and access.</p></div>
+<div class="card"><h3>reconstruction</h3><p>Rebuilding after war or crisis; often involves huge contracts, loans, and asset deals.</p></div>
+<div class="card"><h3>world reserve currency</h3><p>A currency widely used by governments, central banks, banks, and global trade.</p></div>
+<div class="card"><h3>reserve currency</h3><p>A currency widely held and used internationally for trade and savings.</p></div>
+<div class="card"><h3>trade deficit</h3><p>When a country imports more goods and services than it exports.</p></div>
+<div class="card"><h3>fiscal deficit</h3><p>When a government spends more than it collects in revenue.</p></div>
+<div class="card"><h3>sovereignty</h3><p>The ability of a person or country to make decisions without being easily controlled by outside dependency.</p></div>
+<div class="card"><h3>financial sovereignty</h3><p>More control over your money, custody, debt, and economic choices.</p></div>
+<div class="card"><h3>supply chain</h3><p>The chain of people and companies that produce, move, and sell a product.</p></div>
+<div class="card"><h3>local economy</h3><p>The businesses, farms, workers, and services near you that circulate money locally.</p></div>
+<div class="card"><h3>boycott</h3><p>Refusing to buy from or participate in a system to reduce support for it.</p></div>
+<div class="card"><h3>quantitative easing</h3><p>A central bank creating reserves to buy financial assets, usually to lower borrowing costs and support markets.</p></div>
+<div class="card"><h3>QE</h3><p>Quantitative easing: central-bank asset buying used to lower borrowing costs and support markets.</p></div>
+<div class="card"><h3>corporation</h3><p>A company treated as a legal entity that can own assets, borrow, sue, and be sued.</p></div>
+<div class="card"><h3>corporations</h3><p>Companies treated as legal entities that can own assets, borrow, sue, and be sued.</p></div>
+<div class="card"><h3>ordinary people</h3><p>Regular households: workers, renters, savers, taxpayers, consumers, and voters.</p></div>
+<div class="card"><h3>taxpayer</h3><p>A person or business that pays tax to the state.</p></div>
+<div class="card"><h3>taxpayers</h3><p>People or businesses that pay tax to the state.</p></div>
+<div class="card"><h3>renter</h3><p>Someone who pays to live in or use property they do not own.</p></div>
+<div class="card"><h3>renters</h3><p>People who pay to live in or use property they do not own.</p></div>
+<div class="card"><h3>mortgage holder</h3><p>Someone with a home loan secured against a property.</p></div>
+<div class="card"><h3>mortgage holders</h3><p>People with home loans secured against property.</p></div>
+<div class="card"><h3>consumer</h3><p>A person who buys goods or services.</p></div>
+<div class="card"><h3>consumers</h3><p>People who buy goods or services.</p></div>
+<div class="card"><h3>voter</h3><p>A person with the right to vote in elections.</p></div>
+<div class="card"><h3>voters</h3><p>People with the right to vote in elections.</p></div>
+<div class="card"><h3>saver</h3><p>A person who stores money or assets for later.</p></div>
+<div class="card"><h3>savers</h3><p>People who store money or assets for later.</p></div>
+<div class="card"><h3>data source</h3><p>A person, device, app, or system that produces information others can collect or analyze.</p></div>
+<div class="card"><h3>data sources</h3><p>People, devices, apps, or systems that produce information others can collect or analyze.</p></div>
+<div class="card"><h3>defense firms</h3><p>Companies that sell weapons, military technology, or security services.</p></div>
+<div class="card"><h3>security firms</h3><p>Companies that sell protection, surveillance, intelligence, or security services.</p></div>
+<div class="card"><h3>revenue</h3><p>Money received by a business or institution before costs are deducted.</p></div>
+<div class="card"><h3>conflict</h3><p>A fight, war, or political confrontation that can redirect public money and attention.</p></div>
+<div class="card"><h3>fear</h3><p>A strong emotion that can make people accept policies or spending they would otherwise question.</p></div>
+<div class="card"><h3>policy</h3><p>A rule, plan, or decision made by a government, institution, or company.</p></div>
+</div>
+</details>
+<section id="deep">
+<h2>How the debt-power system works step by step</h2>
+<p class="section-kicker">Read this as a sequence, not a list.</p>
+<div class="grid two">
+<div class="card blue">
+<span class="label">Act 1</span>
+<h3>Money starts as debt</h3>
+<p>When money is created through lending, the economy needs continuous income, borrowing, and refinancing. That makes society sensitive to interest rates, bank decisions, credit markets, and bond markets.</p>
+</div>
+<div class="card amber">
+<span class="label">Act 2</span>
+<h3>Cheap capital buys the world</h3>
+<p>The player borrowing at 2% can outbid the player borrowing at 20%. Over time, cheap capital collects assets while expensive capital creates dependency.</p>
+</div>
+<div class="card">
+<span class="label">Act 3</span>
+<h3>Government becomes the piggy bank</h3>
+<p>When crisis hits, government borrows in the public’s name. The spending often lands in large institutions: banks, defense firms, infrastructure firms, tech firms, insurers, and major contractors.</p>
+</div>
+<div class="card green">
+<span class="label">Act 4</span>
+<h3>Asset owners pull away</h3>
+<p>QE, bailouts, low rates, subsidies, and fiscal spending can raise asset prices. People with assets gain; people living only on wages and debt face rising costs.</p>
+</div>
+</div>
+<figure aria-label="Public crisis routes money through state borrowing into contracts, asset prices, and later public costs." class="visual crisis-diagram" role="img">
+<div class="diagram-title">Public crisis → private accumulation</div>
+<div class="flow-diagram">
+<div class="flow-box rose"><b>Crisis</b><span>war · bailout · shock</span></div>
+<div class="flow-box amber"><b>State borrows</b><span>public balance sheet</span></div>
+<div class="flow-box blue"><b>Contracts flow</b><span>finance · tech · defense</span></div>
+<div class="flow-box green"><b>Assets rise</b><span>ownership pulls away</span></div>
+</div>
+<div class="diagram-note">Public costs return later: inflation · taxes · rent · austerity · debt service · lower real wages.</div>
+<figcaption>The money route matters more than the slogan used to justify the spending.</figcaption>
+</figure>
+<div class="divider"></div>
+<h3>Asset managers as the capital nervous system</h3>
+<p>Asset managers matter because they sit where pensions, ETFs, insurance money, public companies, proxy voting, and sovereign capital meet. BlackRock, Vanguard, and State Street are not simply rich people with vaults of cash; they manage other people’s capital at gigantic scale. That makes them central routers of financial influence.</p>
+<div aria-label="Asset manager influence chain" class="flowline">
+<span>Pensions and ETFs</span><span class="arr">→</span><span>asset managers</span><span class="arr">→</span><span>shares and votes</span><span class="arr">→</span><span>boards and policy pressure</span><span class="arr">→</span><span>capital allocation</span>
+</div>
+<p class="deep-extra">Research on the “Big Three” asset managers found that BlackRock, Vanguard, and State Street together were the largest shareholder in most S&amp;P 500 firms. BlackRock also offers some clients voting choice, which means the influence is large but not as simple as one person personally voting every share.</p>
+<div class="divider"></div>
+<h3>Industrial complexes: finance, war, and data</h3>
+<div class="grid three">
+<div class="card"><span class="label">Finance</span><h3>Financial-industrial complex</h3><p>Banks, asset managers, private equity, insurers, bond markets, hedge funds, and investment banks. It turns debt, savings, pensions, and crises into asset control.</p></div>
+<div class="card"><span class="label">War</span><h3>Military-industrial complex</h3><p>Defense contractors, security agencies, military budgets, NATO procurement, intelligence-linked contracting, and reconstruction after conflict.</p></div>
+<div class="card"><span class="label">Data</span><h3>Technical-industrial complex</h3><p>Big tech, cloud, AI, data centers, digital ID, surveillance, cybersecurity, stablecoins, and central-bank digital currency infrastructure.</p></div>
+</div>
+<div class="recap"><strong>Keep this:</strong> crisis is not only a tragedy. It is also a budgeting event, a contracting event, a media event, and an asset-pricing event.</div>
+<div class="divider"></div>
+<h3>Countries as portfolios</h3>
+<p>The most unsettling part of the worldview is the idea that capital treats countries less like communities and more like asset bundles.</p>
+<div class="grid two">
+<div class="card blue">
+<h3>Country as home</h3>
+<p>A country is people, language, food, homes, grandparents, schools, land, culture, memories, and belonging.</p>
+</div>
+<div class="card amber">
+<h3>Country as asset portfolio</h3>
+<p>A country is oil, ports, labor, debt, minerals, real estate, tax capacity, farmland, water, energy, and privatization opportunities.</p>
+</div>
+</div>
+<figure aria-label="Country as portfolio: country, debt pressure, portfolio." class="visual country-diagram optional-soft" role="img">
+<div class="diagram-title">Country as a portfolio</div>
+<div class="flow-diagram three-step">
+<div class="flow-box blue"><b>Country</b><span>people · resources · debt · land</span></div>
+<div class="flow-box amber"><b>Debt pressure</b><span>loans · conditions · privatization · asset sales</span></div>
+<div class="flow-box green"><b>Portfolio</b><span>cash flows · contracts · ownership · control</span></div>
+</div>
+</figure>
+</section>
+<section id="applications">
+<h2>Interview examples: empire, war, media, and Bitcoin</h2>
+<p>Once the loop is clear, the examples become easier to follow. Each example asks the same questions: where is the debt, who gets cheap capital, which assets move, who gets contracts, and what story is sold to the public?</p>
+<div class="grid two">
+<div class="card blue">
+<span class="label">Origin story</span>
+<h3>Bank of England and war finance</h3>
+<p>The starting image is the state needing money for war, finance providing it, and public debt becoming a permanent structure of power.</p>
+</div>
+<div class="card amber">
+<span class="label">International debt</span>
+<h3>IMF loans and privatization</h3>
+<p>Debt trouble becomes leverage. Loans, conditions, reforms, privatization, and resource access can turn a country into a cash-flow portfolio.</p>
+</div>
+<div class="card">
+<span class="label">War spending</span>
+<h3>Ukraine and reconstruction</h3>
+<p>The war is read through weapons contracts, European dependency, government-backed financing, and future reconstruction assets.</p>
+</div>
+<div class="card">
+<span class="label">Resource politics</span>
+<h3>Venezuela, oil, and bargaining power</h3>
+<p>Resource-rich countries are understood through oil access, sanctions, debt pressure, military pressure, and who controls the terms of trade.</p>
+</div>
+<div class="card">
+<span class="label">Empire decline</span>
+<h3>The dollar and slow Western squeeze</h3>
+<p>The predicted collapse is not cinematic. It is smaller homes, higher costs, more debt, fewer children, longer work, and lower expectations.</p>
+</div>
+<div class="card green">
+<span class="label">New power centers</span>
+<h3>China, Gulf capital, Africa, and multipolarity</h3>
+<p>Countries that control resources, manufacturing, energy, or sovereign wealth can play a longer game than wage-tax-and-debt economies.</p>
+</div>
+<div class="card rose">
+<span class="label">Attention layer</span>
+<h3>Media and algorithmic boxes</h3>
+<p>Feeds sort people into fear and identity camps. The more emotional the feed, the easier the public is to predict, divide, and redirect.</p>
+</div>
+<div class="card green">
+<span class="label">Exit layer</span>
+<h3>Bitcoin, gold, and local life as exits</h3>
+<p>The positive answer is not winning the empire game. It is opting out of as many dependency loops as possible.</p>
+</div>
+</div>
+<div class="recap"><strong>Keep this:</strong> every example is a variation of the same template: debt pressure, capital access, asset transfer, public narrative, and personal exit.</div>
+</section>
+<section id="bitcoin">
+<h2>Bitcoin and gold as financial exit tools</h2>
+<p>Bitcoin appears near the end because it is the proposed boycott tool. The point is not merely price. The point is custody.</p>
+<div class="grid two">
+<div class="card amber">
+<span class="label">Inside the system</span>
+<h3>Captured exposure: ETF, custodian, leverage</h3>
+<p>You own exposure, but someone else controls custody. If you borrow against it, you turn a long-term asset into a debt contract with deadlines, margin calls, and counterparty risk.</p>
+</div>
+<div class="card green">
+<span class="label">Outside the system</span>
+<h3>Exit exposure: self-custody, node, no leverage</h3>
+<p>You reduce dependence on banks, custodians, lenders, and asset managers. This is why Simon treats self-custody as a political and financial act.</p>
+</div>
+</div>
+<figure aria-label="Bitcoin can be held inside institutional custody or used as an exit through self-custody and no leverage." class="visual btc-diagram-wrap" role="img">
+<div class="diagram-title">Bitcoin: exposure versus exit</div>
+<div class="btc-diagram">
+<div class="btc-side">
+<div class="flow-box rose"><b>Custodian / ETF</b><span>exposure without direct control</span></div>
+<div class="flow-box rose"><b>Borrow against it</b><span>a finite debt game</span></div>
+</div>
+<div class="btc-center"><div><b>BTC</b><span>scarce asset</span></div></div>
+<div class="btc-side">
+<div class="flow-box green"><b>Self-custody</b><span>keys under your control</span></div>
+<div class="flow-box green"><b>No leverage</b><span>long-time saving</span></div>
+</div>
+</div>
+<div class="btc-caption">
+<div><strong>Captured route:</strong> price exposure stays inside the same financial plumbing.</div>
+<div><strong>Exit route:</strong> custody and no leverage reduce dependence on that plumbing.</div>
+</div>
+</figure>
+<div class="recap"><strong>Keep this:</strong> the asset is one issue; custody is the deeper issue. In this worldview, an asset held through the same institutions you are trying to escape is only a partial exit.</div>
+</section>
+<section id="playbook">
+<h2>Practical resilience plan: debt, assets, local life</h2>
+<p>The answer is not perfection. It is becoming less dependent each month.</p>
+<div class="action-ladder">
+<div class="action-step"><div><strong>Kill the worst debt first.</strong><p>High-interest consumer debt is the most obvious leash. Every repayment removes a point of control.</p></div></div>
+<div class="action-step"><div><strong>Build an emergency buffer.</strong><p>Cash is not a perfect long-term asset, but it prevents forced selling and panic borrowing.</p></div></div>
+<div class="action-step"><div><strong>Own something scarce or productive.</strong><p>This could be Bitcoin, gold, property without dangerous leverage, a business, tools, land, or skills that generate income.</p></div></div>
+<div class="action-step"><div><strong>Avoid leverage traps.</strong><p>Borrowing against volatile assets can convert freedom into a margin-call machine.</p></div></div>
+<div class="action-step"><div><strong>Move spending closer to home.</strong><p>Local farmers, butchers, cafés, tradespeople, clubs, and independent businesses keep more energy in your real network.</p></div></div>
+<div class="action-step"><div><strong>Protect attention.</strong><p>Algorithms can turn fear and outrage into a daily cage. Deliberate feeds, long walks, books, and real conversations are part of the exit.</p></div></div>
+<div class="action-step"><div><strong>Use time altruistically.</strong><p>Simon’s positive ending is not “be selfish.” It is: look after yourself so you can help family, friends, and community see the game more clearly.</p></div></div>
+</div>
+<div class="callout green"><strong>One-month target</strong> Owe less bad debt, own a little more of a resilient asset, spend a little more locally, and spend less time inside rage algorithms.</div>
+</section>
+<section id="learn">
+<h2>ADHD/dyslexia study plan for this topic</h2>
+<p>This subject is emotionally heavy and concept-dense. Use retrieval and spacing rather than rereading the whole page repeatedly.</p>
+<div class="grid two">
+<div class="card">
+<span class="label">Pass 1 · 10 minutes</span>
+<h3>Start with the four diagrams</h3>
+<p>Read the core thesis, the four visual anchors, and the memory sentence. Stop before the step-by-step model.</p>
+</div>
+<div class="card">
+<span class="label">Pass 2 · 20 minutes</span>
+<h3>Trace where the money flows</h3>
+<p>Read from the £100 loan through the step-by-step model. After each section, ask: “Where does the money flow?”</p>
+</div>
+<div class="card">
+<span class="label">Pass 3 · walking recall</span>
+<h3>Walk and explain the loop aloud</h3>
+<p>Walk for five minutes and explain the model into your phone. Movement reduces restlessness and makes recall easier.</p>
+</div>
+<div class="card">
+<span class="label">Later review</span>
+<h3>Use closed-book recall instead of rereading</h3>
+<p>Answer the closed-book checks before revealing the cues. Practice testing and spaced review beat passive rereading.</p>
+</div>
+</div>
+<div class="teachback">
+<h3>Two-minute teach-back script</h3>
+<p>Simon Dixon’s worldview says modern power is not mainly held by elected politicians. It is held by the capital-allocation network: banks, asset managers, corporations, sovereign wealth funds, military contractors, tech infrastructure, and the media systems that protect those flows.</p>
+<p>Money enters through debt. Debt creates dependence. Cheap capital buys assets. Assets create power. Government borrows and spends in the public’s name. Crises accelerate the transfer. The answer is to reduce dependence: less bad debt, more resilient assets, self-custody where possible, local spending, attention control, family, and community.</p>
+</div>
+<details class="panel optional-soft">
+<summary>Why this study method works</summary>
+<div class="details-body">
+<p><a href="https://www.whz.de/fileadmin/lehre/hochschuldidaktik/docs/dunloskiimprovingstudentlearning.pdf" rel="noopener" target="_blank">Dunloski et al.</a> rate practice testing and distributed practice as high-utility learning techniques. <a href="https://www.learningscientists.org/blog/2019/11/28-1" rel="noopener" target="_blank">The Learning Scientists</a> also emphasize spacing and retrieval. For ADHD and dyslexia, the added trick is to make the information visible, chunked, spoken, and revisited in short sessions.</p>
+</div>
+</details>
+</section>
+<details class="panel" id="checks">
+<summary>Closed-book checks</summary>
+<div class="details-body">
+<p class="mini">Try to answer before revealing. Imperfect answers are fine; retrieval is the point.</p>
+<div class="quiz-item">
+<strong>1. What is the central loop?</strong>
+<div class="button-row"><button class="reveal" type="button">Reveal cue</button></div>
+<div class="quiz-answer">Debt creates dependence → cheap capital buys assets → assets create power → power shapes policy → policy creates more debt.</div>
+</div>
+<div class="quiz-item">
+<strong>2. Why does debt matter so much?</strong>
+<div class="button-row"><button class="reveal" type="button">Reveal cue</button></div>
+<div class="quiz-answer">Because anyone who must repay, refinance, or roll over debt is vulnerable to whoever controls credit, rates, liquidity, and market access.</div>
+</div>
+<div class="quiz-item">
+<strong>3. Why are asset managers central?</strong>
+<div class="button-row"><button class="reveal" type="button">Reveal cue</button></div>
+<div class="quiz-answer">They manage huge pools of pensions, ETFs, insurance money, and institutional capital. That gives them influence over ownership, voting, boards, and capital flows.</div>
+</div>
+<div class="quiz-item">
+<strong>4. What is the K-shaped economy?</strong>
+<div class="button-row"><button class="reveal" type="button">Reveal cue</button></div>
+<div class="quiz-answer">A split where asset owners move up while wage-only households move down because costs and asset prices rise faster than wages.</div>
+</div>
+<div class="quiz-item">
+<strong>5. What is the difference between Bitcoin exposure and Bitcoin exit?</strong>
+<div class="button-row"><button class="reveal" type="button">Reveal cue</button></div>
+<div class="quiz-answer">Exposure can be held through ETFs or custodians. Exit means self-custody, no leverage, and less dependence on the same financial institutions.</div>
+</div>
+<div class="quiz-item">
+<strong>6. What is the practical answer?</strong>
+<div class="button-row"><button class="reveal" type="button">Reveal cue</button></div>
+<div class="quiz-answer">Reduce dependence: kill bad debt, own useful assets, avoid leverage traps, self-custody where possible, buy local, protect attention, and build family/community resilience.</div>
+</div>
+</div>
+</details>
+<section id="memory-card">
+<h2>Memory card: debt machine, capital game, local exit</h2>
+<div class="callout green big">
+<strong>Debt machine, capital game, local exit</strong>
+          The modern world is a debt machine. The winners are closest to cheap capital. The losers live mainly on wages and expensive debt. Politics manages the story. Finance manages the game. The escape is not a perfect revolution; it is a steady reduction of dependence at the personal, family, and community level.
+        </div>
+<div class="button-row">
+<button id="printBtn" type="button">Print or save as PDF</button>
+<button id="copyHook" type="button">Copy memory loop</button>
+</div>
+</section>
+<details class="panel optional-soft no-gloss" id="sources">
+<summary>Reference shelf</summary>
+<div class="details-body">
+<ol class="footnote-list">
+<li><a href="https://www.youtube.com/watch?v=C9PSM3hpsaU&amp;t=47s" rel="noopener" target="_blank">Peter McCormack interview with Simon Dixon</a></li>
+<li><a href="https://www.simondixon.com/about" rel="noopener" target="_blank">Simon Dixon profile</a></li>
+<li><a href="https://www.simondixon.com/blog/who-really-runs-the-world-peter-mccormack-simon-dixon" rel="noopener" target="_blank">Simon Dixon episode notes</a></li>
+<li><a href="https://www.bankofengland.co.uk/quarterly-bulletin/2014/q1/money-creation-in-the-modern-economy" rel="noopener" target="_blank">Bank of England — Money creation in the modern economy</a></li>
+<li><a href="https://www.bankofengland.co.uk/about/history" rel="noopener" target="_blank">Bank of England — History</a></li>
+<li><a href="https://www.bankofengland.co.uk/monetary-policy/quantitative-easing" rel="noopener" target="_blank">Bank of England — Quantitative easing</a></li>
+<li><a href="https://home.treasury.gov/policy-issues/financing-the-government/quarterly-refunding/primary-dealers" rel="noopener" target="_blank">U.S. Treasury — Primary dealers</a></li>
+<li><a href="https://www.imf.org/en/about/factsheets/sheets/2023/imf-conditionality" rel="noopener" target="_blank">IMF — Conditionality</a></li>
+<li><a href="https://www.newyorkfed.org/markets/primary-market-corporate-credit-facility" rel="noopener" target="_blank">New York Fed — Primary Market Corporate Credit Facility</a></li>
+<li><a href="https://www.reuters.com/business/blackrock-quarterly-profit-rises-active-etfs-2026-04-14/" rel="noopener" target="_blank">Reuters — BlackRock Q1 2026 assets under management</a></li>
+<li><a href="https://www.researchgate.net/publication/316462236_Hidden_power_of_the_Big_Three_Passive_index_funds_re-concentration_of_corporate_ownership_and_new_financial_risk" rel="noopener" target="_blank">Hidden Power of the Big Three</a></li>
+<li><a href="https://www.blackrock.com/corporate/about-us/investment-stewardship/blackrock-voting-choice" rel="noopener" target="_blank">BlackRock — Voting Choice</a></li>
+<li><a href="https://www.worldbank.org/en/news/press-release/2025/02/25/updated-ukraine-recovery-and-reconstruction-needs-assessment-released" rel="noopener" target="_blank">World Bank — Ukraine recovery and reconstruction needs</a></li>
+<li><a href="https://www.reuters.com/business/finance/ukraine-reconstruction-bank-guided-by-blackrock-jpmorgan-ready-action-this-year-2024-01-16/" rel="noopener" target="_blank">Reuters — Ukraine reconstruction bank</a></li>
+<li><a href="https://www.reuters.com/business/aerospace-defense/ukraine-middle-east-conflicts-boost-us-arms-makers-profits-2025-10-21/" rel="noopener" target="_blank">Reuters — arms makers and conflict demand</a></li>
+<li><a href="https://history.state.gov/historicaldocuments/frus1952-54Guat/sources" rel="noopener" target="_blank">U.S. State Department — Guatemala documentary history</a></li>
+<li><a href="https://www.federalreserve.gov/econres/notes/feds-notes/the-international-role-of-the-u-s-dollar-2025-edition-20250718.html" rel="noopener" target="_blank">Federal Reserve — international role of the U.S. dollar</a></li>
+<li><a href="https://www.cbo.gov/publication/61882" rel="noopener" target="_blank">Congressional Budget Office — Budget and Economic Outlook</a></li>
+<li><a href="https://orfme.org/research/mapping-gulf-sovereign-wealth-funds-in-the-global-energy-transition-capital-technology-and-diplomacy/" rel="noopener" target="_blank">ORF Middle East — Gulf sovereign wealth funds</a></li>
+<li><a href="https://bitcoin.org/bitcoin.pdf" rel="noopener" target="_blank">Bitcoin white paper</a></li>
+<li><a href="https://www.simondixon.com/blog/free-bitcoin-self-custody-training" rel="noopener" target="_blank">Simon Dixon — Bitcoin self-custody training</a></li>
+<li><a href="https://www.whz.de/fileadmin/lehre/hochschuldidaktik/docs/dunloskiimprovingstudentlearning.pdf" rel="noopener" target="_blank">Dunloski et al. — Improving Students’ Learning</a></li>
+<li><a href="https://www.learningscientists.org/blog/2019/11/28-1" rel="noopener" target="_blank">The Learning Scientists — spacing and retrieval</a></li>
+</ol>
+</div>
+</details>
+</main>
+</div>
+<script>
+    const progress = document.getElementById('progress');
+    const updateProgress = () => {
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      const pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+      progress.style.width = pct + '%';
+    };
+    document.addEventListener('scroll', updateProgress, {passive:true});
+    updateProgress();
+
+    const body = document.body;
+    const safeStore = {
+      get(key){ try { return localStorage.getItem(key); } catch(e) { return null; } },
+      set(key, value){ try { localStorage.setItem(key, value); } catch(e) {} }
+    };
+
+    const navLinks = [...document.querySelectorAll('.nav-list a')];
+    const sections = navLinks.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting){
+          const id = '#' + entry.target.id;
+          navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === id));
+        }
+      });
+    }, {rootMargin:'-20% 0px -65% 0px', threshold:0.01});
+    sections.forEach(s => observer.observe(s));
+
+    document.querySelectorAll('.reveal').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.quiz-item');
+        item.classList.toggle('revealed');
+        btn.textContent = item.classList.contains('revealed') ? 'Hide cue' : 'Reveal cue';
+      });
+    });
+
+    function syncToggleButtons(cls){
+      const classOn = body.classList.contains(cls);
+      document.querySelectorAll(`.tool-btn[data-toggle-class="${cls}"]`).forEach(btn => {
+        const invert = btn.dataset.invertPressed === 'true';
+        const pressed = invert ? !classOn : classOn;
+        btn.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+      });
+    }
+    document.querySelectorAll('.tool-btn[data-toggle-class]').forEach(btn => {
+      const cls = btn.dataset.toggleClass;
+      const key = btn.dataset.storageKey;
+      const saved = safeStore.get(key) === '1';
+      body.classList.toggle(cls, saved);
+      syncToggleButtons(cls);
+      btn.addEventListener('click', () => {
+        const on = !body.classList.contains(cls);
+        body.classList.toggle(cls, on);
+        safeStore.set(key, on ? '1' : '0');
+        syncToggleButtons(cls);
+        if(cls === 'gloss-off') hideGlossTip();
+      });
+    });
+
+    document.querySelectorAll('input[data-study]').forEach(box => {
+      const key = 'sd-study-' + box.dataset.study;
+      box.checked = safeStore.get(key) === '1';
+      box.addEventListener('change', () => safeStore.set(key, box.checked ? '1' : '0'));
+    });
+
+    function installReaderSentences(){
+      const root = document.querySelector('main');
+      if(!root) return;
+      const skipSelector = 'a, button, summary, nav, aside, script, style, code, pre, .no-read, .no-gloss, .visual, .tools, .study-strip, .button-row, .chip, .eyebrow, .label, .gloss-tooltip, .speech-panel, .read-bubble';
+      const blockSelector = 'h1,h2,h3,h4,p,li,td,th,figcaption,.quote,.recap,.callout,.loop-card,.flow-box,.map-node,.stack-layer,.diagram-note,.card';
+      const endRegex = /[.!?]+["”’')\]]*\s*/g;
+      let readId = 0;
+      let currentBlock = null;
+      let currentHasText = false;
+
+      function shouldSkipReadNode(node){
+        const p = node.parentElement;
+        if(!p) return true;
+        if(p.closest(skipSelector)) return true;
+        if(!p.closest(blockSelector)) return true;
+        if(!node.nodeValue || !node.nodeValue.trim()) return true;
+        return false;
+      }
+
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode(node){ return shouldSkipReadNode(node) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+      });
+      const nodes = [];
+      while(walker.nextNode()) nodes.push(walker.currentNode);
+
+      nodes.forEach(node => {
+        const parent = node.parentElement;
+        const block = parent.closest(blockSelector);
+        if(block !== currentBlock){
+          if(currentHasText){ readId += 1; currentHasText = false; }
+          currentBlock = block;
+        }
+        const text = node.nodeValue;
+        const frag = document.createDocumentFragment();
+        let last = 0;
+        endRegex.lastIndex = 0;
+        let match;
+        function appendSegment(seg, endsSentence){
+          if(!seg) return;
+          const span = document.createElement('span');
+          span.className = 'read-sentence';
+          span.dataset.readId = String(readId);
+          span.textContent = seg;
+          frag.appendChild(span);
+          if(seg.trim()) currentHasText = true;
+          if(endsSentence && currentHasText){ readId += 1; currentHasText = false; }
+        }
+        while((match = endRegex.exec(text))){
+          const end = match.index + match[0].length;
+          appendSegment(text.slice(last, end), true);
+          last = end;
+        }
+        appendSegment(text.slice(last), false);
+        node.parentNode.replaceChild(frag, node);
+      });
+    }
+
+    function installSpeechReader(){
+      const panel = document.getElementById('speechPanel');
+      const playBtn = document.getElementById('ttsPlay');
+      const prevBtn = document.getElementById('ttsPrev');
+      const nextBtn = document.getElementById('ttsNext');
+      const stopBtn = document.getElementById('ttsStop');
+      const replayBtn = document.getElementById('ttsReplay');
+      const collapseBtn = document.getElementById('ttsCollapse');
+      const status = document.getElementById('ttsStatus');
+      const bar = document.getElementById('ttsBar');
+      const rate = document.getElementById('ttsRate');
+      const rateLabel = document.getElementById('ttsRateLabel');
+      const voiceSelect = document.getElementById('ttsVoice');
+      const autoBtn = document.getElementById('ttsAutoScroll');
+      const lensBtn = document.getElementById('ttsLens');
+      const morePanel = document.getElementById('ttsMore');
+      const bubble = document.getElementById('readBubble');
+      const supported = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+      if(!panel || !playBtn || !bubble) return;
+
+      function buildUnits(){
+        const spans = [...document.querySelectorAll('main .read-sentence[data-read-id]')];
+        const grouped = new Map();
+        spans.forEach(span => {
+          const id = span.dataset.readId;
+          if(!grouped.has(id)) grouped.set(id, {id, spans:[], parts:[]});
+          const unit = grouped.get(id);
+          unit.spans.push(span);
+          unit.parts.push(span.textContent);
+        });
+        const units = [...grouped.values()]
+          .map(unit => ({id:unit.id, spans:unit.spans, text:unit.parts.join('').replace(/\s+/g,' ').trim()}))
+          .filter(unit => unit.text.length > 1 && /[A-Za-z0-9£$]/.test(unit.text));
+        units.forEach((unit, index) => unit.spans.forEach(span => { span.dataset.readIndex = String(index); }));
+        return units;
+      }
+
+      const units = buildUnits();
+      let currentIndex = Math.min(Number(safeStore.get('sd-tts-index') || 0), Math.max(units.length - 1, 0));
+      let isPlaying = false;
+      let isPaused = false;
+      let speechToken = 0;
+      let voices = [];
+      let bubbleIndex = null;
+      let bubbleTimer = null;
+      let autoScroll = safeStore.get('sd-tts-autoscroll') !== '0';
+      let lensOn = safeStore.get('sd-tts-lens') === '1';
+
+      function setStatus(text){ if(status) status.textContent = text; }
+      function updateButtons(){
+        const readingNow = isPlaying && !isPaused;
+        playBtn.textContent = readingNow ? '⏸' : '▶';
+        playBtn.setAttribute('aria-label', readingNow ? 'Pause reading' : (isPaused ? 'Resume reading' : 'Play reading'));
+        playBtn.setAttribute('title', readingNow ? 'Pause' : (isPaused ? 'Resume' : 'Play'));
+        autoBtn?.setAttribute('aria-pressed', autoScroll ? 'true' : 'false');
+        lensBtn?.setAttribute('aria-pressed', lensOn ? 'true' : 'false');
+        body.classList.toggle('reader-active', isPlaying || isPaused);
+        body.classList.toggle('reader-paused', isPaused);
+        body.classList.toggle('reader-lens', lensOn);
+        if(bar && units.length){ bar.style.setProperty('--tts-progress', (((currentIndex + 1) / units.length) * 100) + '%'); }
+      }
+      function clearHighlight(){ document.querySelectorAll('.read-sentence.is-reading').forEach(el => el.classList.remove('is-reading')); }
+      function highlight(index, scroll=true){
+        if(!units.length) return;
+        index = Math.max(0, Math.min(index, units.length - 1));
+        clearHighlight();
+        units[index].spans.forEach(span => span.classList.add('is-reading'));
+        currentIndex = index;
+        safeStore.set('sd-tts-index', String(currentIndex));
+        setStatus(isPlaying && !isPaused ? 'Reading.' : 'Ready.');
+        const first = units[index].spans[0];
+        const parentDetails = first ? first.closest('details') : null;
+        if(parentDetails && !parentDetails.open) parentDetails.open = true;
+        if(scroll && autoScroll){
+          if(first) first.scrollIntoView({behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'center'});
+        }
+        updateButtons();
+      }
+      function voiceChoice(){
+        const saved = safeStore.get('sd-tts-voice-choice');
+        const value = voiceSelect?.value || saved || 'ava';
+        return value === 'andrew' ? 'andrew' : 'ava';
+      }
+      function findPreferredVoice(choice){
+        if(!voices.length) return null;
+        const targetName = choice === 'andrew' ? /andrew/i : /ava/i;
+        const strong = voices.find(v => targetName.test(v.name) && /multilingual/i.test(v.name) && /natural|online/i.test(v.name));
+        if(strong) return strong;
+        const medium = voices.find(v => targetName.test(v.name) && /natural|online|multilingual/i.test(v.name));
+        if(medium) return medium;
+        return voices.find(v => targetName.test(v.name)) || null;
+      }
+      function selectedVoice(){ return findPreferredVoice(voiceChoice()); }
+      function speakFrom(index){
+        if(!supported || !units.length) return;
+        index = Math.max(0, Math.min(index, units.length - 1));
+        speechToken += 1;
+        const token = speechToken;
+        window.speechSynthesis.cancel();
+        currentIndex = index;
+        const unit = units[index];
+        highlight(index, true);
+        const utterance = new SpeechSynthesisUtterance(unit.text);
+        utterance.rate = Number(rate?.value || 1);
+        utterance.pitch = 1;
+        utterance.lang = 'en-US';
+        const voice = selectedVoice();
+        if(voice) utterance.voice = voice;
+        utterance.onstart = () => { if(token !== speechToken) return; isPlaying = true; isPaused = false; setStatus('Reading.'); updateButtons(); };
+        utterance.onend = () => {
+          if(token !== speechToken) return;
+          if(index + 1 < units.length){ speakFrom(index + 1); }
+          else { isPlaying = false; isPaused = false; updateButtons(); setStatus('Finished.'); }
+        };
+        utterance.onerror = () => {
+          if(token !== speechToken) return;
+          isPlaying = false; isPaused = false; updateButtons(); setStatus('Read aloud stopped.');
+        };
+        isPlaying = true;
+        isPaused = false;
+        setStatus('Reading.');
+        updateButtons();
+        window.speechSynthesis.speak(utterance);
+      }
+      function pauseOrPlay(){
+        if(!supported) return;
+        if(isPlaying && !isPaused){
+          window.speechSynthesis.pause();
+          isPaused = true;
+          setStatus('Paused.');
+          updateButtons();
+          return;
+        }
+        if(isPaused){
+          window.speechSynthesis.resume();
+          isPaused = false;
+          setStatus('Reading.');
+          updateButtons();
+          return;
+        }
+        speakFrom(currentIndex || 0);
+      }
+      function stopReading(clear=false){
+        speechToken += 1;
+        if(supported) window.speechSynthesis.cancel();
+        isPlaying = false;
+        isPaused = false;
+        if(clear) clearHighlight();
+        setStatus(clear ? 'Stopped.' : 'Ready.');
+        updateButtons();
+      }
+      function move(delta){
+        const next = Math.max(0, Math.min(currentIndex + delta, units.length - 1));
+        if(isPlaying || isPaused) speakFrom(next);
+        else highlight(next, true);
+      }
+      function replay(){ speakFrom(currentIndex || 0); }
+
+      function populateVoices(){
+        if(!supported || !voiceSelect) return;
+        voices = window.speechSynthesis.getVoices().sort((a,b) => `${a.lang} ${a.name}`.localeCompare(`${b.lang} ${b.name}`));
+        const saved = safeStore.get('sd-tts-voice-choice');
+        voiceSelect.value = saved === 'andrew' ? 'andrew' : 'ava';
+      }
+
+      function showBubbleFor(span){
+        if(!span || window.matchMedia('(max-width: 820px)').matches) return;
+        const index = Number(span.dataset.readIndex);
+        if(Number.isNaN(index)) return;
+        bubbleIndex = index;
+        const rect = span.getBoundingClientRect();
+        const size = 38;
+        let left = rect.left - size - 8;
+        if(left < 8) left = Math.min(rect.right + 8, window.innerWidth - size - 8);
+        let top = rect.top + Math.min(rect.height / 2, 18) - size / 2;
+        top = Math.max(8, Math.min(top, window.innerHeight - size - 8));
+        bubble.style.left = left + 'px';
+        bubble.style.top = top + 'px';
+        bubble.classList.add('show');
+      }
+      function hideBubbleSoon(){
+        clearTimeout(bubbleTimer);
+        bubbleTimer = setTimeout(() => bubble.classList.remove('show'), 90);
+      }
+      function keepBubble(){ clearTimeout(bubbleTimer); }
+
+      if(!supported){
+        panel.classList.add('speech-error');
+        setStatus('Read aloud is not supported in this browser.');
+        [playBtn, prevBtn, nextBtn, stopBtn, replayBtn, rate, voiceSelect].forEach(el => { if(el) el.disabled = true; });
+        return;
+      }
+      if(!units.length){
+        panel.classList.add('speech-error');
+        setStatus('No readable sentences found.');
+        return;
+      }
+
+      const savedRate = Number(safeStore.get('sd-tts-rate') || 1);
+      if(rate){ rate.value = String(Math.min(1.6, Math.max(.75, savedRate))); }
+      if(rateLabel) rateLabel.textContent = Number(rate?.value || 1).toFixed(2) + '×';
+      body.classList.toggle('reader-lens', lensOn);
+      populateVoices();
+      if(window.speechSynthesis.onvoiceschanged !== undefined){ window.speechSynthesis.onvoiceschanged = populateVoices; }
+      highlight(currentIndex, false);
+      stopReading(false);
+
+      playBtn.addEventListener('click', pauseOrPlay);
+      stopBtn?.addEventListener('click', () => stopReading(true));
+      prevBtn?.addEventListener('click', () => move(-1));
+      nextBtn?.addEventListener('click', () => move(1));
+      replayBtn?.addEventListener('click', replay);
+      collapseBtn?.addEventListener('click', () => {
+        const collapsed = !panel.classList.contains('minimized');
+        panel.classList.toggle('minimized', collapsed);
+        if(collapsed && morePanel) morePanel.open = false;
+        collapseBtn.textContent = collapsed ? '+' : '−';
+        collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        collapseBtn.setAttribute('aria-label', collapsed ? 'Expand read-aloud controls' : 'Minimize read-aloud controls');
+        collapseBtn.setAttribute('title', collapsed ? 'Expand' : 'Minimize');
+      });
+      rate?.addEventListener('input', () => {
+        safeStore.set('sd-tts-rate', rate.value);
+        if(rateLabel) rateLabel.textContent = Number(rate.value).toFixed(2) + '×';
+      });
+      voiceSelect?.addEventListener('change', () => safeStore.set('sd-tts-voice-choice', voiceSelect.value));
+      autoBtn?.addEventListener('click', () => {
+        autoScroll = !autoScroll;
+        safeStore.set('sd-tts-autoscroll', autoScroll ? '1' : '0');
+        updateButtons();
+      });
+      lensBtn?.addEventListener('click', () => {
+        lensOn = !lensOn;
+        safeStore.set('sd-tts-lens', lensOn ? '1' : '0');
+        updateButtons();
+      });
+      document.addEventListener('click', (event) => {
+        if(morePanel?.open && !morePanel.contains(event.target)) morePanel.open = false;
+      });
+      document.addEventListener('keydown', (event) => {
+        if(event.key === 'Escape' && morePanel?.open) morePanel.open = false;
+      });
+      bubble.addEventListener('pointerenter', keepBubble);
+      bubble.addEventListener('pointerleave', hideBubbleSoon);
+      bubble.addEventListener('click', () => { if(bubbleIndex !== null) speakFrom(bubbleIndex); bubble.classList.remove('show'); });
+      document.addEventListener('pointerover', e => {
+        if(e.target.closest('.term, a, button, .no-read')) return;
+        const span = e.target.closest('.read-sentence');
+        if(span) showBubbleFor(span);
+      });
+      document.addEventListener('pointerout', e => { if(e.target.closest('.read-sentence')) hideBubbleSoon(); });
+      document.addEventListener('click', e => {
+        if(e.target.closest('.term, a, button, .no-read')) return;
+        const span = e.target.closest('.read-sentence');
+        if(!span) return;
+        const index = Number(span.dataset.readIndex);
+        if(!Number.isNaN(index)) speakFrom(index);
+      });
+      document.addEventListener('scroll', () => bubble.classList.remove('show'), {passive:true});
+      window.addEventListener('beforeunload', () => { if(supported) window.speechSynthesis.cancel(); });
+      updateButtons();
+    }
+
+    const glossaryEntries = [
+      ["financial-industrial complex","The finance power network: banks, asset managers, insurers, bond markets, private equity, hedge funds, and investment banks."],
+      ["military-industrial complex","The war-spending network: defense firms, security contractors, military budgets, and procurement systems."],
+      ["technical-industrial complex","The data-and-control network: big tech, cloud, AI, digital ID, surveillance, and digital money infrastructure."],
+      ["K-shaped economy","A split where asset owners move up while wage-only households fall behind."],
+      ["sovereign wealth fund","A state-owned investment fund, often built from oil, gas, or resource revenue."],
+      ["sovereign wealth funds","State-owned investment funds, often built from oil, gas, or resource revenue."],
+      ["state investment pools","Large pools of money owned or controlled by a government, often through a sovereign wealth fund."],
+      ["resource wealth","Value that comes from oil, gas, minerals, land, water, or other natural resources."],
+      ["energy wealth","Value that comes from controlling energy resources such as oil, gas, electricity, or nuclear capacity."],
+      ["global capital","Large pools of investable money moving across countries, markets, and companies."],
+      ["commercial bank","A normal bank that lends to people and businesses; lending can create deposit money."],
+      ["commercial banks","Normal banks that lend to people and businesses; lending can create deposit money."],
+      ["central bank","The bank for banks and monetary policy; it influences rates, liquidity, reserves, and crisis support."],
+      ["central banks","Banks for banks and monetary policy; they influence rates, liquidity, reserves, and crisis support."],
+      ["investment bank","A bank that helps governments and companies raise, package, trade, or sell financial products."],
+      ["investment banks","Banks that help governments and companies raise, package, trade, or sell financial products."],
+      ["primary dealer","A bank or broker expected to participate in government debt auctions and market-making."],
+      ["primary dealers","Banks or brokers expected to participate in government debt auctions and market-making."],
+      ["asset manager","A firm that manages money for others: pensions, ETFs, insurance pools, and institutional capital."],
+      ["asset managers","Firms that manage money for others: pensions, ETFs, insurance pools, and institutional capital."],
+      ["fiat currency","Government money such as pounds, dollars, and euros; not redeemable for a fixed amount of gold."],
+      ["fiat money","Government money such as pounds, dollars, and euros; not redeemable for a fixed amount of gold."],
+      ["deposit money","Money shown as bank deposits in accounts; commercial-bank lending can create it."],
+      ["credit","Borrowed purchasing power: someone can spend now because someone else accepts a promise to repay later."],
+      ["credit expansion","Growth in lending and debt, which increases spending power in the economy."],
+      ["lending","Providing money now in exchange for repayment later, usually with interest."],
+      ["interest","The extra amount paid for borrowing money."],
+      ["interest rate","The price of borrowing money. Higher rates make debt harder to carry."],
+      ["interest rates","The prices of borrowing money. Higher rates make debt harder to carry."],
+      ["rates","Shorthand here for interest rates: the price of borrowing money."],
+      ["fees","Extra charges paid to banks or financial firms for services, transactions, or accounts."],
+      ["reserves","Central-bank money held by commercial banks; it helps banks settle payments and meet requirements."],
+      ["liquidity","How easily something can be turned into cash without a big loss."],
+      ["crisis backstop","Emergency support used to stop a financial system from freezing or collapsing."],
+      ["crisis backstops","Emergency supports used to stop a financial system from freezing or collapsing."],
+      ["deficit","When a government spends more than it collects, usually filling the gap by borrowing."],
+      ["deficits","When governments spend more than they collect, usually filling the gap by borrowing."],
+      ["bond","An IOU: a government or company borrows and promises interest plus repayment."],
+      ["bonds","IOUs: governments or companies borrow and promise interest plus repayment."],
+      ["bond market","The market where government and company IOUs are bought and sold."],
+      ["bond markets","Markets where government and company IOUs are bought and sold."],
+      ["bond buyers","Investors who buy government or company IOUs, providing cash to the borrower."],
+      ["government debt","Money a government owes after borrowing."],
+      ["corporate debt","Money a company owes after borrowing."],
+      ["gilt","A UK government bond."],
+      ["gilts","UK government bonds."],
+      ["Treasury","A U.S. government bond."],
+      ["Treasuries","U.S. government bonds."],
+      ["debt rollover","Issuing new debt to repay old debt when it matures."],
+      ["rollover","Keeping debt alive by refinancing instead of fully paying it off."],
+      ["roll over","Keep debt alive by refinancing instead of fully paying it off."],
+      ["rolling debt forward","Keeping debt alive by refinancing instead of fully paying it off."],
+      ["refinancing","Replacing old debt with new debt, often to avoid paying everything back immediately."],
+      ["refinance","Replace old debt with new debt, often to avoid paying everything back immediately."],
+      ["debt service","The regular payments needed to keep debt current: interest and sometimes principal."],
+      ["cheap capital","Money that can be borrowed or raised at low cost; it lets big players buy assets more easily."],
+      ["cheap money","Money that can be borrowed cheaply; it gives powerful players more buying power."],
+      ["cheap financing","Borrowing or raising money at low cost."],
+      ["asset","Something that can hold or produce value: property, shares, land, gold, Bitcoin, a business, or tools."],
+      ["assets","Things that can hold or produce value: property, shares, land, gold, Bitcoin, businesses, or tools."],
+      ["asset ownership","Owning things that hold or produce value, such as property, shares, land, gold, Bitcoin, or a business."],
+      ["asset owner","Someone who owns things that can rise in price or produce income."],
+      ["asset owners","People or institutions that own things that can rise in price or produce income."],
+      ["asset inflation","When assets such as houses, shares, or land rise faster than wages."],
+      ["inflation","A rise in the general cost of living, meaning money buys less over time."],
+      ["equities","Company shares; owning equity means owning a piece of a company."],
+      ["shares","Pieces of ownership in a company."],
+      ["stocks","Company shares; owning stock means owning a piece of a company."],
+      ["property","Land or buildings that can be owned, rented, sold, or used as collateral."],
+      ["collateral","An asset pledged to a lender; if you fail to repay, the lender may take it."],
+      ["cash flow","Money coming in regularly, such as wages, rent, profits, or interest."],
+      ["leverage","Using borrowed money or obligations to control a bigger asset or position than you could with cash alone."],
+      ["voting rights","The right attached to shares to vote on company decisions."],
+      ["voting influence","Power over company decisions that comes from voting shares."],
+      ["board influence","Power to shape who runs a company and what decisions it makes."],
+      ["capital-allocation power","Power to decide where large amounts of money go."],
+      ["capital flows","The movement of investment money into and out of companies, sectors, or countries."],
+      ["pension","Long-term retirement money invested on behalf of workers or savers."],
+      ["pensions","Long-term retirement money invested on behalf of workers or savers."],
+      ["ETF","Exchange-traded fund: a basket of assets that trades like a share."],
+      ["ETFs","Exchange-traded funds: baskets of assets that trade like shares."],
+      ["insurance pools","Large pools of insurance money invested before claims are paid."],
+      ["institutional money","Money managed by large organizations such as pension funds, insurers, endowments, or asset managers."],
+      ["proxy voting","Voting on corporate matters through shares held by funds or asset managers."],
+      ["government","The state machinery that taxes, borrows, spends, regulates, and enforces rules."],
+      ["state spending","Government spending funded by taxes, borrowing, or money creation."],
+      ["government spending","Money spent by the state on services, contracts, benefits, debt interest, or war."],
+      ["tax collector","The part of the state that collects compulsory payments from people and businesses."],
+      ["regulator","A public authority that sets and enforces rules for an industry or market."],
+      ["borrower","A person, company, or government that takes money now and promises to repay later."],
+      ["spender","A person or institution that sends money into the economy by buying goods, services, or assets."],
+      ["military funder","A government role: paying for armed forces, weapons, intelligence, and defense contracts."],
+      ["bailout","Rescue money or support for a failing institution, often during a crisis."],
+      ["bailouts","Rescue money or support for failing institutions, often during crises."],
+      ["bailout vehicle","A channel used to move public or central-bank support into troubled institutions."],
+      ["blame sponge","A visible institution or politician that absorbs public anger while deeper incentives remain unchanged."],
+      ["procurement","The process of governments or large institutions buying goods and services."],
+      ["procurement budgets","Money set aside for buying equipment, services, weapons, or infrastructure."],
+      ["subsidy","Government support that lowers costs or increases income for a company, industry, or person."],
+      ["subsidies","Government supports that lower costs or increase income for companies, industries, or people."],
+      ["contracts","Agreements to provide goods or services, often valuable when issued by governments."],
+      ["market access","The ability to sell into a market or raise money from investors."],
+      ["lobbying","Trying to influence politicians, regulators, or policy decisions."],
+      ["data","Information about people, markets, behavior, payments, or systems."],
+      ["identity","The official or digital proof of who someone is."],
+      ["cloud","Remote computing infrastructure used to store data and run software."],
+      ["AI","Artificial intelligence: software that performs tasks requiring prediction, pattern recognition, or language ability."],
+      ["algorithm","A set of rules a computer follows to rank, recommend, sort, or decide something."],
+      ["algorithms","Computer rules that rank, recommend, sort, or decide what people see or how systems behave."],
+      ["digital ID","A digital way to prove identity to governments, banks, apps, or services."],
+      ["digital money","Money represented and moved through software rather than physical cash."],
+      ["surveillance","Monitoring people, money, movement, messages, or behavior."],
+      ["surveillance tools","Technologies used to monitor people, money, movement, messages, or behavior."],
+      ["infrastructure","Basic systems that other activity depends on: roads, energy, finance, internet, cloud, or payments."],
+      ["attention","What people notice and focus on; controlling attention can shape belief and behavior."],
+      ["central bank digital currency","Digital money issued directly by a central bank."],
+      ["central-bank digital currency","Digital money issued directly by a central bank."],
+      ["CBDC","Central bank digital currency: digital money issued directly by a central bank."],
+      ["CBDCs","Central bank digital currencies: digital money issued directly by central banks."],
+      ["stablecoin","A crypto token designed to track a normal currency such as the dollar."],
+      ["stablecoins","Crypto tokens designed to track normal currencies such as the dollar."],
+      ["self-custody","Holding your own keys or asset access instead of trusting an exchange, ETF, bank, or custodian."],
+      ["self custody","Holding your own keys or asset access instead of trusting an exchange, ETF, bank, or custodian."],
+      ["custodian","An institution that holds an asset for you."],
+      ["counterparty risk","The risk that the person or institution holding your asset or contract fails you."],
+      ["margin call","When a lender demands more collateral or repayment because a leveraged position has fallen in value."],
+      ["margin calls","Demands for more collateral or repayment because a leveraged position has fallen in value."],
+      ["derivative","A financial contract whose value depends on another asset, such as a stock, bond, currency, or Bitcoin."],
+      ["derivatives","Financial contracts whose value depends on another asset, such as a stock, bond, currency, or Bitcoin."],
+      ["node","A computer that checks and relays Bitcoin transactions and helps enforce the network rules."],
+      ["nodes","Computers that check and relay Bitcoin transactions and help enforce the network rules."],
+      ["IMF","International Monetary Fund: an institution that lends to countries in financial trouble, usually with policy conditions."],
+      ["IMF conditionality","Policy conditions attached to IMF lending."],
+      ["privatization","Moving assets or services from state ownership into private ownership."],
+      ["privatize","Move assets or services from state ownership into private ownership."],
+      ["color revolution","A protest movement that changes political power; the term is often used when outside influence is suspected."],
+      ["multipolar world","A world with several major power centers instead of one dominant empire or bloc."],
+      ["sanctions","Restrictions used to pressure a country, company, or person by limiting trade, finance, or access."],
+      ["terms of trade","The conditions under which a country trades with the world, including prices, currencies, and access."],
+      ["reconstruction","Rebuilding after war or crisis; often involves huge contracts, loans, and asset deals."],
+      ["world reserve currency","A currency widely used by governments, central banks, banks, and global trade."],
+      ["reserve currency","A currency widely held and used internationally for trade and savings."],
+      ["trade deficit","When a country imports more goods and services than it exports."],
+      ["fiscal deficit","When a government spends more than it collects in revenue."],
+      ["sovereignty","The ability of a person or country to make decisions without being easily controlled by outside dependency."],
+      ["financial sovereignty","More control over your money, custody, debt, and economic choices."],
+      ["supply chain","The chain of people and companies that produce, move, and sell a product."],
+      ["local economy","The businesses, farms, workers, and services near you that circulate money locally."],
+      ["boycott","Refusing to buy from or participate in a system to reduce support for it."],
+      ["quantitative easing","A central bank creating reserves to buy financial assets, usually to lower borrowing costs and support markets."],
+      ["QE","Quantitative easing: central-bank asset buying used to lower borrowing costs and support markets."],
+      ["corporation","A company treated as a legal entity that can own assets, borrow, sue, and be sued."],
+      ["corporations","Companies treated as legal entities that can own assets, borrow, sue, and be sued."],
+      ["ordinary people","Regular households: workers, renters, savers, taxpayers, consumers, and voters."],
+      ["taxpayer","A person or business that pays tax to the state."],
+      ["taxpayers","People or businesses that pay tax to the state."],
+      ["renter","Someone who pays to live in or use property they do not own."],
+      ["renters","People who pay to live in or use property they do not own."],
+      ["mortgage holder","Someone with a home loan secured against a property."],
+      ["mortgage holders","People with home loans secured against property."],
+      ["consumer","A person who buys goods or services."],
+      ["consumers","People who buy goods or services."],
+      ["voter","A person with the right to vote in elections."],
+      ["voters","People with the right to vote in elections."],
+      ["saver","A person who stores money or assets for later."],
+      ["savers","People who store money or assets for later."],
+      ["data source","A person, device, app, or system that produces information others can collect or analyze."],
+      ["data sources","People, devices, apps, or systems that produce information others can collect or analyze."],
+      ["defense firms","Companies that sell weapons, military technology, or security services."],
+      ["security firms","Companies that sell protection, surveillance, intelligence, or security services."],
+      ["revenue","Money received by a business or institution before costs are deducted."],
+      ["conflict","A fight, war, or political confrontation that can redirect public money and attention."],
+      ["fear","A strong emotion that can make people accept policies or spending they would otherwise question."],
+      ["policy","A rule, plan, or decision made by a government, institution, or company."],
+    ];
+    const entryByAlias = new Map(glossaryEntries.map(([alias, def]) => [alias.toLowerCase(), {alias, def}]));
+    const escapeRegExp = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const termPattern = glossaryEntries.map(([alias]) => alias).sort((a,b) => b.length - a.length).map(escapeRegExp).join('|');
+    // Boundary-safe without regex lookbehind, so glossary hints work in more browsers.
+    const termRegex = new RegExp(`(^|[^A-Za-z0-9])(${termPattern})(?![A-Za-z0-9])`, 'gi');
+    function shouldSkip(node){
+      const p = node.parentElement;
+      if(!p) return true;
+      return Boolean(p.closest('a, button, summary, nav, aside, script, style, code, pre, h1, .term, .visual, .no-gloss, .button-row, .chip, .eyebrow, .label, .study-strip'));
+    }
+    function installGlossaryHints(){
+      const root = document.querySelector('main');
+      if(!root || !termPattern) return;
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode(node){
+          if(shouldSkip(node)) return NodeFilter.FILTER_REJECT;
+          if(!node.nodeValue || !termRegex.test(node.nodeValue)){ termRegex.lastIndex = 0; return NodeFilter.FILTER_REJECT; }
+          termRegex.lastIndex = 0;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+      const nodes = [];
+      while(walker.nextNode()) nodes.push(walker.currentNode);
+      nodes.forEach(node => {
+        const text = node.nodeValue;
+        const frag = document.createDocumentFragment();
+        let last = 0;
+        termRegex.lastIndex = 0;
+        let match;
+        while((match = termRegex.exec(text))){
+          const boundary = match[1] || '';
+          const matched = match[2];
+          const termStart = match.index + boundary.length;
+          const before = text.slice(last, match.index) + boundary;
+          if(before) frag.appendChild(document.createTextNode(before));
+          const entry = entryByAlias.get(matched.toLowerCase());
+          if(entry){
+            const span = document.createElement('span');
+            span.className = 'term';
+            span.tabIndex = 0;
+            span.dataset.term = entry.alias;
+            span.dataset.def = entry.def;
+            span.setAttribute('aria-label', entry.alias + ': ' + entry.def);
+            span.title = entry.alias + ': ' + entry.def;
+            span.textContent = matched;
+            frag.appendChild(span);
+          } else {
+            frag.appendChild(document.createTextNode(matched));
+          }
+          last = termStart + matched.length;
+        }
+        const after = text.slice(last);
+        if(after) frag.appendChild(document.createTextNode(after));
+        node.parentNode.replaceChild(frag, node);
+      });
+    }
+    let glossTip;
+    function ensureGlossTip(){
+      if(glossTip) return glossTip;
+      glossTip = document.createElement('div');
+      glossTip.className = 'gloss-tooltip';
+      glossTip.id = 'gloss-tooltip';
+      glossTip.setAttribute('role', 'tooltip');
+      document.body.appendChild(glossTip);
+      return glossTip;
+    }
+    function showGlossTip(el){
+      if(body.classList.contains('gloss-off')) return;
+      const tip = ensureGlossTip();
+      tip.innerHTML = `<strong>${el.dataset.term}</strong><span>${el.dataset.def}</span>`;
+      tip.classList.add('show');
+      el.setAttribute('aria-describedby', 'gloss-tooltip');
+      const rect = el.getBoundingClientRect();
+      const tipRect = tip.getBoundingClientRect();
+      let left = rect.left + rect.width / 2 - tipRect.width / 2;
+      left = Math.max(12, Math.min(left, window.innerWidth - tipRect.width - 12));
+      let top = rect.bottom + 8;
+      if(top + tipRect.height > window.innerHeight - 12){ top = rect.top - tipRect.height - 8; }
+      top = Math.max(12, top);
+      tip.style.left = left + 'px';
+      tip.style.top = top + 'px';
+    }
+    function hideGlossTip(){
+      if(glossTip) glossTip.classList.remove('show');
+      document.querySelectorAll('.term[aria-describedby]').forEach(el => el.removeAttribute('aria-describedby'));
+    }
+    installReaderSentences();
+    installGlossaryHints();
+    installSpeechReader();
+    document.addEventListener('mouseover', e => { const el = e.target.closest('.term'); if(el) showGlossTip(el); });
+    document.addEventListener('mouseout', e => { if(e.target.closest('.term')) hideGlossTip(); });
+    document.addEventListener('focusin', e => { const el = e.target.closest('.term'); if(el) showGlossTip(el); });
+    document.addEventListener('focusout', e => { if(e.target.closest('.term')) hideGlossTip(); });
+    document.addEventListener('click', e => { const el = e.target.closest('.term'); if(el){ showGlossTip(el); } else { hideGlossTip(); } });
+    document.addEventListener('scroll', hideGlossTip, {passive:true});
+    window.addEventListener('resize', hideGlossTip);
+
+
+
+    function installEditableMindMap(){
+      const board = document.getElementById('mindBoard');
+      const svg = document.getElementById('mindSvg');
+      const viewport = document.getElementById('mindViewport');
+      const status = document.getElementById('mindStatus');
+      if(!board || !svg || !viewport) return;
+
+      const mapKey = 'sd-debt-power-mindmap-v1';
+      const defaultNodes = [
+        {id:'core', title:'Core claim', body:'Modern politics sits underneath debt, cheap capital, assets, institutions, and attention.', group:'blue', x:270, y:30, tag:'anchor'},
+        {id:'money', title:'Money starts as debt', body:'Loans, deficits, bonds, and refinancing create new claims that must be serviced.', group:'blue', x:30, y:205, tag:'money'},
+        {id:'dependence', title:'Debt creates dependence', body:'Households, firms, and states need lenders, income, buyers, and rollover.', group:'amber', x:270, y:205, tag:'loop'},
+        {id:'cheap', title:'Cheap capital buys assets', body:'Best-connected institutions can buy property, companies, infrastructure, and securities first.', group:'green', x:520, y:205, tag:'capital'},
+        {id:'assets', title:'Assets become leverage', body:'Ownership brings cash flow, collateral, board influence, votes, lobbying power, and reach.', group:'green', x:520, y:410, tag:'assets'},
+        {id:'policy', title:'Policy follows leverage', body:'Spending, regulation, bailouts, military budgets, and crisis design favor capital networks.', group:'amber', x:270, y:590, tag:'policy'},
+        {id:'public', title:'The public pays', body:'Inflation, taxes, rent, wage pressure, debt service, and insecurity land on ordinary people.', group:'rose', x:30, y:590, tag:'costs'},
+        {id:'assetmgr', title:'Asset managers allocate flows', body:'Pensions, ETFs, insurance pools, and proxy votes concentrate influence over companies.', group:'green', x:520, y:30, tag:'players'},
+        {id:'government', title:'Government is the visible tool', body:'It borrows, spends, regulates, bails out, funds war, collects tax, and absorbs blame.', group:'amber', x:30, y:405, tag:'state'},
+        {id:'crises', title:'Crises speed up transfer', body:'Wars, bailouts, and reconstruction move public debt into private contracts and assets.', group:'rose', x:30, y:795, tag:'crisis'},
+        {id:'media', title:'Narrative manages attention', body:'Media and algorithms shape what people fear, hate, support, or ignore.', group:'blue', x:270, y:795, tag:'attention'},
+        {id:'bitcoin', title:'Scarce assets support exit', body:'Gold or self-custodied Bitcoin can reduce dependence on bank custody and fiat debt.', group:'green', x:520, y:795, tag:'exit'},
+        {id:'exit', title:'Practical exit path', body:'Reduce bad debt. Own useful assets. Self-custody where possible. Buy local. Build community.', group:'green', x:270, y:980, tag:'action'}
+      ];
+      const defaultEdges = [
+        {from:'core', to:'money'},
+        {from:'money', to:'dependence'},
+        {from:'dependence', to:'cheap'},
+        {from:'cheap', to:'assets'},
+        {from:'assets', to:'policy'},
+        {from:'policy', to:'money', type:'loop'},
+        {from:'policy', to:'public'},
+        {from:'assetmgr', to:'cheap'},
+        {from:'government', to:'policy'},
+        {from:'crises', to:'government'},
+        {from:'crises', to:'public'},
+        {from:'media', to:'policy'},
+        {from:'dependence', to:'exit'},
+        {from:'bitcoin', to:'exit'}
+      ];
+      let data = loadMap();
+      let selectedId = data.nodes[0]?.id || null;
+      let connectMode = false;
+      let connectSource = null;
+      let saveTimer = null;
+
+      function cloneDefaults(){ return {nodes: defaultNodes.map(n => ({...n})), edges: defaultEdges.map(e => ({...e}))}; }
+      function loadMap(){
+        try{
+          const saved = localStorage.getItem(mapKey);
+          if(saved){
+            const parsed = JSON.parse(saved);
+            if(parsed && Array.isArray(parsed.nodes) && Array.isArray(parsed.edges)) return parsed;
+          }
+        }catch(e){}
+        return cloneDefaults();
+      }
+      function setStatus(text){ if(status) status.textContent = text; }
+      function scheduleSave(msg='Saved'){
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+          try{ localStorage.setItem(mapKey, JSON.stringify(data)); setStatus(msg); }
+          catch(e){ setStatus('Could not save'); }
+        }, 160);
+      }
+      function nowId(){ return 'node-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7); }
+      function byId(id){ return data.nodes.find(n => n.id === id); }
+      function safeText(s){ return String(s || '').replace(/\s+/g, ' ').trim(); }
+      function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+      function nodeRect(node){
+        const el = board.querySelector(`[data-node-id="${CSS.escape(node.id)}"]`);
+        const w = el ? el.offsetWidth : 236;
+        const h = el ? el.offsetHeight : 116;
+        return {x:node.x, y:node.y, w, h, cx:node.x + w/2, cy:node.y + h/2};
+      }
+      function edgePath(a, b, type){
+        const dx = Math.abs(b.cx - a.cx);
+        const dy = Math.abs(b.cy - a.cy);
+        const curve = Math.max(70, Math.min(220, (dx + dy) * .32));
+        if(type === 'loop'){
+          return `M ${a.cx} ${a.cy} C ${a.cx - curve} ${a.cy - 170}, ${b.cx - curve} ${b.cy - 170}, ${b.cx} ${b.cy}`;
+        }
+        return `M ${a.cx} ${a.cy} C ${a.cx + curve} ${a.cy}, ${b.cx - curve} ${b.cy}, ${b.cx} ${b.cy}`;
+      }
+      function adjustBoardHeight(){
+        const maxY = data.nodes.reduce((m,n) => Math.max(m, Number(n.y) || 0), 0);
+        board.style.height = Math.max(1120, maxY + 180) + 'px';
+      }
+      function renderEdges(){
+        svg.innerHTML = '';
+        const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+        const marker = document.createElementNS('http://www.w3.org/2000/svg','marker');
+        marker.setAttribute('id','mindArrow'); marker.setAttribute('markerWidth','10'); marker.setAttribute('markerHeight','10'); marker.setAttribute('refX','8'); marker.setAttribute('refY','3'); marker.setAttribute('orient','auto'); marker.setAttribute('markerUnits','strokeWidth');
+        const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+        path.setAttribute('d','M0,0 L0,6 L9,3 z'); path.setAttribute('fill','#8b7965');
+        marker.appendChild(path); defs.appendChild(marker); svg.appendChild(defs);
+        data.edges.forEach(edge => {
+          const from = byId(edge.from), to = byId(edge.to);
+          if(!from || !to) return;
+          const a = nodeRect(from), b = nodeRect(to);
+          const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+          p.setAttribute('class', 'mind-edge' + (edge.type === 'loop' ? ' loop' : ''));
+          p.setAttribute('d', edgePath(a,b,edge.type));
+          p.setAttribute('marker-end','url(#mindArrow)');
+          svg.appendChild(p);
+        });
+      }
+      function renderNodes(){
+        adjustBoardHeight();
+        board.querySelectorAll('.mind-node').forEach(el => el.remove());
+        data.nodes.forEach(node => {
+          const el = document.createElement('article');
+          el.className = `mind-node ${node.group || ''}`.trim();
+          el.dataset.nodeId = node.id;
+          el.style.left = node.x + 'px';
+          el.style.top = node.y + 'px';
+          if(node.id === selectedId) el.classList.add('selected');
+          if(node.id === connectSource) el.classList.add('connect-source');
+          el.innerHTML = `
+            <div class="mind-head">
+              <div class="mind-title" contenteditable="true" spellcheck="false" data-field="title"></div>
+              <button class="mind-handle" type="button" aria-label="Drag ${escapeHtml(node.title)}" title="Drag block">↕</button>
+            </div>
+            <div class="mind-body" contenteditable="true" spellcheck="false" data-field="body"></div>
+            <span class="mind-tag"></span>`;
+          el.querySelector('.mind-title').textContent = node.title || 'New block';
+          el.querySelector('.mind-body').textContent = node.body || 'Add the idea here.';
+          el.querySelector('.mind-tag').textContent = node.tag || 'custom';
+          board.appendChild(el);
+        });
+        renderEdges();
+      }
+      function render(){ renderNodes(); }
+      function escapeHtml(str){ return String(str || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch])); }
+      function selectNode(id){
+        selectedId = id;
+        board.querySelectorAll('.mind-node').forEach(el => el.classList.toggle('selected', el.dataset.nodeId === id));
+      }
+      function addNode(linked=false){
+        const selected = byId(selectedId);
+        const id = nowId();
+        const baseX = selected ? selected.x + 270 : viewport.scrollLeft + 90;
+        const baseY = selected ? selected.y + 60 : viewport.scrollTop + 90;
+        const node = {id, title: linked ? 'New linked idea' : 'New idea', body:'Rewrite this in your own words.', group:'blue', x:clamp(baseX, 16, board.offsetWidth - 230), y:clamp(baseY, 16, board.offsetHeight - 140), tag:'custom'};
+        data.nodes.push(node);
+        if(linked && selected) data.edges.push({from:selected.id, to:id});
+        selectedId = id;
+        render(); scheduleSave('Added'); setStatus('Added — edit the new block');
+        const el = board.querySelector(`[data-node-id="${CSS.escape(id)}"] .mind-title`);
+        if(el) setTimeout(() => { el.closest('.mind-node')?.scrollIntoView({block:'center', inline:'center'}); el.focus(); }, 30);
+      }
+      function addEdge(from, to){
+        if(!from || !to || from === to) return;
+        const exists = data.edges.some(e => e.from === from && e.to === to);
+        if(!exists){ data.edges.push({from,to}); scheduleSave('Connected'); }
+      }
+      function deleteSelected(){
+        if(!selectedId) return;
+        const node = byId(selectedId);
+        if(!node) return;
+        if(!confirm(`Delete “${node.title || 'this block'}”?`)) return;
+        data.nodes = data.nodes.filter(n => n.id !== selectedId);
+        data.edges = data.edges.filter(e => e.from !== selectedId && e.to !== selectedId);
+        selectedId = data.nodes[0]?.id || null;
+        connectSource = null;
+        render(); scheduleSave('Deleted');
+      }
+      function resetMap(){
+        if(!confirm('Reset the mind map to the original layout? Your edits in this browser will be replaced.')) return;
+        data = cloneDefaults(); selectedId = 'core'; connectMode = false; connectSource = null;
+        document.getElementById('mindConnect')?.setAttribute('aria-pressed','false');
+        render(); scheduleSave('Reset');
+      }
+      function tidyLayout(){
+        const defaults = new Map(defaultNodes.map(n => [n.id, n]));
+        let customIndex = 0;
+        data.nodes.forEach(node => {
+          const d = defaults.get(node.id);
+          if(d){ node.x = d.x; node.y = d.y; }
+          else {
+            const col = customIndex % 3;
+            const row = Math.floor(customIndex / 3);
+            node.x = 30 + col * 250;
+            node.y = 980 + row * 150;
+            customIndex += 1;
+          }
+        });
+        const extraRows = Math.max(0, Math.ceil(customIndex / 3));
+        board.style.height = Math.max(1120, 1120 + extraRows * 150) + 'px';
+        render(); scheduleSave('Tidied');
+      }
+      function exportMap(){
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'simon-dixon-debt-power-mindmap.json';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 500);
+        setStatus('Exported');
+      }
+      function importMap(file){
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try{
+            const parsed = JSON.parse(reader.result);
+            if(!parsed || !Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) throw new Error('bad map');
+            data = parsed;
+            selectedId = data.nodes[0]?.id || null;
+            connectSource = null;
+            render(); scheduleSave('Imported');
+          }catch(e){ setStatus('Import failed'); }
+        };
+        reader.readAsText(file);
+      }
+      function plainPaste(e){
+        const target = e.target.closest('[contenteditable="true"]');
+        if(!target) return;
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+        document.execCommand('insertText', false, text);
+      }
+
+      board.addEventListener('click', e => {
+        const nodeEl = e.target.closest('.mind-node');
+        if(!nodeEl) return;
+        const clickedId = nodeEl.dataset.nodeId;
+        if(connectMode){
+          if(!connectSource){ connectSource = clickedId; nodeEl.classList.add('connect-source'); setStatus('Now click the target block'); }
+          else {
+            addEdge(connectSource, clickedId);
+            connectSource = null;
+            connectMode = false;
+            document.getElementById('mindConnect')?.setAttribute('aria-pressed','false');
+            render(); setStatus('Connected');
+          }
+          return;
+        }
+        selectNode(clickedId);
+      });
+      board.addEventListener('input', e => {
+        const nodeEl = e.target.closest('.mind-node');
+        const field = e.target.dataset.field;
+        if(!nodeEl || !field) return;
+        const node = byId(nodeEl.dataset.nodeId);
+        if(!node) return;
+        node[field] = safeText(e.target.textContent) || (field === 'title' ? 'Untitled block' : '');
+        scheduleSave('Saved');
+      });
+      board.addEventListener('paste', plainPaste);
+
+      let drag = null;
+      board.addEventListener('pointerdown', e => {
+        const handle = e.target.closest('.mind-handle');
+        if(!handle) return;
+        const nodeEl = handle.closest('.mind-node');
+        const node = byId(nodeEl.dataset.nodeId);
+        if(!node) return;
+        e.preventDefault();
+        selectNode(node.id);
+        drag = {id:node.id, sx:e.clientX, sy:e.clientY, x:node.x, y:node.y};
+        handle.setPointerCapture(e.pointerId);
+      });
+      board.addEventListener('pointermove', e => {
+        if(!drag) return;
+        const node = byId(drag.id);
+        if(!node) return;
+        node.x = clamp(drag.x + (e.clientX - drag.sx), 8, board.offsetWidth - 230);
+        node.y = clamp(drag.y + (e.clientY - drag.sy), 8, board.offsetHeight - 128);
+        const el = board.querySelector(`[data-node-id="${CSS.escape(node.id)}"]`);
+        if(el){ el.style.left = node.x + 'px'; el.style.top = node.y + 'px'; }
+        renderEdges();
+      });
+      board.addEventListener('pointerup', e => {
+        if(!drag) return;
+        drag = null;
+        scheduleSave('Moved');
+      });
+      board.addEventListener('pointercancel', () => { if(drag){ drag=null; scheduleSave('Moved'); } });
+      board.addEventListener('keydown', e => {
+        const handle = e.target.closest('.mind-handle');
+        if(!handle || !selectedId) return;
+        if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) return;
+        e.preventDefault();
+        const node = byId(selectedId); if(!node) return;
+        const step = e.shiftKey ? 24 : 8;
+        if(e.key === 'ArrowUp') node.y = clamp(node.y-step, 8, board.offsetHeight-128);
+        if(e.key === 'ArrowDown') node.y = clamp(node.y+step, 8, board.offsetHeight-128);
+        if(e.key === 'ArrowLeft') node.x = clamp(node.x-step, 8, board.offsetWidth-245);
+        if(e.key === 'ArrowRight') node.x = clamp(node.x+step, 8, board.offsetWidth-245);
+        render(); scheduleSave('Moved');
+      });
+
+      document.getElementById('mindAddLinked')?.addEventListener('click', () => addNode(true));
+      document.getElementById('mindAddFree')?.addEventListener('click', () => addNode(false));
+      document.getElementById('mindDelete')?.addEventListener('click', deleteSelected);
+      document.getElementById('mindReset')?.addEventListener('click', resetMap);
+      document.getElementById('mindExport')?.addEventListener('click', exportMap);
+      document.getElementById('mindImport')?.addEventListener('change', e => importMap(e.target.files?.[0]));
+      document.getElementById('mindAutoArrange')?.addEventListener('click', tidyLayout);
+      document.getElementById('mindConnect')?.addEventListener('click', e => {
+        connectMode = !connectMode;
+        connectSource = connectMode ? selectedId : null;
+        e.currentTarget.setAttribute('aria-pressed', connectMode ? 'true' : 'false');
+        setStatus(connectMode ? 'Connect mode: click target block' : 'Connect mode off');
+        render();
+      });
+      window.addEventListener('resize', renderEdges, {passive:true});
+      render();
+      requestAnimationFrame(() => {
+        if(viewport.clientWidth < 520 && viewport.scrollWidth > viewport.clientWidth){
+          viewport.scrollLeft = Math.max(0, Math.min(viewport.scrollWidth - viewport.clientWidth, 220));
+        }
+      });
+      setStatus('Map ready — drag, rewrite, add');
+    }
+    installEditableMindMap();
+
+    const printBtn = document.getElementById('printBtn');
+    if(printBtn) printBtn.addEventListener('click', () => window.print());
+    const copyBtn = document.getElementById('copyHook');
+    if(copyBtn){
+      copyBtn.addEventListener('click', async () => {
+        const text = 'Debt creates dependence; cheap capital buys assets; assets create power; power shapes policy; policy creates more debt.';
+        try{ await navigator.clipboard.writeText(text); copyBtn.textContent = 'Copied'; setTimeout(() => copyBtn.textContent = 'Copy memory loop', 1400); }
+        catch(e){ copyBtn.textContent = 'Copy failed'; setTimeout(() => copyBtn.textContent = 'Copy memory loop', 1400); }
+      });
+    }
+</script>
+</body>
+</html>

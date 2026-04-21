@@ -1,0 +1,281 @@
+{
+  "meta": {
+    "name": "project_runtime_config",
+    "version": "7.0",
+    "purpose": "Hard-settings layer for stable transform-only HTML generation with Comic Sans typography, subject-specific headings, inline glossary hovers, layout-safe diagrams, compact read-aloud controls, and regression prevention."
+  },
+  "defaults": {
+    "mode": "transform_only",
+    "subject_research": "disabled_unless_explicitly_requested",
+    "audience": "user",
+    "goal": "single_self_contained_html_optimized_for_comprehension_and_retention",
+    "output_count": 1,
+    "simplifier_not_summarizer_by_default": true,
+    "summarization_only_if_explicitly_requested": true,
+    "prune_repetition_before_unique_information": true,
+    "one_responsive_file_for_desktop_and_phone_by_default": true,
+    "final_saved_html_is_quality_gate_artifact": true
+  },
+  "access": {
+    "use_only_directly_accessible_material": true,
+    "hard_stop_on_partial_access": true,
+    "hard_stop_message": "I can’t access enough of the actual content to transform it safely. Please paste the text, upload the file, upload screenshots of the relevant parts, or provide the exact excerpt here.",
+    "trust_order": [
+      "current_message",
+      "uploaded_files_and_images",
+      "accessible_project_context",
+      "directly_readable_links"
+    ],
+    "rebuild_missing_content_from_outside_sources": false
+  },
+  "typography": {
+    "latin_body_font_stack_required": "\"Comic Sans MS\", \"Comic Sans\", cursive, \"OpenDyslexic\", \"Atkinson Hyperlegible\", Verdana, Arial, sans-serif",
+    "do_not_embed_or_share_font_files": true,
+    "letter_spacing_for_comic_sans": "0",
+    "avoid_tight_negative_letter_spacing": true,
+    "arabic_must_use_arabic_stack_not_latin_stack": true
+  },
+  "heading_policy": {
+    "subject_specific_headings_required": true,
+    "heading_should_name_the_idea_not_the_container": true,
+    "avoid_generic_headings": [
+      "The whole argument in one breath",
+      "The clean version",
+      "The cleanest way to state the conclusion",
+      "How I would phrase the final answer",
+      "The machine",
+      "The players",
+      "Applications",
+      "Deep explanation",
+      "Worked anchor",
+      "Main organizing frame",
+      "Bucket 1",
+      "Bucket 2",
+      "Bucket 3"
+    ],
+    "prefer_examples": [
+      "Core thesis: debt money concentrates power",
+      "Four mental pictures for the power system",
+      "How debt becomes political control",
+      "Why a £100 bank loan creates new money",
+      "Who holds leverage in the system",
+      "Wars, bailouts, algorithms, and slow collapse",
+      "Why Bitcoin and gold are exit tools",
+      "ADHD and dyslexia study plan"
+    ],
+    "avoid_meta_provenance_phrases_in_body": [
+      "this page turns",
+      "this page restructures",
+      "this page is built from",
+      "built from the pasted discussion",
+      "your notes show",
+      "the pasted material argues",
+      "the supplied material",
+      "the article says",
+      "the paper argues",
+      "How the page treats it"
+    ]
+  },
+  "hero": {
+    "compact_required": true,
+    "generic_process_badges_disallowed": [
+      "Study page",
+      "Single-source study page"
+    ],
+    "hero_summary_must_be_subject_facing": true,
+    "hero_chips_must_be_topic_facing": true,
+    "source_access_pattern": "quiet_linked_work_name_or_byline_when_sources_exist"
+  },
+  "glossary": {
+    "required_for_technical_material": true,
+    "inline_hover_or_tap_terms_required": true,
+    "native_title_or_aria_label_fallback_required": true,
+    "custom_tooltip_allowed": true,
+    "terms_must_remain_inline": true,
+    "terms_must_not_be_pills_cards_or_full_line_blocks": true,
+    "terms_must_not_force_following_words_to_new_line": true,
+    "apply_to": [
+      "paragraphs",
+      "list_items",
+      "bold_labels",
+      "cards",
+      "lower_level_headings_when_useful"
+    ],
+    "skip_inside": [
+      "nav",
+      "aside",
+      "buttons",
+      "summary",
+      "code",
+      "pre",
+      "script",
+      "style",
+      "svg",
+      "source_shelf",
+      "glossary_definition_section"
+    ],
+    "include_aliases_and_multiword_phrases": true,
+    "sort_terms_by_length_before_matching": true,
+    "css_required": {
+      "display": "inline !important",
+      "white_space": "nowrap",
+      "background": "inline highlight only",
+      "border": "dotted underline only"
+    }
+  },
+  "visuals": {
+    "use_visual_pretraining_for_abstract_material": true,
+    "prefer_html_css_diagrams_or_simple_safe_svg": true,
+    "labels_must_be_inside_boxes": true,
+    "arrows_must_not_cross_text": true,
+    "graph_lines_must_not_escape_frame": true,
+    "number_badges_must_be_centered": true,
+    "desktop_and_mobile_visual_review_required": true
+  },
+  "support_blocks": {
+    "collapse_by_default": [
+      "concept_primer",
+      "retrieval_ladder",
+      "reference_shelf",
+      "review_later",
+      "answer_cue",
+      "optional_method_notes",
+      "optional_appendices"
+    ],
+    "keep_open_by_default": [
+      "orientation",
+      "core_thesis",
+      "main_sections",
+      "essential_visual_pretraining"
+    ],
+    "collapse_if_optional": true
+  },
+  "source_linking": {
+    "inline_links_required_for_major_sources": true,
+    "first_meaningful_mention_clickable_when_practical": true,
+    "reference_shelf_required_when_sources_exist": true,
+    "reference_shelf_collapsed_by_default_when_inline_access_is_good": true,
+    "avoid_raw_url_clutter": true,
+    "sanitize_obvious_tracking_params_when_safe": true
+  },
+  "layout": {
+    "one_file_responsive_required": true,
+    "mobile_single_column_breakpoint_px_preferred": 820,
+    "mobile_navigation_should_collapse_or_compact_when_sidebar_exists": true,
+    "wide_tables_must_have_phone_fallback": true,
+    "prefer_stacked_record_cards_over_horizontal_table_panning_on_phone": true,
+    "horizontal_scroll_only_as_last_resort": true,
+    "disallow_touch_action_pan_x_on_main_reading_flow_wrappers": true,
+    "stacked_mobile_wrapper_reset_required": true,
+    "android_chromium_touch_scroll_stability_check_required_when_x_scroll_exists": true
+  },
+  "learning": {
+    "visual_pretraining_before_deep_detail_for_abstract_topics": true,
+    "preserve_operational_method_substructure_when_explanatorily_useful": true,
+    "keep_at_least_one_body_level_counterweight_when_answer_is_qualified": true,
+    "retrieval_checks_required_for_study_worthy_material": true,
+    "review_later_cues_recommended_for_dense_material": true
+  },
+  "final_artifact_audit": {
+    "required_when_file_created": true,
+    "inspect_saved_html_not_just_intended_draft": true,
+    "phrase_scan_required": true,
+    "phone_width_review_required_when_table_sidebar_visual_grid_or_rtl_layout_exists": true,
+    "glossary_regression_check_required_when_glossary_exists": true,
+    "visual_overlap_check_required_when_diagrams_exist": true,
+    "sample_visible_fail_patterns": [
+      "Study page",
+      "Single-source study page",
+      "The whole argument in one breath",
+      "The clean version",
+      "This page turns",
+      "Primary source:",
+      "Sentence 1 of",
+      ">Play<",
+      ">Stop<",
+      "Play reading",
+      "Stop reading"
+    ],
+    "read_aloud_regression_check_required_when_html_file_created": true
+  },
+  "review": {
+    "benchmark_file": "quality_benchmark_and_review_v15.md",
+    "system_review_file": "project_system_improvement_v16.md",
+    "component_patterns_file": "html_component_patterns_v2.md",
+    "read_aloud_component_file": "html_read_aloud_component_v1.md",
+    "mode_triggers_file": "mode_triggers_v14.md",
+    "navigation_file": "navigation_and_layout_v4.md",
+    "style_file": "html_style_system_v12.md",
+    "learning_file": "learning_and_retention_architecture_v11.md"
+  },
+  "read_aloud": {
+    "default_for_html_learning_files": true,
+    "component_file": "html_read_aloud_component_v1.md",
+    "no_external_libraries_or_api_calls": true,
+    "web_speech_api_only": true,
+    "desktop_layout": "compact_vertical_side_toolbar_fixed_right_center",
+    "mobile_layout": "compact_safe_position_that_does_not_block_reading; vertical side preferred when usable",
+    "visible_controls": [
+      "previous_sentence_up_icon",
+      "play_pause_icon",
+      "next_sentence_down_icon",
+      "stop_icon",
+      "options_gear",
+      "minimize_expand"
+    ],
+    "disallow_visible_labels": [
+      "Play",
+      "Stop",
+      "Sentence X of Y",
+      "Reading sentence",
+      "long status text"
+    ],
+    "screen_reader_status_only": true,
+    "options_collapsed_by_default": true,
+    "options": [
+      "speed",
+      "voice",
+      "auto_scroll",
+      "focus_lens",
+      "replay_current_sentence"
+    ],
+    "voices": {
+      "visible_choices": [
+        "Ava Natural Multilingual",
+        "Andrew Natural Multilingual"
+      ],
+      "default_choice": "Ava Natural Multilingual",
+      "fallback_when_unavailable": "browser_default_voice_or_null"
+    },
+    "sentence_interaction": {
+      "hover_play_bubble_desktop": true,
+      "tap_to_read_mobile": true,
+      "continuous_reading_from_start_point": true,
+      "current_sentence_highlight_required": true,
+      "optional_focus_lens": true,
+      "auto_scroll_default": true
+    },
+    "skip_regions": [
+      "nav",
+      "aside",
+      "buttons",
+      "summary",
+      "code",
+      "pre",
+      "script",
+      "style",
+      "svg",
+      ".no-read",
+      ".speech-panel",
+      ".read-bubble",
+      ".gloss-tooltip"
+    ],
+    "install_order_when_glossary_exists": [
+      "installReaderSentences",
+      "installGlossaryHints",
+      "installSpeechReader"
+    ],
+    "print_css_hides_reader": true,
+    "quality_gate_required": true
+  }
+}

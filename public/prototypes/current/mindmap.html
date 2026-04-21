@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Advanced Learning Map v20 · Clean Connectors Simon Dixon Debt-Power Model</title>
+<style>
+:root{
+  --bg:#f4eddf;
+  --paper:#fffaf2;
+  --ink:#282522;
+  --muted:#665f55;
+  --border:#d9c7aa;
+  --strong:#9b8058;
+  --blue:#e6f2f7;
+  --blue-border:#adcbd5;
+  --amber:#f6edcf;
+  --amber-border:#d9bd77;
+  --green:#e6f2df;
+  --green-border:#a9c99b;
+  --rose:#f7e4de;
+  --rose-border:#d4a498;
+  --violet:#eee7f7;
+  --violet-border:#b8a7d8;
+  --shadow:0 20px 45px rgba(72,54,31,.13);
+  --font:"Comic Sans MS","Comic Sans",cursive,"OpenDyslexic","Atkinson Hyperlegible",Verdana,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;}
+body{
+  font-family:var(--font);
+  color:var(--ink);
+  background:var(--bg);
+  overflow:hidden;
+  letter-spacing:0;
+}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:inherit}
+.app{display:grid;grid-template-rows:auto 1fr;height:100vh;height:100dvh;}
+.topbar{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto auto;
+  align-items:center;
+  gap:.75rem;
+  padding:.62rem .75rem;
+  background:rgba(255,250,242,.95);
+  border-bottom:1px solid var(--border);
+  box-shadow:0 4px 18px rgba(72,54,31,.06);
+  position:relative;
+  z-index:30;
+}
+.back-link,.topbar button,.toolbar button,.menu button,.file-label,.small-btn{
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:#fffaf4;
+  min-height:2.1rem;
+  padding:.32rem .7rem;
+  text-decoration:none;
+  display:inline-grid;
+  place-items:center;
+  cursor:pointer;
+  box-shadow:none;
+}
+.back-link:hover,.topbar button:hover,.toolbar button:hover,.menu button:hover,.file-label:hover,.small-btn:hover{border-color:var(--strong);background:#fffdf8;}
+.title-wrap{min-width:0}
+.title-wrap h1{margin:0;font-size:clamp(1.03rem,2.1vw,1.45rem);line-height:1.12;}
+.title-wrap p{margin:.1rem 0 0;color:var(--muted);font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+.pagebar{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:.35rem;
+  min-width:min(520px,38vw);
+}
+.pagebar label{font-weight:900;color:var(--muted);font-size:.86rem;}
+.pagebar select{
+  min-height:2.1rem;
+  max-width:240px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:#fffaf4;
+  padding:.28rem 2rem .28rem .7rem;
+  cursor:pointer;
+}
+.pagebar button{
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:#fffaf4;
+  min-height:2.1rem;
+  padding:.28rem .58rem;
+  cursor:pointer;
+  font-weight:900;
+}
+.pagebar button:hover,.pagebar select:hover{border-color:var(--strong);background:#fffdf8;}
+.status-pill{display:inline-flex;align-items:center;gap:.35rem;min-width:6.5rem;justify-content:center;border:1px solid var(--border);border-radius:999px;padding:.28rem .62rem;color:var(--muted);background:#fffaf4;font-size:.86rem;}
+.stage{
+  position:relative;
+  overflow:hidden;
+  min-height:0;
+  background-color:var(--bg);
+  --grid-size:24px;
+  --grid-x:0px;
+  --grid-y:0px;
+  background-image:
+    linear-gradient(rgba(155,128,88,.13) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(155,128,88,.13) 1px, transparent 1px);
+  background-size:var(--grid-size) var(--grid-size);
+  background-position:var(--grid-x) var(--grid-y);
+  touch-action:none;
+  cursor:grab;
+}
+.stage.is-panning{cursor:grabbing}
+.world{position:absolute;left:0;top:0;width:1px;height:1px;transform-origin:0 0;will-change:transform;transform:translate(0,0);}
+.world-scale{position:absolute;left:0;top:0;width:1px;height:1px;transform-origin:0 0;will-change:transform;zoom:1;
+  text-rendering:geometricPrecision;backface-visibility:hidden;}
+.edge-layer{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:auto;z-index:0;}
+.edge-group{pointer-events:auto;}
+.edge-hit{fill:none;stroke:transparent;stroke-width:20;stroke-linecap:round;stroke-linejoin:round;pointer-events:stroke;cursor:context-menu;}
+.edge{fill:none;opacity:.84;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;}
+.edge.selected{filter:drop-shadow(0 0 4px rgba(64,64,64,.3));opacity:1;}
+.edge-label-layer{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none;z-index:1;}
+.edge-label{
+  position:absolute;
+  transform:translate(-50%,-50%);
+  white-space:nowrap;
+  pointer-events:auto;
+  border:1px solid rgba(217,199,170,.75);
+  border-radius:999px;
+  background:rgba(255,250,242,.93);
+  padding:.08rem .42rem .1rem;
+  font-size:.68rem;
+  font-weight:900;
+  color:#4f493f;
+  cursor:context-menu;
+  box-shadow:0 6px 14px rgba(72,54,31,.08);
+}
+.edge-label.selected{outline:3px solid rgba(139,109,66,.28);background:#fff7e3;}
+.node-layer{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;z-index:2;}
+.map-node,.edge-label,.topbar,.menu{text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;}
+.map-node{
+  position:absolute;
+  text-rendering:geometricPrecision;
+  -webkit-font-smoothing:antialiased;
+  backface-visibility:hidden;
+  width:268px;
+  height:auto;
+  min-height:132px;
+  padding:0;
+  border:1.5px solid var(--border);
+  border-radius:18px;
+  background:var(--paper);
+  box-shadow:0 10px 25px rgba(72,54,31,.08);
+  cursor:default;
+  user-select:none;
+  overflow:visible;
+  overflow-wrap:normal;
+  word-break:normal;
+  hyphens:none;
+}
+.node-content{
+  position:relative;
+  z-index:1;
+  width:100%;
+  height:100%;
+  min-height:inherit;
+  padding:.92rem .9rem 1.25rem;
+  overflow-x:hidden;
+  overflow-y:auto;
+  border-radius:inherit;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(92,76,52,.22) transparent;
+}
+.node-content::-webkit-scrollbar{width:5px;height:0;}
+.node-content::-webkit-scrollbar-track{background:transparent;}
+.node-content::-webkit-scrollbar-thumb{background:rgba(92,76,52,.18);border-radius:999px;}
+.map-node:hover .node-content::-webkit-scrollbar-thumb,.map-node.selected .node-content::-webkit-scrollbar-thumb{background:rgba(92,76,52,.32);}
+.node-content::-webkit-scrollbar-corner{background:transparent;}
+.map-node.blue{background:var(--blue);border-color:var(--blue-border)}
+.map-node.amber{background:var(--amber);border-color:var(--amber-border)}
+.map-node.green{background:var(--green);border-color:var(--green-border)}
+.map-node.rose{background:var(--rose);border-color:var(--rose-border)}
+.map-node.violet{background:var(--violet);border-color:var(--violet-border)}
+.map-node.shape-card{border-radius:18px;}
+.map-node.shape-round{border-radius:30px;}
+.map-node.shape-pill{border-radius:44px;}
+.map-node.shape-note{border-radius:8px 28px 8px 28px;border-left-width:7px;}
+.map-node.shape-oval{border-radius:999px;text-align:center;display:block;overflow:visible;}
+.map-node.shape-oval .node-content{padding:1.08rem 1.45rem 1.2rem;display:flex;flex-direction:column;justify-content:center;align-items:center;overflow:visible;}
+.map-node.shape-oval .node-top{display:block;width:100%;}
+.map-node.shape-oval .node-title{font-size:.94rem;line-height:1.12;margin-bottom:.2rem;}
+.map-node.shape-oval .node-body{font-size:.78rem;line-height:1.22;}
+.map-node.shape-oval .node-tag{margin-top:.35rem;font-size:.68rem;}
+.map-node.shape-oval .drag-handle{position:absolute;right:.55rem;top:.55rem;width:1.7rem;height:1.7rem;min-height:1.7rem;font-size:.86rem;}
+.map-node.imp-1{opacity:.94;}
+.map-node.imp-2{box-shadow:0 12px 27px rgba(72,54,31,.1);}
+.map-node.imp-3{border-width:2.5px;box-shadow:0 18px 38px rgba(72,54,31,.16);}
+.map-node.imp-3 .node-title{font-size:1.13rem;}
+.map-node.selected{outline:3px solid rgba(139,109,66,.34);border-color:#8b6d42;box-shadow:0 18px 40px rgba(72,54,31,.17);}
+.map-node.connect-source{outline:4px solid rgba(79,121,138,.38);}
+.map-node.connect-target{animation:pulseTarget 1.1s ease-in-out infinite alternate;}
+@keyframes pulseTarget{from{box-shadow:0 10px 25px rgba(72,54,31,.08)}to{box-shadow:0 0 0 5px rgba(85,123,136,.22),0 16px 34px rgba(72,54,31,.13)}}
+.node-top{display:grid;grid-template-columns:1fr auto;align-items:start;gap:.5rem;}
+.node-title{font-weight:900;font-size:1.04rem;line-height:1.12;margin:0 0 .38rem;}
+.node-body{font-size:.9rem;line-height:1.34;color:#504941;min-height:2.2rem;}
+.node-title,.node-body{user-select:text;cursor:text;border-radius:9px;outline:none;overflow-wrap:break-word;word-break:normal;hyphens:none;}
+.node-title:focus,.node-body:focus{background:rgba(255,255,255,.52);box-shadow:0 0 0 3px rgba(139,109,66,.18);}
+.drag-handle{width:2rem;height:2rem;min-height:2rem;border:1px solid rgba(155,128,88,.4);border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.58);cursor:grab;padding:0;}
+.drag-handle:active{cursor:grabbing}
+.node-tag{display:inline-flex;margin-top:.55rem;border:1px solid rgba(155,128,88,.25);background:rgba(255,255,255,.5);border-radius:999px;padding:.12rem .45rem;color:#6a5f50;font-size:.76rem;font-weight:800;}
+.resize-handle{position:absolute;right:.35rem;bottom:.35rem;z-index:5;width:1.15rem;height:1.15rem;border-radius:6px;border:1px solid rgba(155,128,88,.38);background:rgba(255,255,255,.65);cursor:nwse-resize;display:grid;place-items:center;color:#7b6a55;font-size:.7rem;}
+.resize-handle::before{content:'↘';line-height:1;}
+.connection-port{
+  position:absolute;
+  width:12px;
+  height:12px;
+  border:1.5px solid rgba(92,76,52,.48);
+  border-radius:50%;
+  background:#fffaf2;
+  box-shadow:0 0 0 2px rgba(255,250,242,.78);
+  opacity:.42;
+  z-index:6;
+  pointer-events:none;
+  transition:opacity .14s ease, transform .14s ease, border-color .14s ease;
+}
+.connection-port.port-top{left:50%;top:-12px;transform:translateX(-50%);}
+.connection-port.port-right{right:-12px;top:50%;transform:translateY(-50%);}
+.connection-port.port-bottom{left:50%;bottom:-12px;transform:translateX(-50%);}
+.connection-port.port-left{left:-12px;top:50%;transform:translateY(-50%);}
+.map-node:hover .connection-port,.map-node.selected .connection-port,.map-node.connect-source .connection-port,.map-node.connect-target .connection-port{opacity:.92;}
+.map-node.selected .connection-port{border-color:#8b6d42;background:#fff7e3;}
+.focus-mode .map-node.dimmed,.focus-mode .edge-label.dimmed{opacity:.17;filter:saturate(.4);}
+.focus-mode .edge.dimmed{opacity:.08;}
+.toolbar{position:absolute;left:.8rem;top:.8rem;display:flex;flex-direction:column;gap:.42rem;z-index:18;pointer-events:none;}
+.toolbar-group{display:flex;flex-direction:column;gap:.32rem;padding:.38rem;border:1px solid var(--border);border-radius:20px;background:rgba(255,250,242,.94);box-shadow:0 14px 28px rgba(72,54,31,.12);pointer-events:auto;}
+.toolbar button,.file-label{width:2.45rem;height:2.45rem;min-height:2.45rem;padding:0;border-radius:15px;font-weight:900;position:relative;}
+.toolbar button.zoom-readout{width:3.45rem;font-size:.82rem;letter-spacing:-.02em;}
+.toolbar button.active{background:var(--blue);border-color:var(--blue-border);}
+.side-panel{position:absolute;right:.65rem;top:50%;transform:translateY(-50%);z-index:14;display:flex;flex-direction:row-reverse;align-items:flex-start;gap:.55rem;pointer-events:none;}
+.side-tabs{display:flex;flex-direction:column;gap:.4rem;pointer-events:auto;}
+.side-tab{border:1px solid var(--border);border-radius:999px;background:rgba(255,250,242,.96);box-shadow:0 10px 22px rgba(72,54,31,.11);min-width:2.8rem;min-height:2.8rem;padding:.34rem .55rem;display:flex;align-items:center;justify-content:center;gap:.35rem;cursor:pointer;font-weight:900;}
+.side-tab span{display:none;}
+.side-tab.active,.side-tab:hover{border-color:var(--strong);background:#fffdf8;}
+.panel-drawer{width:min(390px,calc(100vw - 8rem));max-height:calc(100dvh - 8.2rem);overflow:auto;display:grid;gap:.55rem;pointer-events:auto;}
+.panel-drawer[hidden],.learning-card[hidden],.legend-card[hidden]{display:none!important;}
+.panel-close{justify-self:end;border:1px solid var(--border);border-radius:999px;background:#fffaf4;min-height:2rem;min-width:2rem;padding:.1rem .5rem;cursor:pointer;font-weight:900;}
+.learning-card,.legend-card{border:1px solid var(--border);border-radius:18px;background:rgba(255,250,242,.96);box-shadow:var(--shadow);padding:.78rem .88rem;}
+.learning-card h2,.legend-card h2{margin:0 0 .25rem;font-size:1rem;}
+.learning-card p{margin:.25rem 0 0;font-size:.86rem;line-height:1.35;color:var(--muted);}
+.legend-card details{margin-top:.35rem;}
+.legend-card summary{font-weight:900;cursor:pointer;}
+.legend-list{display:grid;gap:.34rem;margin-top:.5rem;font-size:.82rem;color:#4f493f;}
+.legend-item{display:grid;grid-template-columns:72px 1fr;gap:.45rem;align-items:center;}
+.legend-line{height:0;border-top:4px solid #888;border-radius:999px;}
+.legend-line.dashed{border-top-style:dashed}.legend-line.dotted{border-top-style:dotted}.legend-line.thin{border-top-width:2px}.legend-line.thick{border-top-width:6px}
+.connect-banner{position:absolute;left:50%;transform:translateX(-50%);bottom:1rem;z-index:20;display:none;align-items:center;gap:.65rem;border:1px solid var(--blue-border);border-radius:999px;background:rgba(230,242,247,.96);padding:.44rem .7rem .44rem .9rem;box-shadow:var(--shadow);}
+.connect-banner.show{display:flex}.connect-banner button{border:1px solid var(--blue-border);border-radius:999px;background:#fff;padding:.25rem .6rem;cursor:pointer;}
+.selection-shelf{position:absolute;left:50%;top:1rem;transform:translateX(-50%);z-index:16;border:1px solid var(--border);border-radius:999px;background:rgba(255,250,242,.94);box-shadow:0 10px 24px rgba(72,54,31,.11);padding:.35rem .55rem;display:none;align-items:center;gap:.45rem;max-width:min(720px,calc(100vw - 165px));white-space:nowrap;}
+.selection-shelf.show{display:flex}.selection-shelf strong{overflow:hidden;text-overflow:ellipsis;max-width:300px;}.selection-shelf button{border:1px solid var(--border);background:#fffaf4;border-radius:999px;padding:.18rem .5rem;cursor:pointer;}
+.menu{position:fixed;z-index:90;min-width:256px;max-width:min(360px,calc(100vw - 18px));display:none;border:1px solid var(--border);border-radius:18px;background:#fffaf2;box-shadow:0 20px 42px rgba(0,0,0,.2);padding:.38rem;}
+.menu.show{display:block}.menu-title{padding:.48rem .62rem .38rem;font-weight:900;color:#3a342e;border-bottom:1px solid rgba(217,199,170,.7);margin-bottom:.28rem;}.menu-section{font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;color:#7a6f61;font-weight:900;padding:.48rem .62rem .18rem;}.menu button{width:100%;justify-content:flex-start;text-align:left;border-color:transparent;border-radius:12px;min-height:2rem;background:transparent;padding:.36rem .56rem;}.menu button:hover,.menu button:focus{background:#f7eddb;outline:none}.menu button.danger{color:#8a2e2e}.menu button[disabled]{opacity:.45;cursor:not-allowed}.menu-row{display:flex;flex-wrap:wrap;gap:.35rem;padding:.26rem .4rem .38rem;}.menu-row button{width:auto;min-width:2rem;height:2rem;min-height:2rem;justify-content:center;padding:0 .48rem;border:1px solid var(--border);font-size:.8rem;}.dot-blue{background:var(--blue)!important;border-color:var(--blue-border)!important}.dot-amber{background:var(--amber)!important;border-color:var(--amber-border)!important}.dot-green{background:var(--green)!important;border-color:var(--green-border)!important}.dot-rose{background:var(--rose)!important;border-color:var(--rose-border)!important}.dot-violet{background:var(--violet)!important;border-color:var(--violet-border)!important}
+.import-input{display:none}.toast{position:absolute;right:1rem;bottom:1rem;z-index:22;border:1px solid var(--border);border-radius:999px;background:rgba(255,250,242,.95);color:var(--muted);padding:.45rem .75rem;box-shadow:0 12px 24px rgba(72,54,31,.12);opacity:0;transform:translateY(8px);transition:opacity .18s ease, transform .18s ease;pointer-events:none;}.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:860px){.topbar{grid-template-columns:1fr auto;gap:.4rem}.pagebar{grid-column:1/3;justify-content:flex-start;min-width:0}.pagebar select{max-width:calc(100vw - 14rem)}.back-link{grid-column:1/3;width:max-content}.title-wrap p{display:none}.status-pill{font-size:.78rem;min-width:0}.side-panel{right:.45rem;top:.45rem}.side-tab{min-width:2.25rem;min-height:2.25rem;padding:.2rem}.panel-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem)}.toolbar{left:.45rem;top:.45rem}.toolbar button,.file-label{width:2.2rem;height:2.2rem;min-height:2.2rem}.map-node{width:235px;min-height:120px}.map-node .node-content{padding:.78rem .75rem 1.2rem}.node-title{font-size:.96rem}.node-body{font-size:.84rem}.selection-shelf{top:auto;bottom:.85rem;max-width:calc(100vw - 1rem)}.connect-banner{bottom:4.2rem;max-width:calc(100vw - 1rem);border-radius:16px}}
+@media print{.topbar,.pagebar,.toolbar,.side-panel,.menu,.toast,.connect-banner,.selection-shelf{display:none!important}body{overflow:visible;background:white}.stage{overflow:visible}.map-node{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <a class="back-link" href="lesson.html">← Main lesson</a>
+    <div class="title-wrap">
+      <h1>Advanced learning map app: Simon Dixon’s debt-power model</h1>
+      <p>Use pages, block shapes, connection ports, and relationship lines to encode meaning. Two-finger scroll pans. Pinch zooms. Right-click blocks, lines, or canvas.</p>
+    </div>
+    <div class="pagebar" aria-label="Map pages">
+      <label for="pageSelect">Page</label>
+      <select id="pageSelect" title="Switch learning-map page" aria-label="Switch learning-map page"></select>
+      <button id="btnNewPage" type="button" title="Create a new blank page" aria-label="Create a new page">＋ page</button>
+      <button id="btnDuplicatePage" type="button" title="Duplicate current page" aria-label="Duplicate current page">⧉</button>
+      <button id="btnRenamePage" type="button" title="Rename current page" aria-label="Rename current page">✎</button>
+      <button id="btnDeletePage" type="button" title="Delete current page" aria-label="Delete current page">⌫</button>
+    </div>
+    <span class="status-pill" id="saveStatus" aria-live="polite">Map ready</span>
+  </header>
+
+  <main class="stage" id="stage" aria-label="Infinite editable learning map canvas" tabindex="0">
+    <div class="world" id="world">
+      <div class="world-scale" id="worldScale">
+        <svg class="edge-layer" id="edgeLayer" width="1" height="1" aria-hidden="true" focusable="false">
+          <defs id="edgeDefs"></defs>
+        </svg>
+        <div class="edge-label-layer" id="edgeLabelLayer"></div>
+        <div class="node-layer" id="nodeLayer"></div>
+      </div>
+    </div>
+
+    <div class="toolbar no-print" aria-label="Learning map controls">
+      <div class="toolbar-group">
+        <button id="btnCenter" title="Recenter full map (Home)" aria-label="Recenter full map">◎</button>
+        <button id="btnZoomIn" title="Zoom in (+)" aria-label="Zoom in">＋</button>
+        <button id="btnZoomPercent" class="zoom-readout" title="Click to set zoom percentage" aria-label="Set zoom percentage">100%</button>
+        <button id="btnZoomOut" title="Zoom out (-)" aria-label="Zoom out">−</button>
+        <button id="btnResetView" title="Reset to 100% around selected" aria-label="Reset to 100 percent">1×</button>
+      </div>
+      <div class="toolbar-group">
+        <button id="btnAddLinked" title="Add linked block from selected" aria-label="Add linked block from selected">＋↗</button>
+        <button id="btnAddFree" title="Add free block at the center" aria-label="Add free block">＋</button>
+        <button id="btnConnect" title="Connect selected block to another block" aria-label="Connect selected block">⛓</button>
+      </div>
+      <div class="toolbar-group">
+        <button id="btnFocus" title="Focus only on selected block and its direct links" aria-label="Toggle focus mode">◉</button>
+        <button id="btnLegend" title="Show or hide the learning legend" aria-label="Toggle legend">?</button>
+        <button id="btnTidy" title="Tidy the map layout" aria-label="Tidy map">⌁</button>
+      </div>
+      <div class="toolbar-group">
+        <button id="btnExport" title="Export all pages as workspace JSON" aria-label="Export all pages">⇩</button>
+        <label class="file-label" title="Import map or workspace JSON" aria-label="Import map or workspace" for="importFile">⇧</label>
+        <input id="importFile" class="import-input" type="file" accept="application/json"/>
+        <button id="btnResetMap" title="Reset map content" aria-label="Reset map content">↺</button>
+      </div>
+    </div>
+
+    <aside class="side-panel" id="sidePanel" aria-label="Collapsed learning help panels">
+      <div class="side-tabs" aria-label="Open learning help">
+        <button class="side-tab" id="btnRememberPanel" type="button" title="Open retrieval prompt" aria-label="Open retrieval prompt">↺<span>Remember</span></button>
+        <button class="side-tab" id="btnVisualPanel" type="button" title="Open visual code legend" aria-label="Open visual code legend">?</button>
+      </div>
+      <div class="panel-drawer" id="panelDrawer" hidden>
+        <button class="panel-close" id="btnClosePanel" type="button" aria-label="Collapse help panel">×</button>
+        <section class="learning-card" id="promptCard" hidden>
+          <h2>Restructure to remember</h2>
+          <p id="promptText">Move one block or change one link, then say aloud: “This belongs here because…”</p>
+        </section>
+        <section class="legend-card" id="legendCard" hidden>
+          <h2>Visual code</h2>
+          <details open>
+            <summary>Link types</summary>
+            <div class="legend-list">
+              <div class="legend-item"><span class="legend-line" style="border-color:#8b6d42"></span><span><strong>causes</strong> = one idea produces another</span></div>
+              <div class="legend-item"><span class="legend-line thick" style="border-color:#b68234"></span><span><strong>funds</strong> = money moves into a player</span></div>
+              <div class="legend-item"><span class="legend-line" style="border-color:#6e5aa8"></span><span><strong>controls</strong> = leverage shapes behavior</span></div>
+              <div class="legend-item"><span class="legend-line" style="border-color:#4f8a52"></span><span><strong>benefits</strong> = value flows upward</span></div>
+              <div class="legend-item"><span class="legend-line" style="border-color:#ad5f58"></span><span><strong>costs</strong> = burden lands on someone</span></div>
+              <div class="legend-item"><span class="legend-line dashed" style="border-color:#9a7449"></span><span><strong>loop</strong> = feedback cycle</span></div>
+              <div class="legend-item"><span class="legend-line dotted" style="border-color:#2f7f7a"></span><span><strong>exit</strong> = practical alternative</span></div>
+              <div class="legend-item"><span class="legend-line dashed thin" style="border-color:#557b88"></span><span><strong>evidence</strong> = support / example</span></div>
+            </div>
+          </details>
+          <details>
+            <summary>Learning trick</summary>
+            <div class="legend-list">
+              <div><strong>Big block</strong> = main idea.</div>
+              <div><strong>Small block</strong> = detail or example.</div>
+              <div><strong>Thick link</strong> = important relationship.</div>
+              <div><strong>Shape change</strong> = different kind of thinking: process, actor, cost, exit, or question.</div>
+            </div>
+          </details>
+        </section>
+      </div>
+    </aside>
+
+    <div class="selection-shelf" id="selectionShelf">
+      <span id="selectionLabel">Selected:</span>
+      <strong id="selectedTitle">none</strong>
+      <button id="shelfAddLinked">＋ linked</button>
+      <button id="shelfCenter">center</button>
+    </div>
+
+    <div class="connect-banner" id="connectBanner">
+      <span id="connectText">Click another block to connect.</span>
+      <button id="cancelConnect">Cancel</button>
+    </div>
+
+    <div class="menu" id="contextMenu" role="menu" aria-hidden="true"></div>
+    <div class="toast" id="toast" aria-live="polite">Saved</div>
+  </main>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  const stage = document.getElementById('stage');
+  const world = document.getElementById('world');
+  const worldScale = document.getElementById('worldScale');
+  const nodeLayer = document.getElementById('nodeLayer');
+  const edgeLayer = document.getElementById('edgeLayer');
+  const edgeDefs = document.getElementById('edgeDefs');
+  const edgeLabelLayer = document.getElementById('edgeLabelLayer');
+  const menu = document.getElementById('contextMenu');
+  const saveStatus = document.getElementById('saveStatus');
+  const toast = document.getElementById('toast');
+  const connectBanner = document.getElementById('connectBanner');
+  const connectText = document.getElementById('connectText');
+  const selectionShelf = document.getElementById('selectionShelf');
+  const selectedTitle = document.getElementById('selectedTitle');
+  const selectionLabel = document.getElementById('selectionLabel');
+  const promptText = document.getElementById('promptText');
+  const legendCard = document.getElementById('legendCard');
+  const panelDrawer = document.getElementById('panelDrawer');
+  const promptCard = document.getElementById('promptCard');
+  const btnRememberPanel = document.getElementById('btnRememberPanel');
+  const btnVisualPanel = document.getElementById('btnVisualPanel');
+  const btnClosePanel = document.getElementById('btnClosePanel');
+  const zoomPercent = document.getElementById('btnZoomPercent');
+  const pageSelect = document.getElementById('pageSelect');
+  const btnNewPage = document.getElementById('btnNewPage');
+  const btnPageMenu = document.getElementById('btnPageMenu');
+  const btnDuplicatePage = document.getElementById('btnDuplicatePage');
+  const btnRenamePage = document.getElementById('btnRenamePage');
+  const btnDeletePage = document.getElementById('btnDeletePage');
+
+  const workspaceKey = 'simon-dixon-debt-power-learning-workspace-v20-clean-connectors';
+  const legacyStorageKeys = ['simon-dixon-debt-power-learning-workspace-v18-fixed-visibility','simon-dixon-debt-power-learning-workspace-v17','simon-dixon-debt-power-learning-workspace-v16','simon-dixon-debt-power-learning-workspace-v15','simon-dixon-debt-power-learning-map-v14','simon-dixon-debt-power-learning-map-v13'];
+  const cssZoomOK = !!(document.documentElement && 'zoom' in document.documentElement.style);
+  const colors = ['blue','amber','green','rose','violet'];
+  const shapes = ['card','round','pill','note','oval'];
+  const sizePresets = {
+    small:{w:220,h:118}, normal:{w:268,h:145}, large:{w:330,h:185}, wide:{w:390,h:145}, tall:{w:260,h:230}
+  };
+  const relationStyles = {
+    causes:{label:'causes', color:'#8b6d42', dash:'', base:2.0, marker:false, note:'one idea produces another'},
+    funds:{label:'funds', color:'#b68234', dash:'', base:2.2, marker:false, note:'money flows into a player'},
+    controls:{label:'controls', color:'#6e5aa8', dash:'', base:2.1, marker:false, note:'leverage shapes behavior'},
+    benefits:{label:'benefits', color:'#4f8a52', dash:'', base:2.1, marker:false, note:'value flows upward'},
+    costs:{label:'costs', color:'#ad5f58', dash:'', base:2.1, marker:false, note:'burden lands on someone'},
+    loop:{label:'loop', color:'#9a7449', dash:'8 7', base:2.2, marker:false, note:'feedback cycle'},
+    exit:{label:'exit', color:'#2f7f7a', dash:'2 6', base:2.2, marker:false, note:'practical alternative'},
+    evidence:{label:'evidence', color:'#557b88', dash:'6 5', base:1.7, marker:false, note:'example or support'},
+    contrast:{label:'contrast', color:'#77736d', dash:'10 4 2 4', base:1.8, marker:false, note:'opposite or tension'}
+  };
+  const edgeShapes = ['curve','straight','elbow','arc'];
+  const ports = ['auto','top','right','bottom','left'];
+  const portLabels = {auto:'auto', top:'top', right:'right', bottom:'bottom', left:'left'};
+  const oppositePort = {top:'bottom', right:'left', bottom:'top', left:'right', auto:'auto'};
+
+  const defaultMap = {
+    version:20,
+    view:{x:0,y:0,scale:1},
+    nodes:[
+      {id:'core', title:'Core claim', body:'Modern politics sits underneath debt, cheap capital, assets, institutions, and attention.', group:'blue', shape:'card', importance:3, x:-120, y:-40, w:310, h:168, tag:'anchor'},
+      {id:'money', title:'Money starts as debt', body:'Loans, deficits, bonds, and refinancing create new claims that must be serviced.', group:'blue', shape:'round', importance:3, x:-620, y:-40, w:285, h:162, tag:'money'},
+      {id:'dependence', title:'Debt creates dependence', body:'Households, firms, and states need lenders, income, buyers, and rollover.', group:'amber', shape:'card', importance:3, x:-380, y:190, w:285, h:162, tag:'loop'},
+      {id:'cheap', title:'Cheap capital buys assets', body:'Best-connected institutions can buy property, companies, infrastructure, and securities first.', group:'green', shape:'card', importance:3, x:-50, y:190, w:305, h:174, tag:'capital'},
+      {id:'assets', title:'Assets become leverage', body:'Ownership brings cash flow, collateral, board influence, votes, lobbying power, and reach.', group:'green', shape:'card', importance:3, x:310, y:120, w:305, h:178, tag:'assets'},
+      {id:'policy', title:'Policy follows leverage', body:'Spending, regulation, bailouts, military budgets, and crisis design favor capital networks.', group:'amber', shape:'note', importance:3, x:310, y:-170, w:315, h:174, tag:'policy'},
+      {id:'public', title:'The public pays', body:'Inflation, taxes, rent, wage pressure, debt service, and insecurity land on ordinary people.', group:'rose', shape:'round', importance:2, x:-50, y:-315, w:310, h:168, tag:'costs'},
+      {id:'assetmgr', title:'Asset managers allocate flows', body:'Pensions, ETFs, insurance pools, and proxy votes concentrate influence over companies.', group:'green', shape:'pill', importance:2, x:-50, y:475, w:320, h:160, tag:'players'},
+      {id:'government', title:'Government is the visible tool', body:'It borrows, spends, regulates, bails out, funds war, collects tax, and absorbs blame.', group:'amber', shape:'note', importance:2, x:-625, y:-315, w:305, h:168, tag:'state'},
+      {id:'crises', title:'Crises speed up transfer', body:'Wars, bailouts, and reconstruction move public debt into private contracts and assets.', group:'rose', shape:'card', importance:2, x:-925, y:-110, w:300, h:166, tag:'crisis'},
+      {id:'media', title:'Narrative manages attention', body:'Media and algorithms shape what people fear, hate, support, or ignore.', group:'blue', shape:'oval', importance:1, x:-760, y:275, w:340, h:170, tag:'attention'},
+      {id:'bitcoin', title:'Scarce assets support exit', body:'Gold or self-custodied Bitcoin can reduce dependence on bank custody and fiat debt.', group:'green', shape:'pill', importance:2, x:310, y:460, w:315, h:154, tag:'exit'},
+      {id:'exit', title:'Practical exit path', body:'Reduce bad debt. Own useful assets. Self-custody where possible. Buy local. Build community.', group:'green', shape:'round', importance:3, x:-380, y:675, w:345, h:165, tag:'action'}
+    ],
+    edges:[
+      {id:'e1', from:'core', to:'money', relation:'evidence', strength:3, shape:'curve', label:'start here'},
+      {id:'e2', from:'money', to:'dependence', relation:'causes', strength:5, shape:'curve', label:'creates'},
+      {id:'e3', from:'dependence', to:'cheap', relation:'causes', strength:4, shape:'curve', label:'enables'},
+      {id:'e4', from:'cheap', to:'assets', relation:'benefits', strength:5, shape:'curve', label:'buys'},
+      {id:'e5', from:'assets', to:'policy', relation:'controls', strength:5, shape:'curve', label:'shapes'},
+      {id:'e6', from:'policy', to:'money', relation:'loop', strength:5, shape:'curve', label:'more debt'},
+      {id:'e7', from:'policy', to:'public', relation:'costs', strength:4, shape:'curve', label:'cost shifts'},
+      {id:'e8', from:'assetmgr', to:'cheap', relation:'controls', strength:4, shape:'curve', label:'allocates'},
+      {id:'e9', from:'government', to:'policy', relation:'funds', strength:4, shape:'curve', label:'spends'},
+      {id:'e10', from:'crises', to:'government', relation:'causes', strength:4, shape:'curve', label:'justifies'},
+      {id:'e11', from:'crises', to:'public', relation:'costs', strength:4, shape:'curve', label:'burden'},
+      {id:'e12', from:'media', to:'policy', relation:'controls', strength:3, shape:'curve', label:'attention'},
+      {id:'e13', from:'dependence', to:'exit', relation:'exit', strength:4, shape:'arc', label:'respond'},
+      {id:'e14', from:'bitcoin', to:'exit', relation:'exit', strength:3, shape:'curve', label:'tool'}
+    ]
+  };
+
+  let workspace = loadWorkspace();
+  let data = activePage().map;
+  let view = Object.assign({x:0,y:0,scale:1}, data.view || {});
+  let selectedId = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
+  let selectedEdgeId = null;
+  let dragNode = null;
+  let resizeNode = null;
+  let panDrag = null;
+  let saveTimer = null;
+  let menuContext = null;
+  let connectFrom = null;
+  let focusMode = false;
+  let wheelTimer = null;
+  let activePanel = null;
+
+  function cloneDefault(){ return JSON.parse(JSON.stringify(defaultMap)); }
+  function normalizeMap(map){
+    const base = cloneDefault();
+    if(!map || !Array.isArray(map.nodes) || map.nodes.length === 0) return base;
+    if(!Array.isArray(map.edges)) map.edges = [];
+    map.version = 19;
+    map.view = Object.assign({x:0,y:0,scale:1}, map.view || {});
+    map.nodes = map.nodes.map((n,i) => {
+      const shape = shapes.includes(n.shape) ? n.shape : 'card';
+      let w = clamp(Number(n.w) || 268, 160, 640);
+      let h = clamp(Number(n.h) || 145, 95, 520);
+      if(shape === 'oval'){ w = Math.max(w, 340); h = Math.max(h, 172); }
+      return {
+        id: String(n.id || ('node-'+i)),
+        title: String(n.title || 'Untitled block'),
+        body: String(n.body || 'Rewrite this in your own words.'),
+        group: colors.includes(n.group) ? n.group : 'blue',
+        shape,
+        importance: clamp(Number(n.importance) || 2, 1, 3),
+        x: Number.isFinite(+n.x) ? +n.x : i*40,
+        y: Number.isFinite(+n.y) ? +n.y : i*40,
+        w,
+        h,
+        tag: String(n.tag || 'custom')
+      };
+    });
+    const ids = new Set(map.nodes.map(n => n.id));
+    map.edges = map.edges.filter(e => ids.has(e.from) && ids.has(e.to)).map((e,i) => {
+      let shape = edgeShapes.includes(e.shape) ? e.shape : 'curve';
+      // Older files used a large “loop” arc. Convert it to a calm adaptive curve so it does not sweep across the canvas.
+      if(shape === 'loop') shape = 'curve';
+      return {
+        id: String(e.id || ('edge-'+i)),
+        from: e.from,
+        to: e.to,
+        relation: relationStyles[e.relation] ? e.relation : (e.type === 'loop' ? 'loop' : 'causes'),
+        strength: clamp(Number(e.strength) || 3, 1, 5),
+        shape,
+        fromPort: ports.includes(e.fromPort) ? e.fromPort : 'auto',
+        toPort: ports.includes(e.toPort) ? e.toPort : 'auto',
+        label: String(e.label || '')
+      };
+    });
+    return map;
+  }
+  function pageId(){ return 'page-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7); }
+  function makePage(title, map){ return { id: pageId(), title: clean(title || 'New page') || 'New page', map: normalizeMap(map || blankMap()) }; }
+  function blankMap(){
+    return normalizeMap({
+      version:19,
+      view:{x:0,y:0,scale:1},
+      nodes:[{id:'core', title:'Main idea', body:'Write the central idea here, then add linked blocks around it.', group:'blue', shape:'card', importance:3, x:-120, y:-40, w:310, h:168, tag:'anchor'}],
+      edges:[]
+    });
+  }
+  function activePage(){
+    if(!workspace.pages.length) workspace.pages.push({id:'page-main', title:'Debt-power map', map: cloneDefault()});
+    let p = workspace.pages.find(x => x.id === workspace.activePageId);
+    if(!p){ p = workspace.pages[0]; workspace.activePageId = p.id; }
+    return p;
+  }
+  function syncCurrentPage(){
+    const p = workspace.pages.find(x => x.id === workspace.activePageId);
+    if(p){ data.view = view; p.map = data; }
+  }
+  function normalizeWorkspace(ws){
+    if(!ws || !Array.isArray(ws.pages) || !ws.pages.length){
+      return {version:19, activePageId:'page-main', pages:[{id:'page-main', title:'Debt-power map', map:cloneDefault()}]};
+    }
+    const pages = ws.pages.map((p,i) => ({
+      id:String(p.id || ('page-'+i)),
+      title:clean(p.title || ('Page ' + (i+1))) || ('Page ' + (i+1)),
+      map:normalizeMap(p.map || p)
+    }));
+    const active = pages.some(p => p.id === ws.activePageId) ? ws.activePageId : pages[0].id;
+    return {version:19, activePageId:active, pages};
+  }
+  function resetViewsForLegacyWorkspace(ws){
+    const normalized = normalizeWorkspace(ws);
+    normalized.pages.forEach(p => {
+      if(p && p.map) p.map.view = {x:0, y:0, scale:1};
+    });
+    return normalized;
+  }
+  function loadWorkspace(){
+    try{
+      const saved = localStorage.getItem(workspaceKey);
+      if(saved) return normalizeWorkspace(JSON.parse(saved));
+      for(const key of legacyStorageKeys){
+        const legacy = localStorage.getItem(key);
+        if(legacy){
+          const parsed = JSON.parse(legacy);
+          if(parsed && Array.isArray(parsed.pages)) return resetViewsForLegacyWorkspace(parsed);
+          const migrated = normalizeMap(parsed);
+          migrated.view = {x:0,y:0,scale:1};
+          return normalizeWorkspace({version:19, activePageId:'page-main', pages:[{id:'page-main', title:'Debt-power map', map:migrated}]});
+        }
+      }
+    }catch(e){}
+    return normalizeWorkspace({version:19, activePageId:'page-main', pages:[{id:'page-main', title:'Debt-power map', map:cloneDefault()}]});
+  }
+  function save(msg='Saved'){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      try{
+        syncCurrentPage();
+        workspace.version = 19;
+        localStorage.setItem(workspaceKey, JSON.stringify(workspace));
+        setStatus(msg);
+        renderPageControls();
+      }catch(e){ setStatus('Could not save'); }
+    }, 140);
+  }
+  function setStatus(text){ saveStatus.textContent = text; }
+  function showToast(text){ toast.textContent = text; toast.classList.add('show'); clearTimeout(showToast.t); showToast.t = setTimeout(() => toast.classList.remove('show'), 1300); }
+  function renderPageControls(){
+    if(!pageSelect) return;
+    const current = workspace.activePageId;
+    pageSelect.innerHTML = '';
+    workspace.pages.forEach((p,i) => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = (i+1) + '. ' + (p.title || 'Untitled page');
+      pageSelect.appendChild(opt);
+    });
+    pageSelect.value = current;
+    if(btnDeletePage) btnDeletePage.disabled = workspace.pages.length <= 1;
+  }
+  function switchPage(pageId){
+    if(pageId === workspace.activePageId) return;
+    const next = workspace.pages.find(p => p.id === pageId); if(!next) return;
+    syncCurrentPage();
+    workspace.activePageId = next.id;
+    data = next.map;
+    view = Object.assign({x:0,y:0,scale:1}, data.view || {});
+    selectedId = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
+    selectedEdgeId = null; connectFrom = null; closeMenu(); closeSidePanel();
+    render(); applyView(); updatePrompt(); recoverViewSoon('page switched'); save('Page switched'); showToast('Page switched');
+  }
+  function createNewPage(){
+    const name = prompt('Name for the new learning-map page:', 'New page');
+    if(name === null) return;
+    syncCurrentPage();
+    const p = makePage(name, blankMap());
+    workspace.pages.push(p);
+    workspace.activePageId = p.id;
+    data = p.map;
+    view = Object.assign({x:0,y:0,scale:1}, data.view || {});
+    selectedId = 'core'; selectedEdgeId = null; connectFrom = null;
+    render(); resetView(); save('Page created'); showToast('New page created');
+  }
+  function duplicateCurrentPage(){
+    const current = activePage();
+    syncCurrentPage();
+    const copyMap = normalizeMap(JSON.parse(JSON.stringify(current.map)));
+    const p = makePage((current.title || 'Page') + ' copy', copyMap);
+    workspace.pages.push(p);
+    workspace.activePageId = p.id;
+    data = p.map;
+    view = Object.assign({x:0,y:0,scale:1}, data.view || {});
+    selectedId = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
+    selectedEdgeId = null; connectFrom = null;
+    render(); applyView(); recoverViewSoon('page duplicated'); save('Page duplicated'); showToast('Page duplicated');
+  }
+  function renameCurrentPage(){
+    const p = activePage();
+    const name = prompt('Rename this page:', p.title || 'Untitled page');
+    if(name === null) return;
+    p.title = clean(name) || p.title || 'Untitled page';
+    renderPageControls(); save('Page renamed'); showToast('Page renamed');
+  }
+  function deleteCurrentPage(){
+    if(workspace.pages.length <= 1){ showToast('Keep at least one page'); return; }
+    const p = activePage();
+    if(!confirm(`Delete page “${p.title || 'Untitled page'}”? This only deletes this page from this browser save.`)) return;
+    const idx = workspace.pages.findIndex(x => x.id === p.id);
+    workspace.pages.splice(idx,1);
+    workspace.activePageId = (workspace.pages[Math.max(0,idx-1)] || workspace.pages[0]).id;
+    data = activePage().map;
+    view = Object.assign({x:0,y:0,scale:1}, data.view || {});
+    selectedId = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
+    selectedEdgeId = null; connectFrom = null;
+    render(); applyView(); recoverViewSoon('page deleted'); save('Page deleted'); showToast('Page deleted');
+  }
+  function createPageFromNode(nodeId){
+    const origin = byId(nodeId); if(!origin) return;
+    syncCurrentPage();
+    const neighborEdges = data.edges.filter(e => e.from === nodeId || e.to === nodeId).slice(0, 10);
+    const ids = new Set([nodeId]); neighborEdges.forEach(e => { ids.add(e.from); ids.add(e.to); });
+    const copiedNodes = Array.from(ids).map((nid, i) => JSON.parse(JSON.stringify(byId(nid)))).filter(Boolean);
+    const radius = 330;
+    copiedNodes.forEach((n, i) => {
+      if(n.id === nodeId){ n.x = -140; n.y = -70; n.w = Math.max(n.w || 310, 320); n.h = Math.max(n.h || 168, 170); n.importance = 3; n.group = origin.group || n.group; n.tag = 'page focus'; }
+      else{
+        const k = i - 1, total = Math.max(1, copiedNodes.length - 1);
+        const angle = (-Math.PI/2) + (Math.PI*2*k/total);
+        n.x = Math.round(-140 + Math.cos(angle)*radius);
+        n.y = Math.round(-70 + Math.sin(angle)*radius);
+        n.w = Math.min(Math.max(n.w || 268, 245), 330);
+        n.h = Math.min(Math.max(n.h || 145, 130), 190);
+      }
+    });
+    const kept = new Set(copiedNodes.map(n => n.id));
+    const copiedEdges = data.edges.filter(e => kept.has(e.from) && kept.has(e.to)).map(e => JSON.parse(JSON.stringify(e)));
+    const map = normalizeMap({version:19, view:{x:0,y:0,scale:1}, nodes:copiedNodes, edges:copiedEdges});
+    const p = makePage((origin.title || 'Block') + ' detail map', map);
+    workspace.pages.push(p);
+    workspace.activePageId = p.id;
+    data = p.map; view = Object.assign({x:0,y:0,scale:1}, data.view || {});
+    selectedId = nodeId; selectedEdgeId = null; connectFrom = null;
+    render(); resetView(); save('Detail page created'); showToast('Detail page created');
+  }
+  function id(){ return 'node-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7); }
+  function edgeId(){ return 'edge-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7); }
+  function byId(nodeId){ return data.nodes.find(n => n.id === nodeId); }
+  function edgeById(eid){ return data.edges.find(e => e.id === eid); }
+  function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
+  function clean(s){ return String(s || '').replace(/\s+/g,' ').trim(); }
+
+  function installMarkers(){
+    edgeDefs.innerHTML = '';
+    Object.entries(relationStyles).forEach(([key, r]) => {
+      const marker = document.createElementNS('http://www.w3.org/2000/svg','marker');
+      marker.setAttribute('id', 'arrow-' + key);
+      marker.setAttribute('markerWidth','10');
+      marker.setAttribute('markerHeight','10');
+      marker.setAttribute('refX','8.5');
+      marker.setAttribute('refY','3');
+      marker.setAttribute('orient','auto');
+      marker.setAttribute('markerUnits','strokeWidth');
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d','M0,0 L0,6 L9,3 z');
+      path.setAttribute('fill', r.color);
+      marker.appendChild(path);
+      edgeDefs.appendChild(marker);
+    });
+  }
+
+  function applyView(){
+    view.scale = clamp(Number(view.scale) || 1, .18, 2.6);
+    view.x = Number(view.x) || 0; view.y = Number(view.y) || 0;
+    const dpr = window.devicePixelRatio || 1;
+    const px = Math.round(view.x * dpr) / dpr;
+    const py = Math.round(view.y * dpr) / dpr;
+    // Stable crisp zoom model:
+    // 1) The outer world only translates, so panning and zoom anchoring stay stable.
+    // 2) The inner world-scale layer zooms the content. In Chromium/Edge, CSS zoom
+    //    keeps text crisper than transform-scaling, without scaling the translation offset.
+    world.style.left = '0px';
+    world.style.top = '0px';
+    world.style.transform = `translate(${px}px, ${py}px)`;
+    if(cssZoomOK){
+      worldScale.style.zoom = String(view.scale);
+      worldScale.style.transform = 'none';
+    }else{
+      worldScale.style.zoom = '1';
+      worldScale.style.transform = `scale(${view.scale})`;
+    }
+    const grid = Math.max(5, 24 * view.scale);
+    stage.style.setProperty('--grid-size', grid + 'px');
+    stage.style.setProperty('--grid-x', (view.x % grid) + 'px');
+    stage.style.setProperty('--grid-y', (view.y % grid) + 'px');
+    if(zoomPercent) zoomPercent.textContent = Math.round(view.scale * 100) + '%';
+  }
+  function screenToWorld(clientX, clientY){ const r = stage.getBoundingClientRect(); return {x:(clientX - r.left - view.x) / view.scale, y:(clientY - r.top - view.y) / view.scale}; }
+  function zoomAt(clientX, clientY, factor, shouldSave=true){
+    const r = stage.getBoundingClientRect();
+    const before = screenToWorld(clientX, clientY);
+    const next = clamp(view.scale * factor, .18, 2.6);
+    view.x = clientX - r.left - before.x * next;
+    view.y = clientY - r.top - before.y * next;
+    view.scale = next;
+    applyView();
+    if(shouldSave) save('View saved');
+  }
+  function zoomCenter(factor, shouldSave=true){ const r = stage.getBoundingClientRect(); zoomAt(r.left + r.width/2, r.top + r.height/2, factor, shouldSave); }
+  function setZoomPercent(percent){
+    const p = clamp(Number(percent) || 100, 18, 260) / 100;
+    const r = stage.getBoundingClientRect();
+    const cx = r.left + r.width/2, cy = r.top + r.height/2;
+    const before = screenToWorld(cx, cy);
+    view.x = r.width/2 - before.x * p;
+    view.y = r.height/2 - before.y * p;
+    view.scale = p;
+    applyView(); save('Zoom set'); showToast('Zoom ' + Math.round(p*100) + '%');
+  }
+  function promptZoomPercent(){
+    const current = Math.round(view.scale * 100);
+    const val = prompt('Zoom percentage (18–260):', String(current));
+    if(val === null) return;
+    const num = parseFloat(String(val).replace('%',''));
+    if(Number.isFinite(num)) setZoomPercent(num);
+  }
+  function nodeDims(node){
+    const w = Number(node.w) || 268, h = Number(node.h) || 145;
+    return node.shape === 'oval' ? {w:Math.max(w,340), h:Math.max(h,172)} : {w, h};
+  }
+  function nodeRect(node){ const d = nodeDims(node); return {x:node.x, y:node.y, w:d.w, h:d.h, cx:node.x+d.w/2, cy:node.y+d.h/2}; }
+  function bbox(){
+    if(!data.nodes.length) return {x:0,y:0,w:800,h:500,cx:0,cy:0};
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    data.nodes.forEach(n => { const r = nodeRect(n); minX = Math.min(minX, r.x); minY = Math.min(minY, r.y); maxX = Math.max(maxX, r.x+r.w); maxY = Math.max(maxY, r.y+r.h); });
+    const pad = 120; minX -= pad; minY -= pad; maxX += pad; maxY += pad;
+    return {x:minX,y:minY,w:maxX-minX,h:maxY-minY,cx:(minX+maxX)/2,cy:(minY+maxY)/2};
+  }
+  function recenter(){
+    const b = bbox(), r = stage.getBoundingClientRect();
+    const s = clamp(Math.min((r.width-150)/Math.max(1,b.w), (r.height-130)/Math.max(1,b.h)), .28, 1.1);
+    view.scale = s; view.x = r.width/2 - b.cx*s; view.y = r.height/2 - b.cy*s;
+    applyView(); save('View centered'); showToast('Map centered');
+  }
+  function resetView(){
+    view.scale = 1;
+    const r = stage.getBoundingClientRect(); const n = byId(selectedId) || byId('core') || data.nodes[0];
+    if(n){ const nr = nodeRect(n); view.x = r.width/2 - nr.cx; view.y = r.height/2 - nr.cy; } else { view.x = r.width/2; view.y = r.height/2; }
+    applyView(); save('View reset');
+  }
+  function centerOnNode(nodeId){
+    const n = byId(nodeId); if(!n) return;
+    const r = stage.getBoundingClientRect(); const nr = nodeRect(n);
+    view.x = r.width/2 - nr.cx*view.scale; view.y = r.height/2 - nr.cy*view.scale;
+    applyView(); save('View saved');
+  }
+
+  function nodeIsVisible(node, margin=24){
+    if(!node) return false;
+    const r = stage.getBoundingClientRect();
+    if(r.width < 80 || r.height < 80) return true;
+    const nr = nodeRect(node);
+    const left = view.x + nr.x * view.scale;
+    const top = view.y + nr.y * view.scale;
+    const right = view.x + (nr.x + nr.w) * view.scale;
+    const bottom = view.y + (nr.y + nr.h) * view.scale;
+    return right > margin && left < r.width - margin && bottom > margin && top < r.height - margin;
+  }
+  function anyNodeVisible(){ return data.nodes.some(n => nodeIsVisible(n, 18)); }
+  function recoverViewIfBlank(reason=''){
+    if(!data.nodes.length) return false;
+    const r = stage.getBoundingClientRect();
+    if(r.width < 120 || r.height < 120) return false;
+    if(anyNodeVisible()) return false;
+    // A blank canvas normally means an old saved pan/zoom offset put the map offscreen.
+    // Recover without deleting or changing any blocks.
+    view.scale = 1;
+    const n = byId(selectedId) || byId('core') || data.nodes[0];
+    if(n){ const nr = nodeRect(n); view.x = r.width/2 - nr.cx; view.y = r.height/2 - nr.cy; }
+    else { view.x = r.width/2; view.y = r.height/2; }
+    applyView();
+    save('View recovered');
+    if(reason) showToast('View recovered');
+    setStatus('View recovered');
+    return true;
+  }
+  function recoverViewSoon(reason=''){
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if(recoverViewIfBlank(reason)){ renderEdges(); applyFocus(); }
+      else if(reason === 'startup') setStatus('Map ready');
+    }));
+  }
+
+  function render(){ renderPageControls(); renderNodes(); requestAnimationFrame(() => { renderEdges(); applyFocus(); }); updateSelectionUI(); applyView(); }
+  function renderNodes(){
+    nodeLayer.innerHTML = '';
+    data.nodes.forEach(n => {
+      const el = document.createElement('article');
+      el.className = `map-node ${n.group} shape-${n.shape} imp-${n.importance}`;
+      if(n.id === selectedId) el.classList.add('selected');
+      if(connectFrom === n.id) el.classList.add('connect-source');
+      if(connectFrom && connectFrom !== n.id) el.classList.add('connect-target');
+      el.dataset.id = n.id;
+      el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; el.style.width = n.w + 'px'; el.style.height = n.h + 'px';
+      const content = document.createElement('div'); content.className = 'node-content';
+      const top = document.createElement('div'); top.className = 'node-top';
+      const title = document.createElement('h3'); title.className = 'node-title'; title.contentEditable = 'plaintext-only'; title.spellcheck = false; title.dataset.field = 'title'; title.textContent = n.title || 'Untitled block';
+      const handle = document.createElement('button'); handle.className = 'drag-handle'; handle.type = 'button'; handle.title = 'Drag block'; handle.setAttribute('aria-label','Drag block'); handle.textContent = '↕';
+      top.append(title, handle);
+      const body = document.createElement('div'); body.className = 'node-body'; body.contentEditable = 'plaintext-only'; body.spellcheck = false; body.dataset.field = 'body'; body.textContent = n.body || 'Rewrite this in your own words.';
+      const tag = document.createElement('span'); tag.className = 'node-tag'; tag.textContent = n.tag || 'custom';
+      const resize = document.createElement('span'); resize.className = 'resize-handle'; resize.title = 'Resize block'; resize.setAttribute('aria-hidden','true');
+      content.append(top, body, tag);
+      el.append(content, resize);
+      ['top','right','bottom','left'].forEach(side => {
+        const port = document.createElement('span');
+        port.className = 'connection-port port-' + side;
+        port.title = 'Outside connection point: ' + side;
+        port.setAttribute('aria-hidden','true');
+        el.appendChild(port);
+      });
+      nodeLayer.appendChild(el);
+    });
+  }
+  function autoPort(rect, target){
+    const dx = target.cx - rect.cx, dy = target.cy - rect.cy;
+    if(Math.abs(dx / Math.max(1, rect.w)) > Math.abs(dy / Math.max(1, rect.h))) return dx >= 0 ? 'right' : 'left';
+    return dy >= 0 ? 'bottom' : 'top';
+  }
+  const PORT_OUTSET = 6;
+  function sideVector(side){
+    if(side === 'top') return {x:0,y:-1};
+    if(side === 'right') return {x:1,y:0};
+    if(side === 'bottom') return {x:0,y:1};
+    if(side === 'left') return {x:-1,y:0};
+    return {x:0,y:0};
+  }
+  function portPoint(rect, port, target){
+    const side = port && port !== 'auto' ? port : autoPort(rect, target);
+    if(side === 'top') return {cx:rect.cx, cy:rect.y - PORT_OUTSET, side};
+    if(side === 'right') return {cx:rect.x + rect.w + PORT_OUTSET, cy:rect.cy, side};
+    if(side === 'bottom') return {cx:rect.cx, cy:rect.y + rect.h + PORT_OUTSET, side};
+    if(side === 'left') return {cx:rect.x - PORT_OUTSET, cy:rect.cy, side};
+    return {cx:rect.cx, cy:rect.cy, side:'center'};
+  }
+  function cubicPoint(a,c1,c2,b,t=.5){
+    const mt = 1-t;
+    return {
+      x: mt*mt*mt*a.cx + 3*mt*mt*t*c1.x + 3*mt*t*t*c2.x + t*t*t*b.cx,
+      y: mt*mt*mt*a.cy + 3*mt*mt*t*c1.y + 3*mt*t*t*c2.y + t*t*t*b.cy
+    };
+  }
+  function quadPoint(a,c,b,t=.5){
+    const mt = 1-t;
+    return {x:mt*mt*a.cx + 2*mt*t*c.x + t*t*b.cx, y:mt*mt*a.cy + 2*mt*t*c.y + t*t*b.cy};
+  }
+  function edgeGeometry(a,b,shape){
+    const dx = b.cx-a.cx, dy = b.cy-a.cy;
+    const dist = Math.max(1, Math.hypot(dx, dy));
+    const mx = (a.cx+b.cx)/2, my = (a.cy+b.cy)/2;
+    const av = sideVector(a.side), bv = sideVector(b.side);
+    if(shape === 'straight') return {d:`M ${a.cx} ${a.cy} L ${b.cx} ${b.cy}`, mid:{x:mx,y:my}};
+    if(shape === 'elbow'){
+      const lead = clamp(dist * .12, 18, 58);
+      const a1 = {x:a.cx + av.x*lead, y:a.cy + av.y*lead};
+      const b1 = {x:b.cx + bv.x*lead, y:b.cy + bv.y*lead};
+      const horizontalFirst = (a.side === 'left' || a.side === 'right');
+      if(horizontalFirst){
+        const xMid = (a1.x + b1.x) / 2;
+        return {d:`M ${a.cx} ${a.cy} L ${a1.x} ${a1.y} L ${xMid} ${a1.y} L ${xMid} ${b1.y} L ${b1.x} ${b1.y} L ${b.cx} ${b.cy}`, mid:{x:xMid,y:(a1.y+b1.y)/2}};
+      }
+      const yMid = (a1.y + b1.y) / 2;
+      return {d:`M ${a.cx} ${a.cy} L ${a1.x} ${a1.y} L ${a1.x} ${yMid} L ${b1.x} ${yMid} L ${b1.x} ${b1.y} L ${b.cx} ${b.cy}`, mid:{x:(a1.x+b1.x)/2,y:yMid}};
+    }
+    if(shape === 'arc'){
+      const bend = clamp(dist * .10, 8, 54);
+      const nx = -dy / dist, ny = dx / dist;
+      const c = {x:mx + nx*bend, y:my + ny*bend};
+      return {d:`M ${a.cx} ${a.cy} Q ${c.x} ${c.y} ${b.cx} ${b.cy}`, mid:quadPoint(a,c,b,.5)};
+    }
+    const handle = clamp(dist * .28, 32, 150);
+    const c1 = {x:a.cx + av.x*handle, y:a.cy + av.y*handle};
+    const c2 = {x:b.cx + bv.x*handle, y:b.cy + bv.y*handle};
+    return {d:`M ${a.cx} ${a.cy} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${b.cx} ${b.cy}`, mid:cubicPoint(a,c1,c2,b,.5)};
+  }
+  function edgePath(a,b,shape){ return edgeGeometry(a,b,shape).d; }
+  function edgeMid(a,b,shape){ return edgeGeometry(a,b,shape).mid; }
+  function renderEdges(){
+    [...edgeLayer.querySelectorAll('g.edge-group')].forEach(g => g.remove());
+    edgeLabelLayer.innerHTML = '';
+    data.edges.forEach(e => {
+      const from = byId(e.from), to = byId(e.to); if(!from || !to) return;
+      const style = relationStyles[e.relation] || relationStyles.causes;
+      const ar = nodeRect(from), br = nodeRect(to);
+      const a = portPoint(ar, e.fromPort || 'auto', br), b = portPoint(br, e.toPort || 'auto', ar);
+      const d = edgePath(a,b,e.shape || 'curve');
+      const g = document.createElementNS('http://www.w3.org/2000/svg','g'); g.setAttribute('class','edge-group'); g.dataset.edgeId = e.id;
+      const hit = document.createElementNS('http://www.w3.org/2000/svg','path');
+      hit.setAttribute('class', 'edge-hit');
+      hit.setAttribute('d', d);
+      hit.setAttribute('stroke-width', String(Math.max(18, style.base + e.strength*.58 + 12)));
+      g.appendChild(hit);
+      const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+      p.setAttribute('class', 'edge' + (e.id === selectedEdgeId ? ' selected' : ''));
+      p.setAttribute('d', d); p.setAttribute('stroke', style.color); p.setAttribute('stroke-width', String(style.base + e.strength*.58));
+      if(style.dash) p.setAttribute('stroke-dasharray', style.dash);
+      g.appendChild(p); edgeLayer.appendChild(g);
+      const mid = edgeMid(a,b,e.shape || 'curve');
+      const label = document.createElement('button');
+      label.className = 'edge-label' + (e.id === selectedEdgeId ? ' selected' : '');
+      label.type = 'button'; label.dataset.edgeId = e.id;
+      label.style.left = mid.x + 'px'; label.style.top = mid.y + 'px'; label.style.borderColor = style.color + '66';
+      label.textContent = e.label || style.label;
+      label.title = 'Right-click to modify this relationship, connection side, or line route';
+      edgeLabelLayer.appendChild(label);
+    });
+  }
+  function applyFocus(){
+    document.body.classList.toggle('focus-mode', focusMode);
+    if(!focusMode || !selectedId){
+      nodeLayer.querySelectorAll('.map-node').forEach(el => el.classList.remove('dimmed'));
+      edgeLayer.querySelectorAll('.edge').forEach(el => el.classList.remove('dimmed'));
+      edgeLabelLayer.querySelectorAll('.edge-label').forEach(el => el.classList.remove('dimmed'));
+      return;
+    }
+    const keep = new Set([selectedId]);
+    const edgeKeep = new Set();
+    data.edges.forEach(e => { if(e.from === selectedId || e.to === selectedId){ keep.add(e.from); keep.add(e.to); edgeKeep.add(e.id); } });
+    nodeLayer.querySelectorAll('.map-node').forEach(el => el.classList.toggle('dimmed', !keep.has(el.dataset.id)));
+    edgeLayer.querySelectorAll('g.edge-group .edge').forEach(p => { const gid = p.parentNode.dataset.edgeId; p.classList.toggle('dimmed', !edgeKeep.has(gid)); });
+    edgeLabelLayer.querySelectorAll('.edge-label').forEach(el => el.classList.toggle('dimmed', !edgeKeep.has(el.dataset.edgeId)));
+  }
+
+  function select(nodeId){
+    if(!byId(nodeId)) return;
+    selectedId = nodeId; selectedEdgeId = null;
+    nodeLayer.querySelectorAll('.map-node').forEach(el => el.classList.toggle('selected', el.dataset.id === nodeId));
+    edgeLabelLayer.querySelectorAll('.edge-label').forEach(el => el.classList.remove('selected'));
+    updateSelectionUI(); updatePrompt(); applyFocus(); save('Selected');
+  }
+  function selectEdge(edgeId){
+    const e = edgeById(edgeId); if(!e) return;
+    selectedEdgeId = edgeId; selectedId = null;
+    nodeLayer.querySelectorAll('.map-node').forEach(el => el.classList.remove('selected'));
+    renderEdges(); updateSelectionUI(); updatePrompt(); applyFocus(); save('Selected link');
+  }
+  function updateSelectionUI(){
+    if(selectedId && byId(selectedId)){
+      const n = byId(selectedId); selectionLabel.textContent = 'Block:'; selectedTitle.textContent = n.title || 'Untitled block'; selectionShelf.classList.add('show');
+    }else if(selectedEdgeId && edgeById(selectedEdgeId)){
+      const e = edgeById(selectedEdgeId); selectionLabel.textContent = 'Link:'; selectedTitle.textContent = `${byId(e.from)?.title || 'block'} — ${byId(e.to)?.title || 'block'}`; selectionShelf.classList.add('show');
+    }else selectionShelf.classList.remove('show');
+    document.getElementById('btnConnect').classList.toggle('active', !!connectFrom);
+    document.getElementById('btnFocus').classList.toggle('active', focusMode);
+  }
+  function updatePrompt(){
+    if(selectedEdgeId){
+      const e = edgeById(selectedEdgeId), style = e && relationStyles[e.relation];
+      if(e) promptText.textContent = `Teach-back: explain why “${byId(e.from)?.title || 'block'}” ${e.label || style.label} “${byId(e.to)?.title || 'block'}”.`;
+      return;
+    }
+    if(selectedId){
+      const n = byId(selectedId);
+      promptText.textContent = `Teach-back: explain “${n.title}” in one sentence, then say which block should come before it.`;
+      return;
+    }
+    promptText.textContent = 'Move one block or change one link, then say aloud: “This belongs here because…”';
+  }
+
+  function addNodeAt(x,y, opts={}){
+    const newNode = { id:id(), title:opts.title || (opts.linkFrom ? 'New linked idea' : 'New block'), body:opts.body || 'Rewrite this in your own words.', group:opts.group || 'blue', shape:opts.shape || 'card', importance:2, x:Math.round(x), y:Math.round(y), w:opts.w || 268, h:opts.h || 145, tag:opts.tag || 'custom' };
+    data.nodes.push(newNode);
+    if(opts.linkFrom && byId(opts.linkFrom)) data.edges.push({id:edgeId(), from:opts.linkFrom, to:newNode.id, relation:opts.relation || 'causes', strength:3, shape:'curve', fromPort:opts.fromPort || 'auto', toPort:opts.toPort || 'auto', label:''});
+    selectedId = newNode.id; selectedEdgeId = null; render(); save('Added block'); showToast(opts.linkFrom ? 'Linked block added' : 'Block added');
+    setTimeout(() => nodeLayer.querySelector(`[data-id="${CSS.escape(newNode.id)}"] .node-title`)?.focus(), 30);
+    return newNode;
+  }
+  function addLinkedFrom(nodeId, x, y, fromPort='right'){
+    const source = byId(nodeId); if(!source) return;
+    const sr = nodeRect(source);
+    if(typeof x !== 'number' || typeof y !== 'number'){
+      const gap = 120;
+      if(fromPort === 'left'){ x = source.x - 268 - gap; y = source.y + 20; }
+      else if(fromPort === 'top'){ x = source.x + sr.w/2 - 134; y = source.y - 145 - gap; }
+      else if(fromPort === 'bottom'){ x = source.x + sr.w/2 - 134; y = source.y + sr.h + gap; }
+      else { x = source.x + sr.w + gap; y = source.y + 20; fromPort = 'right'; }
+    }
+    return addNodeAt(x,y,{linkFrom:source.id, group:'blue', fromPort, toPort:oppositePort[fromPort] || 'auto'});
+  }
+  function addFreeAtCenter(){ const r = stage.getBoundingClientRect(); const p = screenToWorld(r.left + r.width/2, r.top + r.height/2); addNodeAt(p.x - 130, p.y - 70); }
+  function duplicateNode(nodeId){ const n = byId(nodeId); if(!n) return; addNodeAt(n.x+42, n.y+42, {title:n.title + ' copy', body:n.body, group:n.group, shape:n.shape, tag:n.tag, w:n.w, h:n.h}); }
+  function deleteNode(nodeId){
+    const n = byId(nodeId); if(!n) return; if(!confirm(`Delete “${n.title || 'this block'}”?`)) return;
+    data.nodes = data.nodes.filter(x => x.id !== nodeId); data.edges = data.edges.filter(e => e.from !== nodeId && e.to !== nodeId);
+    if(connectFrom === nodeId) connectFrom = null; selectedId = data.nodes[0]?.id || null; selectedEdgeId = null; render(); save('Deleted'); showToast('Block deleted');
+  }
+  function addEdge(from,to,opts={}){
+    if(!from || !to || from===to || !byId(from) || !byId(to)) return;
+    if(data.edges.some(e => e.from === from && e.to === to)){ showToast('Already connected'); return; }
+    const e = {id:edgeId(), from, to, relation:opts.relation || 'causes', strength:opts.strength || 3, shape:opts.shape || 'curve', fromPort:opts.fromPort || 'auto', toPort:opts.toPort || 'auto', label:opts.label || ''};
+    data.edges.push(e); selectedEdgeId = e.id; selectedId = null; render(); save('Connected'); showToast('Connected. Right-click the line or label to style it.');
+  }
+  function deleteEdge(edgeId){ data.edges = data.edges.filter(e => e.id !== edgeId); selectedEdgeId = null; render(); save('Link deleted'); showToast('Link deleted'); }
+  function reverseEdge(edgeId){ const e = edgeById(edgeId); if(!e) return; const old = e.from; e.from = e.to; e.to = old; const oldPort = e.fromPort; e.fromPort = e.toPort || 'auto'; e.toPort = oldPort || 'auto'; render(); save('Link reversed'); }
+  function removeNodeEdges(nodeId){ data.edges = data.edges.filter(e => e.from !== nodeId && e.to !== nodeId); render(); save('Connections removed'); showToast('Connections removed'); }
+  function setNodeColor(nodeId, color){ const n = byId(nodeId); if(!n) return; n.group = color; render(); save('Color changed'); }
+  function setNodeShape(nodeId, shape){ const n = byId(nodeId); if(!n) return; n.shape = shape; render(); save('Shape changed'); }
+  function setNodeImportance(nodeId, val){ const n = byId(nodeId); if(!n) return; n.importance = clamp(Number(val),1,3); render(); save('Importance changed'); }
+  function setNodeSize(nodeId, preset){ const n = byId(nodeId), s = sizePresets[preset]; if(!n || !s) return; n.w = s.w; n.h = s.h; render(); save('Size changed'); }
+  function setEdgeRelation(edgeId, relation){ const e = edgeById(edgeId); if(!e) return; e.relation = relation; render(); save('Link type changed'); }
+  function setEdgeStrength(edgeId, strength){ const e = edgeById(edgeId); if(!e) return; e.strength = clamp(Number(strength),1,5); render(); save('Link strength changed'); }
+  function setEdgeShape(edgeId, shape){ const e = edgeById(edgeId); if(!e) return; e.shape = shape; render(); save('Line route changed'); }
+  function setEdgePort(edgeId, end, port){ const e = edgeById(edgeId); if(!e || !ports.includes(port)) return; if(end === 'from') e.fromPort = port; else e.toPort = port; render(); save('Connection side changed'); showToast('Connection side changed'); }
+  function setEdgeLabel(edgeId){ const e = edgeById(edgeId); if(!e) return; const style = relationStyles[e.relation]; const txt = prompt('Short label for this link:', e.label || style.label); if(txt === null) return; e.label = clean(txt); render(); save('Link label changed'); }
+  function startConnect(nodeId){ if(!byId(nodeId)) return; connectFrom = nodeId; render(); const source = byId(nodeId); connectText.textContent = `Connecting from “${source.title || 'block'}”: click another block.`; connectBanner.classList.add('show'); showToast('Click target block'); }
+  function cancelConnect(){ connectFrom = null; connectBanner.classList.remove('show'); render(); }
+
+  function tidy(){
+    const positions = { core:[-120,-40], money:[-620,-40], dependence:[-380,190], cheap:[-50,190], assets:[310,120], policy:[310,-170], public:[-50,-315], assetmgr:[-50,475], government:[-625,-315], crises:[-925,-110], media:[-760,275], bitcoin:[310,460], exit:[-380,675] };
+    let custom = 0;
+    data.nodes.forEach(n => { if(positions[n.id]){ n.x=positions[n.id][0]; n.y=positions[n.id][1]; } else { const col = custom % 4, row = Math.floor(custom/4); n.x = -820 + col*330; n.y = 930 + row*210; custom++; } });
+    render(); save('Tidied'); recenter();
+  }
+  function safeFileName(name){ return clean(name || 'learning-map').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'learning-map'; }
+  function downloadJson(payload, filename, toastText){
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 700);
+    showToast(toastText);
+  }
+  function exportMap(){
+    syncCurrentPage();
+    const p = activePage();
+    downloadJson(p.map, safeFileName(p.title) + '-page-map.json', 'Current page exported');
+  }
+  function exportWorkspace(){
+    syncCurrentPage();
+    const payload = {version:20, exportedAt:new Date().toISOString(), activePageId:workspace.activePageId, pages:workspace.pages};
+    downloadJson(payload, 'learning-map-all-pages-workspace.json', 'All pages exported');
+  }
+  function importMap(file){
+    if(!file) return; const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const parsed = JSON.parse(reader.result);
+        if(parsed && Array.isArray(parsed.pages)){
+          workspace = normalizeWorkspace(parsed);
+        }else{
+          syncCurrentPage();
+          const p = makePage(file.name ? file.name.replace(/\.json$/i,'') : 'Imported page', parsed);
+          workspace.pages.push(p);
+          workspace.activePageId = p.id;
+        }
+        data = activePage().map; view = Object.assign({x:0,y:0,scale:1}, data.view);
+        selectedId = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null); selectedEdgeId = null; connectFrom = null;
+        render(); applyView(); save('Imported'); showToast('Import complete');
+      }catch(e){ showToast('Import failed'); }
+    };
+    reader.readAsText(file);
+  }
+  function resetMap(){ if(!confirm('Reset this page to the original debt-power layout? Other pages stay safe.')) return; data = cloneDefault(); activePage().map = data; view = Object.assign({}, data.view); selectedId = 'core'; selectedEdgeId = null; connectFrom = null; render(); recenter(); save('Page reset'); }
+
+  function showMenu(title, items, clientX, clientY, context){
+    menuContext = context || null; menu.innerHTML = '';
+    const heading = document.createElement('div'); heading.className = 'menu-title'; heading.textContent = title; menu.appendChild(heading);
+    items.forEach(item => {
+      if(item.type === 'section'){ const s = document.createElement('div'); s.className = 'menu-section'; s.textContent = item.label; menu.appendChild(s); return; }
+      if(item.type === 'colors'){ const row = document.createElement('div'); row.className = 'menu-row'; colors.forEach(c => { const b = document.createElement('button'); b.className = `dot-${c}`; b.title = `Color: ${c}`; b.setAttribute('aria-label',`Color: ${c}`); b.dataset.action = 'color-' + c; b.textContent = c[0].toUpperCase(); row.appendChild(b); }); menu.appendChild(row); return; }
+      if(item.type === 'shapes'){ const row = document.createElement('div'); row.className = 'menu-row'; shapes.forEach(s => { const b = document.createElement('button'); b.dataset.action = 'shape-' + s; b.textContent = s; row.appendChild(b); }); menu.appendChild(row); return; }
+      if(item.type === 'sizes'){ const row = document.createElement('div'); row.className = 'menu-row'; Object.keys(sizePresets).forEach(s => { const b = document.createElement('button'); b.dataset.action = 'size-' + s; b.textContent = s; row.appendChild(b); }); menu.appendChild(row); return; }
+      if(item.type === 'importance'){ const row = document.createElement('div'); row.className = 'menu-row'; [1,2,3].forEach(v => { const b = document.createElement('button'); b.dataset.action = 'importance-' + v; b.textContent = '★'.repeat(v); row.appendChild(b); }); menu.appendChild(row); return; }
+      if(item.type === 'relations'){ const row = document.createElement('div'); row.className = 'menu-row'; Object.entries(relationStyles).forEach(([key,r]) => { const b = document.createElement('button'); b.dataset.action = 'relation-' + key; b.style.borderColor = r.color; b.textContent = r.label; row.appendChild(b); }); menu.appendChild(row); return; }
+      if(item.type === 'strengths'){ const row = document.createElement('div'); row.className = 'menu-row'; [1,2,3,4,5].forEach(v => { const b = document.createElement('button'); b.dataset.action = 'strength-' + v; b.textContent = String(v); row.appendChild(b); }); menu.appendChild(row); return; }
+      if(item.type === 'edgeShapes'){ const row = document.createElement('div'); row.className = 'menu-row'; edgeShapes.forEach(s => { const b = document.createElement('button'); b.dataset.action = 'edge-shape-' + s; b.textContent = s; row.appendChild(b); }); menu.appendChild(row); return; }
+      if(item.type === 'fromPorts'){ const row = document.createElement('div'); row.className = 'menu-row'; ports.forEach(s => { const b = document.createElement('button'); b.dataset.action = 'port-from-' + s; b.textContent = portLabels[s]; row.appendChild(b); }); menu.appendChild(row); return; }
+      if(item.type === 'toPorts'){ const row = document.createElement('div'); row.className = 'menu-row'; ports.forEach(s => { const b = document.createElement('button'); b.dataset.action = 'port-to-' + s; b.textContent = portLabels[s]; row.appendChild(b); }); menu.appendChild(row); return; }
+      if(item.type === 'linkedDirs'){ const row = document.createElement('div'); row.className = 'menu-row'; ['top','right','bottom','left'].forEach(s => { const b = document.createElement('button'); b.dataset.action = 'add-linked-' + s; b.textContent = s; row.appendChild(b); }); menu.appendChild(row); return; }
+      const b = document.createElement('button'); b.type = 'button'; b.dataset.action = item.action; b.textContent = item.label; if(item.danger) b.classList.add('danger'); if(item.disabled) b.disabled = true; menu.appendChild(b);
+    });
+    menu.classList.add('show'); menu.setAttribute('aria-hidden','false');
+    const pad = 8, rect = menu.getBoundingClientRect(); let x = clientX, y = clientY;
+    if(x + rect.width > window.innerWidth - pad) x = window.innerWidth - rect.width - pad;
+    if(y + rect.height > window.innerHeight - pad) y = window.innerHeight - rect.height - pad;
+    menu.style.left = Math.max(pad,x) + 'px'; menu.style.top = Math.max(pad,y) + 'px';
+  }
+  function closeMenu(){ menu.classList.remove('show'); menu.setAttribute('aria-hidden','true'); menuContext = null; }
+  function nodeMenu(node, clientX, clientY){
+    const isTarget = connectFrom && connectFrom !== node.id;
+    showMenu(node.title || 'Block', [
+      {label:'✎ Edit title', action:'edit-title'}, {label:'☰ Edit body text', action:'edit-body'},
+      {label:'＋ Add linked block', action:'add-linked-node'}, {type:'section', label:'Add linked block from side'}, {type:'linkedDirs'}, ...(isTarget ? [{label:'⛓ Connect pending source to this', action:'connect-pending'}] : []),
+      {label:'⛓ Start connection from this', action:'start-connect'}, {label:'↳ Create detail page from this block', action:'page-from-node'}, {label:'⧉ Duplicate block', action:'duplicate'}, {label:'◎ Center on this block', action:'center-node'},
+      {type:'section', label:'Block color'}, {type:'colors'}, {type:'section', label:'Block shape'}, {type:'shapes'}, {type:'section', label:'Block size'}, {type:'sizes'}, {type:'section', label:'Importance'}, {type:'importance'},
+      {label:'⌫ Remove all its connections', action:'remove-edges'}, {label:'Delete block', action:'delete-node', danger:true}
+    ], clientX, clientY, {type:'node', id:node.id});
+  }
+  function edgeMenu(edge, clientX, clientY){
+    const from = byId(edge.from), to = byId(edge.to), rel = relationStyles[edge.relation] || relationStyles.causes;
+    showMenu(`${from?.title || 'Block'} — ${to?.title || 'Block'}`, [
+      {label:'✎ Rename link label', action:'edge-label'}, {label:'⇄ Reverse direction', action:'edge-reverse'},
+      {type:'section', label:'Relationship type'}, {type:'relations'},
+      {type:'section', label:'Importance / thickness'}, {type:'strengths'},
+      {type:'section', label:'Line route'}, {type:'edgeShapes'},
+      {type:'section', label:'From-side connection point'}, {type:'fromPorts'},
+      {type:'section', label:'To-side connection point'}, {type:'toPorts'},
+      {label:'Delete this link', action:'edge-delete', danger:true},
+      {type:'section', label:'Current meaning'}, {label:`${rel.label}: ${rel.note}`, action:'noop', disabled:true}
+    ], clientX, clientY, {type:'edge', id:edge.id});
+  }
+  function canvasMenu(worldPoint, clientX, clientY){
+    const selected = byId(selectedId);
+    showMenu('Canvas space', [
+      {label:'＋ Add free block here', action:'add-free-here'}, {label:'＋↗ Add linked block from selected here', action:'add-linked-here', disabled:!selected},
+      {label:'◎ Recenter full map', action:'recenter'}, {label:'1× Reset zoom around selected', action:'reset-view'},
+      {label:focusMode ? '◉ Turn focus mode off' : '◉ Turn focus mode on', action:'toggle-focus'}, {label:'↺ Show remember prompt', action:'toggle-remember'}, {label:'? Show visual code', action:'toggle-legend'},
+      {label:'⌁ Tidy map layout', action:'tidy'}, {label:'＋ Create new page', action:'new-page'}, {label:'⧉ Duplicate page', action:'duplicate-page'}, {label:'⇩ Export workspace backup', action:'export-workspace'}
+    ], clientX, clientY, {type:'canvas', point:worldPoint});
+  }
+  function pageMenu(clientX, clientY){
+    const items = [{type:'section', label:'Switch page'}];
+    workspace.pages.forEach(p => items.push({label:(p.id === workspace.activePageId ? '✓ ' : '') + (p.title || 'Untitled page'), action:'switch-page-' + p.id}));
+    items.push(
+      {type:'section', label:'Create and manage'},
+      {label:'＋ New blank page', action:'new-page'},
+      {label:'⧉ Duplicate current page', action:'duplicate-page'},
+      {label:'✎ Rename current page', action:'rename-page'},
+      {label:'⇩ Export current page', action:'export'},
+      {label:'⇩ Export all pages', action:'export-workspace'},
+      {label:'Delete current page', action:'delete-page', danger:true, disabled:workspace.pages.length <= 1}
+    );
+    showMenu('Map pages', items, clientX || window.innerWidth - 240, clientY || 70, {type:'page-menu'});
+  }
+
+  menu.addEventListener('click', e => {
+    const b = e.target.closest('button[data-action]'); if(!b || b.disabled || !menuContext) return;
+    const action = b.dataset.action, ctx = menuContext; if(action === 'noop') return; closeMenu();
+    if(ctx.type === 'page-menu'){
+      if(action.startsWith('switch-page-')) switchPage(action.replace('switch-page-',''));
+      else if(action === 'new-page') createNewPage();
+      else if(action === 'duplicate-page') duplicateCurrentPage();
+      else if(action === 'rename-page') renameCurrentPage();
+      else if(action === 'delete-page') deleteCurrentPage();
+      else if(action === 'export') exportMap();
+      else if(action === 'export-workspace') exportWorkspace();
+    }else if(ctx.type === 'node'){
+      const n = byId(ctx.id); if(!n) return; const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`);
+      if(action === 'edit-title') el?.querySelector('.node-title')?.focus();
+      else if(action === 'edit-body') el?.querySelector('.node-body')?.focus();
+      else if(action === 'add-linked-node') addLinkedFrom(n.id);
+      else if(action.startsWith('add-linked-')) addLinkedFrom(n.id, undefined, undefined, action.replace('add-linked-',''));
+      else if(action === 'start-connect') startConnect(n.id);
+      else if(action === 'page-from-node') createPageFromNode(n.id);
+      else if(action === 'connect-pending'){ addEdge(connectFrom, n.id); cancelConnect(); }
+      else if(action === 'duplicate') duplicateNode(n.id);
+      else if(action === 'center-node') centerOnNode(n.id);
+      else if(action === 'remove-edges') removeNodeEdges(n.id);
+      else if(action === 'delete-node') deleteNode(n.id);
+      else if(action.startsWith('color-')) setNodeColor(n.id, action.replace('color-',''));
+      else if(action.startsWith('shape-')) setNodeShape(n.id, action.replace('shape-',''));
+      else if(action.startsWith('size-')) setNodeSize(n.id, action.replace('size-',''));
+      else if(action.startsWith('importance-')) setNodeImportance(n.id, action.replace('importance-',''));
+    }else if(ctx.type === 'edge'){
+      const e2 = edgeById(ctx.id); if(!e2) return;
+      if(action === 'edge-label') setEdgeLabel(e2.id);
+      else if(action === 'edge-reverse') reverseEdge(e2.id);
+      else if(action === 'edge-delete') deleteEdge(e2.id);
+      else if(action.startsWith('relation-')) setEdgeRelation(e2.id, action.replace('relation-',''));
+      else if(action.startsWith('strength-')) setEdgeStrength(e2.id, action.replace('strength-',''));
+      else if(action.startsWith('edge-shape-')) setEdgeShape(e2.id, action.replace('edge-shape-',''));
+      else if(action.startsWith('port-from-')) setEdgePort(e2.id, 'from', action.replace('port-from-',''));
+      else if(action.startsWith('port-to-')) setEdgePort(e2.id, 'to', action.replace('port-to-',''));
+    }else if(ctx.type === 'canvas'){
+      const p = ctx.point;
+      if(action === 'add-free-here') addNodeAt(p.x, p.y);
+      else if(action === 'add-linked-here' && selectedId) addNodeAt(p.x, p.y, {linkFrom:selectedId});
+      else if(action === 'recenter') recenter();
+      else if(action === 'reset-view') resetView();
+      else if(action === 'toggle-focus') toggleFocus();
+      else if(action === 'toggle-remember') toggleRemember();
+      else if(action === 'toggle-legend') toggleLegend();
+      else if(action === 'tidy') tidy();
+      else if(action === 'new-page') createNewPage();
+      else if(action === 'duplicate-page') duplicateCurrentPage();
+      else if(action === 'export-workspace') exportWorkspace();
+      else if(action === 'export') exportMap();
+    }
+  });
+
+  nodeLayer.addEventListener('contextmenu', e => { const el = e.target.closest('.map-node'); if(!el) return; e.preventDefault(); closeMenu(); const n = byId(el.dataset.id); if(!n) return; select(n.id); nodeMenu(n, e.clientX, e.clientY); });
+  edgeLabelLayer.addEventListener('contextmenu', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; e.preventDefault(); closeMenu(); const ed = edgeById(lab.dataset.edgeId); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY); });
+  edgeLayer.addEventListener('contextmenu', e => { const g = e.target.closest('g.edge-group'); if(!g) return; e.preventDefault(); closeMenu(); const ed = edgeById(g.dataset.edgeId); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY); });
+  stage.addEventListener('contextmenu', e => { if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.side-panel') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY); });
+
+  nodeLayer.addEventListener('click', e => { const el = e.target.closest('.map-node'); if(!el) return; if(connectFrom && el.dataset.id !== connectFrom){ addEdge(connectFrom, el.dataset.id); cancelConnect(); return; } select(el.dataset.id); });
+  edgeLabelLayer.addEventListener('click', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; selectEdge(lab.dataset.edgeId); });
+  edgeLayer.addEventListener('click', e => { const g = e.target.closest('g.edge-group'); if(!g) return; selectEdge(g.dataset.edgeId); });
+  nodeLayer.addEventListener('input', e => { const field = e.target.dataset.field, el = e.target.closest('.map-node'); if(!field || !el) return; const n = byId(el.dataset.id); if(!n) return; n[field] = clean(e.target.textContent) || (field === 'title' ? 'Untitled block' : ''); renderEdges(); save('Saved'); updateSelectionUI(); updatePrompt(); });
+  nodeLayer.addEventListener('paste', e => { if(!e.target.closest('[contenteditable]')) return; e.preventDefault(); const text = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, text); });
+
+  nodeLayer.addEventListener('pointerdown', e => {
+    const resize = e.target.closest('.resize-handle');
+    if(resize){ const el = resize.closest('.map-node'), n = byId(el.dataset.id); if(!n) return; e.preventDefault(); closeMenu(); select(n.id); resizeNode = {id:n.id, sx:e.clientX, sy:e.clientY, w:n.w, h:n.h}; resize.setPointerCapture(e.pointerId); return; }
+    const handle = e.target.closest('.drag-handle'); if(!handle) return;
+    const el = handle.closest('.map-node'), n = byId(el.dataset.id); if(!n) return;
+    e.preventDefault(); closeMenu(); select(n.id); dragNode = {id:n.id, sx:e.clientX, sy:e.clientY, x:n.x, y:n.y}; handle.setPointerCapture(e.pointerId);
+  });
+  nodeLayer.addEventListener('pointermove', e => {
+    if(resizeNode){ const n = byId(resizeNode.id); if(!n) return; n.w = clamp(Math.round(resizeNode.w + (e.clientX - resizeNode.sx)/view.scale), 160, 640); n.h = clamp(Math.round(resizeNode.h + (e.clientY - resizeNode.sy)/view.scale), 95, 520); const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`); if(el){ el.style.width = n.w + 'px'; el.style.height = n.h + 'px'; } renderEdges(); return; }
+    if(!dragNode) return; const n = byId(dragNode.id); if(!n) return; n.x = Math.round(dragNode.x + (e.clientX - dragNode.sx)/view.scale); n.y = Math.round(dragNode.y + (e.clientY - dragNode.sy)/view.scale); const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`); if(el){ el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; } renderEdges();
+  });
+  nodeLayer.addEventListener('pointerup', () => { if(resizeNode){ resizeNode=null; save('Resized'); showToast('Resized'); } if(dragNode){ dragNode=null; save('Moved'); showToast('Moved'); } });
+  nodeLayer.addEventListener('pointercancel', () => { if(resizeNode){ resizeNode=null; save('Resized'); } if(dragNode){ dragNode=null; save('Moved'); } });
+
+  stage.addEventListener('pointerdown', e => { if(e.button !== 0) return; if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.side-panel') || e.target.closest('.menu') || e.target.closest('.edge-label')) return; e.preventDefault(); closeMenu(); panDrag = {sx:e.clientX, sy:e.clientY, x:view.x, y:view.y}; stage.classList.add('is-panning'); stage.setPointerCapture(e.pointerId); });
+  stage.addEventListener('pointermove', e => { if(!panDrag) return; view.x = panDrag.x + (e.clientX - panDrag.sx); view.y = panDrag.y + (e.clientY - panDrag.sy); applyView(); });
+  stage.addEventListener('pointerup', () => { if(!panDrag) return; panDrag = null; stage.classList.remove('is-panning'); save('View saved'); });
+  stage.addEventListener('pointercancel', () => { if(!panDrag) return; panDrag = null; stage.classList.remove('is-panning'); save('View saved'); });
+  stage.addEventListener('wheel', e => {
+    if(e.target.closest('.menu')) return;
+    e.preventDefault(); closeMenu();
+    const modeScale = e.deltaMode === 1 ? 16 : (e.deltaMode === 2 ? 600 : 1);
+    const dx = e.deltaX * modeScale, dy = e.deltaY * modeScale;
+    if(e.ctrlKey || e.metaKey){
+      const factor = clamp(Math.exp(-dy * 0.0027), 0.76, 1.32);
+      // Anchor trackpad/browser zoom on the viewport center. This prevents the map from
+      // drifting left/right while zooming and feels calmer for long study sessions.
+      zoomCenter(factor, false);
+      clearTimeout(wheelTimer); wheelTimer = setTimeout(() => save('View saved'), 260);
+    }else{
+      view.x -= dx; view.y -= dy; applyView();
+      clearTimeout(wheelTimer); wheelTimer = setTimeout(() => save('View saved'), 220);
+    }
+  }, {passive:false});
+
+  function toggleFocus(){ focusMode = !focusMode; applyFocus(); updateSelectionUI(); showToast(focusMode ? 'Focus mode on' : 'Focus mode off'); }
+  function openSidePanel(panel){
+    activePanel = panel;
+    panelDrawer.hidden = false;
+    promptCard.hidden = panel !== 'remember';
+    legendCard.hidden = panel !== 'legend';
+    btnRememberPanel.classList.toggle('active', panel === 'remember');
+    btnVisualPanel.classList.toggle('active', panel === 'legend');
+  }
+  function closeSidePanel(){
+    activePanel = null;
+    panelDrawer.hidden = true;
+    promptCard.hidden = true;
+    legendCard.hidden = true;
+    btnRememberPanel.classList.remove('active');
+    btnVisualPanel.classList.remove('active');
+  }
+  function toggleSidePanel(panel){ activePanel === panel ? closeSidePanel() : openSidePanel(panel); }
+  function toggleLegend(){ toggleSidePanel('legend'); }
+  function toggleRemember(){ toggleSidePanel('remember'); }
+
+  document.addEventListener('click', e => { if(!e.target.closest('.menu')) closeMenu(); });
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape'){ closeMenu(); if(connectFrom) cancelConnect(); return; }
+    const editing = document.activeElement && document.activeElement.closest('[contenteditable]'); if(editing) return;
+    if(e.key === 'Home'){ e.preventDefault(); recenter(); }
+    else if(e.key === '+' || e.key === '='){ e.preventDefault(); zoomCenter(1.25); }
+    else if(e.key === '-' || e.key === '_'){ e.preventDefault(); zoomCenter(.80); }
+    else if(e.key === '0'){ e.preventDefault(); resetView(); }
+    else if(e.key === 'Delete' || e.key === 'Backspace'){ if(selectedId){ e.preventDefault(); deleteNode(selectedId); } else if(selectedEdgeId){ e.preventDefault(); deleteEdge(selectedEdgeId); } }
+    else if(e.key.toLowerCase() === 'c' && selectedId){ e.preventDefault(); startConnect(selectedId); }
+    else if(e.key.toLowerCase() === 'f'){ e.preventDefault(); toggleFocus(); }
+  });
+  window.addEventListener('resize', () => { applyView(); renderEdges(); applyFocus(); });
+
+  document.getElementById('btnCenter').addEventListener('click', recenter);
+  document.getElementById('btnZoomIn').addEventListener('click', () => zoomCenter(1.25));
+  document.getElementById('btnZoomOut').addEventListener('click', () => zoomCenter(.80));
+  document.getElementById('btnZoomPercent').addEventListener('click', promptZoomPercent);
+  document.getElementById('btnResetView').addEventListener('click', resetView);
+  document.getElementById('btnAddLinked').addEventListener('click', () => selectedId ? addLinkedFrom(selectedId) : addFreeAtCenter());
+  document.getElementById('btnAddFree').addEventListener('click', addFreeAtCenter);
+  document.getElementById('btnConnect').addEventListener('click', () => selectedId && startConnect(selectedId));
+  document.getElementById('btnFocus').addEventListener('click', toggleFocus);
+  document.getElementById('btnLegend').addEventListener('click', toggleLegend);
+  document.getElementById('btnTidy').addEventListener('click', tidy);
+  document.getElementById('btnExport').addEventListener('click', exportWorkspace);
+  document.getElementById('importFile').addEventListener('change', e => importMap(e.target.files?.[0]));
+  document.getElementById('btnResetMap').addEventListener('click', resetMap);
+  document.getElementById('cancelConnect').addEventListener('click', cancelConnect);
+  document.getElementById('shelfAddLinked').addEventListener('click', () => selectedId && addLinkedFrom(selectedId));
+  document.getElementById('shelfCenter').addEventListener('click', () => selectedId ? centerOnNode(selectedId) : (selectedEdgeId && edgeById(selectedEdgeId) ? centerOnNode(edgeById(selectedEdgeId).from) : null));
+  btnRememberPanel.addEventListener('click', toggleRemember);
+  btnVisualPanel.addEventListener('click', toggleLegend);
+  btnClosePanel.addEventListener('click', closeSidePanel);
+  pageSelect?.addEventListener('change', e => switchPage(e.target.value));
+  btnNewPage?.addEventListener('click', createNewPage);
+  btnPageMenu?.addEventListener('click', e => { e.stopPropagation(); pageMenu(e.clientX, e.clientY); });
+  btnDuplicatePage?.addEventListener('click', duplicateCurrentPage);
+  btnRenamePage?.addEventListener('click', renameCurrentPage);
+  btnDeletePage?.addEventListener('click', deleteCurrentPage);
+
+  installMarkers();
+  renderPageControls();
+  render();
+  requestAnimationFrame(() => {
+    if(!data.view || (data.view.x === 0 && data.view.y === 0 && data.view.scale === 1)) resetView(); else applyView();
+    recoverViewSoon('startup');
+  });
+})();
+</script>
+</body>
+</html>

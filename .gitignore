@@ -1,0 +1,15 @@
+node_modules/
+artifacts/
+.codex/
+dist/
+build/
+coverage/
+.vite/
+playwright-report/
+test-results/
+.vscode/.ropeproject/
+.DS_Store
+.env
+.env.*
+*.local
+npm-debug.log*
