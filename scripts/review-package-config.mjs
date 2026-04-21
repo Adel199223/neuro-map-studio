@@ -21,6 +21,7 @@ export const includePaths = [
   'AGENTS.md',
   'CHANGELOG.md',
   'CODEX_PROMPT.md',
+  'LICENSE',
   'README.md',
   'PLANS.md',
   'eslint.config.js',
@@ -49,9 +50,12 @@ export const requiredReviewPaths = [
   '.agents/skills/a11y-learning-review/SKILL.md',
   '.agents/skills/learning-map-feature/SKILL.md',
   '.agents/skills/prototype-migration/SKILL.md',
+  '.github/workflows/pages.yml',
+  'LICENSE',
   'public/prototypes/current/mindmap.html',
   'public/prototypes/current/lesson.html',
   'scripts/doctor.mjs',
+  'vite.config.ts',
 ];
 
 export const crossLinkChecks = [

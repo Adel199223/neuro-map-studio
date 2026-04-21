@@ -4,15 +4,18 @@ import { join } from 'node:path';
 const required = [
   'AGENTS.md',
   'CODEX_PROMPT.md',
+  'LICENSE',
   'PLANS.md',
   'README.md',
   'package.json',
   'tsconfig.json',
   'tsconfig.app.json',
   'tsconfig.node.json',
+  'vite.config.ts',
   'docs/architecture.md',
   'docs/codex/codex-setup.md',
   'docs/product/current-prototype-audit.md',
+  'docs/exec-plans/github-pages-live-preview.md',
   'public/prototypes/current/mindmap.html',
   'public/prototypes/current/lesson.html',
   'docs/product/product-requirements.md',
@@ -21,7 +24,9 @@ const required = [
   'docs/product/tablet-pen-sync-architecture.md',
   'docs/exec-plans/learning-map-workspace-core.md',
   'docs/exec-plans/harness-repair-tablet-architecture.md',
+  'docs/exec-plans/pages-enable-review-package-completeness.md',
   'docs/exec-plans/review-zip-packaging-completeness.md',
+  '.github/workflows/pages.yml',
   'scripts/review-package-config.mjs',
   'scripts/create-review-zip.mjs',
   'scripts/verify-review-zip.mjs',
@@ -121,6 +126,9 @@ expectIncludes('AGENTS.md', [
 expectIncludes('README.md', [
   '/prototypes/current/mindmap.html',
   '/prototypes/current/lesson.html',
+  'https://Adel199223.github.io/neuro-map-studio/',
+  'https://Adel199223.github.io/neuro-map-studio/prototypes/current/mindmap.html',
+  'https://Adel199223.github.io/neuro-map-studio/prototypes/current/lesson.html',
   'CODEX_PROMPT.md',
   'docs/product/tablet-pen-sync-architecture.md',
   '\\\\wsl.localhost\\Ubuntu\\home\\',
@@ -137,6 +145,13 @@ expectIncludes('docs/codex/codex-setup.md', [
   'package:verify',
 ]);
 expectIncludes('CODEX_PROMPT.md', ['docs/product/tablet-pen-sync-architecture.md']);
+expectIncludes('LICENSE', ['MIT License']);
+expectIncludes('vite.config.ts', ['GITHUB_PAGES', '/neuro-map-studio/']);
+expectIncludes('.github/workflows/pages.yml', [
+  'actions/configure-pages',
+  'actions/upload-pages-artifact',
+  'actions/deploy-pages',
+]);
 expectIncludes('docs/product/current-prototype-audit.md', ['v20 clean connectors']);
 expectIncludes('docs/product/tablet-pen-sync-architecture.md', [
   'Pointer Events',
