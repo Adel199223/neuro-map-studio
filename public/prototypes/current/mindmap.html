@@ -272,11 +272,25 @@ a{color:inherit}
 .selection-action.active{background:var(--blue);border-color:var(--blue-border)}
 .selection-action.warn{color:#8a2e2e;border-color:#c89e9e}
 .selection-action.danger-armed{background:#fff0ef;border-color:#d48787;color:#8a2e2e}
+.input-debug{position:absolute;left:1rem;bottom:1rem;z-index:21;width:min(360px,calc(100vw - 1rem));max-width:min(360px,calc(100vw - 1rem));border:1px solid var(--border);border-radius:18px;background:rgba(255,250,242,.97);box-shadow:0 14px 28px rgba(72,54,31,.13);padding:.45rem .5rem;display:grid;gap:.42rem;pointer-events:auto}
+.input-debug[hidden]{display:none!important}
+.input-debug.collapsed .input-debug-note,.input-debug.collapsed .input-debug-log,.input-debug.collapsed .input-debug-secondary{display:none}
+.input-debug-header{display:flex;align-items:flex-start;justify-content:space-between;gap:.55rem}
+.input-debug-heading{min-width:0;display:grid;gap:.12rem}
+.input-debug-heading strong{font-size:.86rem;line-height:1.1}
+.input-debug-heading span{font-size:.76rem;color:var(--muted);font-weight:800}
+.input-debug-secondary{display:flex;align-items:center;gap:.36rem;justify-content:flex-end}
+.input-debug button{border:1px solid var(--border);border-radius:12px;background:#fffaf4;cursor:pointer;min-height:2rem;padding:.28rem .58rem;font-weight:900}
+.input-debug button:disabled{opacity:.45;cursor:not-allowed}
+.input-debug-toggle{min-width:2rem;padding:0 .5rem}
+.input-debug-note{margin:0;font-size:.76rem;line-height:1.32;color:var(--muted)}
+.input-debug-log{margin:0;border:1px solid rgba(217,199,170,.78);border-radius:14px;background:rgba(255,255,255,.62);padding:.5rem .55rem;min-height:5.2rem;max-height:min(38vh,280px);overflow:auto;font:inherit;font-size:.74rem;line-height:1.34;white-space:pre-wrap;word-break:break-word}
 .menu{position:fixed;z-index:90;min-width:256px;max-width:min(360px,calc(100vw - 18px));display:none;border:1px solid var(--border);border-radius:18px;background:#fffaf2;box-shadow:0 20px 42px rgba(0,0,0,.2);padding:.38rem;}
 .menu.show{display:block}.menu-title{padding:.48rem .62rem .38rem;font-weight:900;color:#3a342e;border-bottom:1px solid rgba(217,199,170,.7);margin-bottom:.28rem;}.menu-section{font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;color:#7a6f61;font-weight:900;padding:.48rem .62rem .18rem;}.menu button{width:100%;justify-content:flex-start;text-align:left;border-color:transparent;border-radius:12px;min-height:2rem;background:transparent;padding:.36rem .56rem;}.menu button:hover,.menu button:focus{background:#f7eddb;outline:none}.menu button.danger{color:#8a2e2e}.menu button[disabled]{opacity:.45;cursor:not-allowed}.menu-row{display:flex;flex-wrap:wrap;gap:.35rem;padding:.26rem .4rem .38rem;}.menu-row button{width:auto;min-width:2rem;height:2rem;min-height:2rem;justify-content:center;padding:0 .48rem;border:1px solid var(--border);font-size:.8rem;}.dot-blue{background:var(--blue)!important;border-color:var(--blue-border)!important}.dot-amber{background:var(--amber)!important;border-color:var(--amber-border)!important}.dot-green{background:var(--green)!important;border-color:var(--green-border)!important}.dot-rose{background:var(--rose)!important;border-color:var(--rose-border)!important}.dot-violet{background:var(--violet)!important;border-color:var(--violet-border)!important}
 .import-input{display:none}.toast{position:absolute;right:1rem;bottom:1rem;z-index:22;border:1px solid var(--border);border-radius:999px;background:rgba(255,250,242,.95);color:var(--muted);padding:.45rem .75rem;box-shadow:0 12px 24px rgba(72,54,31,.12);opacity:0;transform:translateY(8px);transition:opacity .18s ease, transform .18s ease;pointer-events:none;}.toast.show{opacity:1;transform:translateY(0)}
-@media(max-width:860px){.topbar{grid-template-columns:1fr auto;gap:.4rem}.pagebar{grid-column:1/3;justify-content:flex-start;min-width:0}.pagebar select{max-width:calc(100vw - 14rem)}.back-link{grid-column:1/3;width:max-content}.title-wrap p{display:none}.status-pill{font-size:.78rem;min-width:0}.side-panel{right:.45rem;top:.45rem}.side-tab{min-width:2.25rem;min-height:2.25rem;padding:.2rem}.panel-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem)}.toolbar{left:.45rem;top:.45rem}.toolbar button,.file-label{width:2.2rem;height:2.2rem;min-height:2.2rem}.map-node{width:235px;min-height:120px}.map-node .node-content{padding:.78rem .75rem 1.2rem}.node-title{font-size:.96rem}.node-body{font-size:.84rem}.selection-shelf{top:auto;bottom:.85rem;max-width:calc(100vw - 1rem)}.selection-shelf.docked{top:auto;bottom:.85rem}.selection-meta strong{max-width:36vw}.selection-toggle,.selection-action{width:2.6rem;height:2.6rem;min-height:2.6rem}.connect-banner{bottom:4.2rem;max-width:calc(100vw - 1rem);border-radius:16px}}
-@media print{.topbar,.pagebar,.toolbar,.side-panel,.menu,.toast,.connect-banner,.selection-shelf{display:none!important}body{overflow:visible;background:white}.stage{overflow:visible}.map-node{break-inside:avoid}}
+@media(max-width:860px){.topbar{grid-template-columns:1fr auto;gap:.4rem}.pagebar{grid-column:1/3;justify-content:flex-start;min-width:0}.pagebar select{max-width:calc(100vw - 14rem)}.back-link{grid-column:1/3;width:max-content}.title-wrap p{display:none}.status-pill{font-size:.78rem;min-width:0}.side-panel{right:.45rem;top:.45rem}.side-tab{min-width:2.25rem;min-height:2.25rem;padding:.2rem}.panel-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem)}.toolbar{left:.45rem;top:.45rem}.toolbar button,.file-label{width:2.2rem;height:2.2rem;min-height:2.2rem}.map-node{width:235px;min-height:120px}.map-node .node-content{padding:.78rem .75rem 1.2rem}.node-title{font-size:.96rem}.node-body{font-size:.84rem}.selection-shelf{top:auto;bottom:.85rem;max-width:calc(100vw - 1rem)}.selection-shelf.docked{top:auto;bottom:.85rem}.selection-meta strong{max-width:36vw}.selection-toggle,.selection-action{width:2.75rem;height:2.75rem;min-height:2.75rem}.connect-banner{bottom:4.2rem;max-width:calc(100vw - 1rem);border-radius:16px}.input-debug{left:.5rem;bottom:.5rem;width:calc(100vw - 1rem);max-width:calc(100vw - 1rem)}}
+@media (pointer:coarse){.menu button{min-height:2.75rem;padding:.46rem .62rem}.menu-row button{min-width:2.75rem;height:2.75rem;min-height:2.75rem}.selection-toggle,.selection-action{width:2.95rem;height:2.95rem;min-height:2.95rem}.input-debug button{min-height:2.75rem}}
+@media print{.topbar,.pagebar,.toolbar,.side-panel,.menu,.toast,.connect-banner,.selection-shelf,.input-debug{display:none!important}body{overflow:visible;background:white}.stage{overflow:visible}.map-node{break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -406,6 +420,21 @@ a{color:inherit}
 
     <div class="menu" id="contextMenu" role="menu" aria-hidden="true"></div>
     <div class="toast" id="toast" aria-live="polite">Saved</div>
+    <aside class="input-debug collapsed" id="inputDebugPanel" aria-label="Input diagnostics" hidden>
+      <div class="input-debug-header">
+        <div class="input-debug-heading">
+          <strong>Input debug</strong>
+          <span id="inputDebugSummary">Interaction metadata only</span>
+        </div>
+        <button id="inputDebugToggle" class="input-debug-toggle" type="button" aria-label="Expand input diagnostics" title="Expand input diagnostics">▸</button>
+      </div>
+      <div class="input-debug-secondary">
+        <button id="inputDebugClear" type="button" aria-label="Clear diagnostics log">Clear</button>
+        <button id="inputDebugCopy" type="button" aria-label="Copy diagnostics log">Copy</button>
+      </div>
+      <p class="input-debug-note">Interaction metadata only. Map text and exported content are not logged.</p>
+      <pre class="input-debug-log" id="inputDebugLog" aria-live="polite">No recent input yet.</pre>
+    </aside>
   </main>
 </div>
 
@@ -422,6 +451,12 @@ a{color:inherit}
   const menu = document.getElementById('contextMenu');
   const saveStatus = document.getElementById('saveStatus');
   const toast = document.getElementById('toast');
+  const inputDebugPanel = document.getElementById('inputDebugPanel');
+  const inputDebugSummary = document.getElementById('inputDebugSummary');
+  const inputDebugToggle = document.getElementById('inputDebugToggle');
+  const inputDebugClear = document.getElementById('inputDebugClear');
+  const inputDebugCopy = document.getElementById('inputDebugCopy');
+  const inputDebugLog = document.getElementById('inputDebugLog');
   const connectBanner = document.getElementById('connectBanner');
   const connectText = document.getElementById('connectText');
   const selectionShelf = document.getElementById('selectionShelf');
@@ -540,8 +575,137 @@ a{color:inherit}
   const activeTouchPoints = new Map();
   let touchGesture = null;
 
+  const DEBUG_INPUT_KEY = 'neuro-map-studio:debug-input';
   const LONG_PRESS_DELAY = 450;
   const LONG_PRESS_MOVE = 10;
+  const inputDebugState = {
+    enabled: (() => {
+      try{
+        const params = new URLSearchParams(window.location.search);
+        if(params.get('debugInput') === '1') return true;
+      }catch(e){}
+      try{
+        return localStorage.getItem(DEBUG_INPUT_KEY) === '1';
+      }catch(e){
+        return false;
+      }
+    })(),
+    collapsed: true,
+    entries: [],
+    maxEntries: 25,
+    lastPointer: null
+  };
+
+  function formatDebugNumber(value, digits=2){
+    if(typeof value !== 'number' || !Number.isFinite(value)) return '';
+    return Number(value.toFixed(digits)).toString();
+  }
+  function describeDebugTarget(target){
+    const el = target instanceof Element ? target : null;
+    if(!el) return '';
+    const tag = el.tagName.toLowerCase();
+    const id = el.id ? `#${el.id}` : '';
+    const classes = Array.from(el.classList || []).filter(Boolean).slice(0, 3).map(name => `.${name}`).join('');
+    const attrs = [];
+    if(el.dataset?.action) attrs.push(`action=${el.dataset.action}`);
+    if(el.dataset?.field) attrs.push(`field=${el.dataset.field}`);
+    if(el.hasAttribute('contenteditable')) attrs.push('editable');
+    return [tag + id + classes, attrs.join(' ')].filter(Boolean).join(' ');
+  }
+  function getDebugPointerMeta(source, fallback=inputDebugState.lastPointer){
+    if(!source) return fallback ? {...fallback} : {};
+    const meta = {};
+    if(typeof source.pointerType === 'string' && source.pointerType) meta.pointerType = source.pointerType;
+    if(Number.isFinite(source.pointerId)) meta.pointerId = source.pointerId;
+    if(Number.isFinite(source.buttons)) meta.buttons = source.buttons;
+    if(typeof source.pressure === 'number') meta.pressure = Number(source.pressure.toFixed(2));
+    if(typeof source.tiltX === 'number') meta.tiltX = source.tiltX;
+    if(typeof source.tiltY === 'number') meta.tiltY = source.tiltY;
+    return Object.keys(meta).length ? meta : (fallback ? {...fallback} : {});
+  }
+  function rememberDebugPointer(source){
+    if(!inputDebugState.enabled) return;
+    const meta = getDebugPointerMeta(source, null);
+    if(Object.keys(meta).length) inputDebugState.lastPointer = meta;
+  }
+  function formatDebugEntry(entry){
+    const parts = [entry.time, entry.action];
+    const pointerBits = [];
+    if(entry.pointerType) pointerBits.push(entry.pointerType);
+    if(entry.pointerId !== '') pointerBits.push(`#${entry.pointerId}`);
+    if(entry.buttons !== '') pointerBits.push(`buttons=${entry.buttons}`);
+    if(entry.pressure !== '') pointerBits.push(`pressure=${entry.pressure}`);
+    if(entry.tiltX !== '' || entry.tiltY !== ''){
+      pointerBits.push(`tilt=${entry.tiltX !== '' ? entry.tiltX : '?'}:${entry.tiltY !== '' ? entry.tiltY : '?'}`);
+    }
+    if(pointerBits.length) parts.push(pointerBits.join(' '));
+    if(entry.mode) parts.push(`mode=${entry.mode}`);
+    if(entry.reason) parts.push(`reason=${entry.reason}`);
+    if(entry.target) parts.push(`target=${entry.target}`);
+    return parts.join(' | ');
+  }
+  function updateInputDebugUI(){
+    if(!inputDebugState.enabled){
+      inputDebugPanel.hidden = true;
+      return;
+    }
+    inputDebugPanel.hidden = false;
+    inputDebugPanel.classList.toggle('collapsed', inputDebugState.collapsed);
+    inputDebugToggle.textContent = inputDebugState.collapsed ? '▸' : '▾';
+    inputDebugToggle.title = inputDebugState.collapsed ? 'Expand input diagnostics' : 'Collapse input diagnostics';
+    inputDebugToggle.setAttribute('aria-label', inputDebugToggle.title);
+    inputDebugSummary.textContent = inputDebugState.entries.length
+      ? `${inputDebugState.entries.length} recent interactions`
+      : 'Interaction metadata only';
+    inputDebugLog.textContent = inputDebugState.entries.length
+      ? inputDebugState.entries.map(formatDebugEntry).join('\n')
+      : 'No recent input yet.';
+    inputDebugClear.disabled = inputDebugState.entries.length === 0;
+    inputDebugCopy.disabled = inputDebugState.entries.length === 0;
+  }
+  function logInputDebug(action, source=null, details={}){
+    if(!inputDebugState.enabled) return;
+    const meta = getDebugPointerMeta(source, inputDebugState.lastPointer);
+    if(Object.keys(meta).length) inputDebugState.lastPointer = meta;
+    const entry = {
+      time: new Date().toISOString().slice(11, 23),
+      action,
+      pointerType: meta.pointerType || '',
+      pointerId: Number.isFinite(meta.pointerId) ? meta.pointerId : '',
+      buttons: Number.isFinite(meta.buttons) ? meta.buttons : '',
+      pressure: formatDebugNumber(meta.pressure),
+      tiltX: Number.isFinite(meta.tiltX) ? meta.tiltX : '',
+      tiltY: Number.isFinite(meta.tiltY) ? meta.tiltY : '',
+      mode: details.mode || '',
+      reason: details.reason || '',
+      target: details.targetSummary || describeDebugTarget(details.target || source?.target)
+    };
+    inputDebugState.entries.unshift(entry);
+    if(inputDebugState.entries.length > inputDebugState.maxEntries) inputDebugState.entries.length = inputDebugState.maxEntries;
+    updateInputDebugUI();
+  }
+  async function copyInputDebugEntries(){
+    if(!inputDebugState.entries.length) return;
+    const text = inputDebugState.entries.map(formatDebugEntry).join('\n');
+    try{
+      if(navigator.clipboard?.writeText){
+        await navigator.clipboard.writeText(text);
+      }else{
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', 'true');
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        textarea.remove();
+      }
+      showToast('Copied input diagnostics');
+    }catch(e){
+      showToast('Could not copy diagnostics');
+    }
+  }
 
   function cloneDefault(){ return JSON.parse(JSON.stringify(defaultMap)); }
   function normalizeMap(map){
@@ -774,7 +938,7 @@ a{color:inherit}
   }
   function openMenuFromButton(button, title, items, context){
     const point = menuPointFromButton(button);
-    showMenu(title, items, point.x, point.y, context);
+    showMenu(title, items, point.x, point.y, {...context, trigger:'toolbar'});
   }
   function setButtonVisible(button, visible){ button.hidden = !visible; }
   function focusNodeEditor(nodeId){
@@ -793,47 +957,52 @@ a{color:inherit}
     updateSelectionUI();
     showToast('Tap delete again to remove this link');
   }
-  function cancelLongPress(pointerId=null){
+  function cancelLongPress(pointerId=null, reason='cancel', source=null){
     if(!longPressState) return;
     if(pointerId !== null && longPressState.pointerId !== pointerId) return;
+    logInputDebug('long-press-cancel', source || longPressState, {mode:longPressState.type, reason, target:longPressState.target});
     clearTimeout(longPressState.timer);
     longPressState = null;
   }
   function startLongPress(target){
     cancelLongPress();
     if(menu.classList.contains('show')) return;
+    logInputDebug('long-press-start', target, {mode:target.type, target:target.target});
     longPressState = {
       ...target,
       timer:setTimeout(() => {
         const active = longPressState;
         if(!active || active.pointerId !== target.pointerId) return;
         longPressState = null;
+        logInputDebug('long-press-fire', active, {mode:active.type, target:active.target});
         closeMenu();
         if(active.type === 'canvas'){
-          canvasMenu(screenToWorld(active.clientX, active.clientY), active.clientX, active.clientY);
+          canvasMenu(screenToWorld(active.clientX, active.clientY), active.clientX, active.clientY, {trigger:'long-press'});
         }else if(active.type === 'node'){
           const node = byId(active.id);
           if(!node) return;
           select(node.id);
-          nodeMenu(node, active.clientX, active.clientY);
+          nodeMenu(node, active.clientX, active.clientY, {trigger:'long-press'});
         }else if(active.type === 'edge'){
           const edge = edgeById(active.id);
           if(!edge) return;
           selectEdge(edge.id);
-          edgeMenu(edge, active.clientX, active.clientY);
+          edgeMenu(edge, active.clientX, active.clientY, {trigger:'long-press'});
         }
       }, LONG_PRESS_DELAY)
     };
   }
   function beginCanvasPan(e){
-    cancelLongPress(e.pointerId);
+    cancelLongPress(e.pointerId, 'pan-start', e);
     panDrag = {pointerId:e.pointerId, sx:e.clientX, sy:e.clientY, x:view.x, y:view.y};
     stage.classList.add('is-panning');
     if(stage.setPointerCapture) stage.setPointerCapture(e.pointerId);
+    logInputDebug('pan-start', e, {mode:'canvas', target:stage});
   }
   function stopCanvasPan(shouldSave=true, pointerId=null){
     if(!panDrag) return;
     if(pointerId !== null && panDrag.pointerId !== pointerId) return;
+    logInputDebug('pan-end', inputDebugState.lastPointer, {mode:'canvas', target:stage});
     panDrag = null;
     stage.classList.remove('is-panning');
     if(shouldSave) save('View saved');
@@ -846,6 +1015,7 @@ a{color:inherit}
     const [a, b] = points;
     const startMid = midpoint(a, b);
     const startDistance = Math.max(1, distance(a, b));
+    logInputDebug('pinch-start', inputDebugState.lastPointer, {mode:'canvas', target:stage});
     return {
       startMid,
       startDistance,
@@ -1339,7 +1509,7 @@ a{color:inherit}
     if(!from || !to || from===to || !byId(from) || !byId(to)) return;
     if(data.edges.some(e => e.from === from && e.to === to)){ showToast('Already connected'); return; }
     const e = {id:edgeId(), from, to, relation:opts.relation || 'causes', strength:opts.strength || 3, shape:opts.shape || 'curve', fromPort:opts.fromPort || 'auto', toPort:opts.toPort || 'auto', label:opts.label || ''};
-    data.edges.push(e); selectedEdgeId = e.id; selectedId = null; render(); save('Connected'); showToast('Connected. Use the link toolbar or right-click/long-press to style it.');
+    data.edges.push(e); selectedEdgeId = e.id; selectedId = null; render(); save('Connected'); showToast('Connected. Use the link toolbar or right-click/long-press to style it.'); logInputDebug('connect-complete', inputDebugState.lastPointer, {mode:'edge'});
   }
   function deleteEdge(edgeId){ data.edges = data.edges.filter(e => e.id !== edgeId); selectedEdgeId = null; render(); save('Link deleted'); showToast('Link deleted'); }
   function reverseEdge(edgeId){ const e = edgeById(edgeId); if(!e) return; const old = e.from; e.from = e.to; e.to = old; const oldPort = e.fromPort; e.fromPort = e.toPort || 'auto'; e.toPort = oldPort || 'auto'; render(); save('Link reversed'); }
@@ -1353,7 +1523,7 @@ a{color:inherit}
   function setEdgeShape(edgeId, shape){ const e = edgeById(edgeId); if(!e) return; e.shape = shape; render(); save('Line route changed'); }
   function setEdgePort(edgeId, end, port){ const e = edgeById(edgeId); if(!e || !ports.includes(port)) return; if(end === 'from') e.fromPort = port; else e.toPort = port; render(); save('Connection side changed'); showToast('Connection side changed'); }
   function setEdgeLabel(edgeId){ const e = edgeById(edgeId); if(!e) return; const style = relationStyles[e.relation]; const txt = prompt('Short label for this link:', e.label || style.label); if(txt === null) return; e.label = clean(txt); render(); save('Link label changed'); }
-  function startConnect(nodeId){ if(!byId(nodeId)) return; connectFrom = nodeId; render(); const source = byId(nodeId); connectText.textContent = `Connecting from “${source.title || 'block'}”: click another block.`; connectBanner.classList.add('show'); showToast('Click target block'); }
+  function startConnect(nodeId){ if(!byId(nodeId)) return; connectFrom = nodeId; render(); const source = byId(nodeId); connectText.textContent = `Connecting from “${source.title || 'block'}”: click another block.`; connectBanner.classList.add('show'); showToast('Click target block'); logInputDebug('connect-start', inputDebugState.lastPointer, {mode:'node'}); }
   function cancelConnect(){ connectFrom = null; connectBanner.classList.remove('show'); render(); }
 
   function tidy(){
@@ -1404,7 +1574,9 @@ a{color:inherit}
   function resetMap(){ if(!confirm('Reset this page to the original debt-power layout? Other pages stay safe.')) return; data = cloneDefault(); activePage().map = data; view = Object.assign({}, data.view); selectedId = 'core'; selectedEdgeId = null; connectFrom = null; render(); recenter(); save('Page reset'); }
 
   function showMenu(title, items, clientX, clientY, context){
-    menuContext = context || null; menu.innerHTML = '';
+    menuContext = context || null;
+    logInputDebug('menu-open', inputDebugState.lastPointer, {mode:context?.type || 'menu', reason:context?.trigger || 'direct'});
+    menu.innerHTML = '';
     const heading = document.createElement('div'); heading.className = 'menu-title'; heading.textContent = title; menu.appendChild(heading);
     items.forEach(item => {
       if(item.type === 'section'){ const s = document.createElement('div'); s.className = 'menu-section'; s.textContent = item.label; menu.appendChild(s); return; }
@@ -1427,7 +1599,7 @@ a{color:inherit}
     menu.style.left = Math.max(pad,x) + 'px'; menu.style.top = Math.max(pad,y) + 'px';
   }
   function closeMenu(){ menu.classList.remove('show'); menu.setAttribute('aria-hidden','true'); menuContext = null; }
-  function nodeMenu(node, clientX, clientY){
+  function nodeMenu(node, clientX, clientY, extraContext={}){
     const isTarget = connectFrom && connectFrom !== node.id;
     showMenu(node.title || 'Block', [
       {label:'✎ Edit title', action:'edit-title'}, {label:'☰ Edit body text', action:'edit-body'},
@@ -1435,9 +1607,9 @@ a{color:inherit}
       {label:'⛓ Start connection from this', action:'start-connect'}, {label:'↳ Create detail page from this block', action:'page-from-node'}, {label:'⧉ Duplicate block', action:'duplicate'}, {label:'◎ Center on this block', action:'center-node'},
       {type:'section', label:'Block color'}, {type:'colors'}, {type:'section', label:'Block shape'}, {type:'shapes'}, {type:'section', label:'Block size'}, {type:'sizes'}, {type:'section', label:'Importance'}, {type:'importance'},
       {label:'⌫ Remove all its connections', action:'remove-edges'}, {label:'Delete block', action:'delete-node', danger:true}
-    ], clientX, clientY, {type:'node', id:node.id});
+    ], clientX, clientY, {type:'node', id:node.id, ...extraContext});
   }
-  function edgeMenu(edge, clientX, clientY){
+  function edgeMenu(edge, clientX, clientY, extraContext={}){
     const from = byId(edge.from), to = byId(edge.to), rel = relationStyles[edge.relation] || relationStyles.causes;
     showMenu(`${from?.title || 'Block'} — ${to?.title || 'Block'}`, [
       {label:'✎ Rename link label', action:'edge-label'}, {label:'⇄ Reverse direction', action:'edge-reverse'},
@@ -1448,16 +1620,16 @@ a{color:inherit}
       {type:'section', label:'To-side connection point'}, {type:'toPorts'},
       {label:'Delete this link', action:'edge-delete', danger:true},
       {type:'section', label:'Current meaning'}, {label:`${rel.label}: ${rel.note}`, action:'noop', disabled:true}
-    ], clientX, clientY, {type:'edge', id:edge.id});
+    ], clientX, clientY, {type:'edge', id:edge.id, ...extraContext});
   }
-  function canvasMenu(worldPoint, clientX, clientY){
+  function canvasMenu(worldPoint, clientX, clientY, extraContext={}){
     const selected = byId(selectedId);
     showMenu('Canvas space', [
       {label:'＋ Add free block here', action:'add-free-here'}, {label:'＋↗ Add linked block from selected here', action:'add-linked-here', disabled:!selected},
       {label:'◎ Recenter full map', action:'recenter'}, {label:'1× Reset zoom around selected', action:'reset-view'},
       {label:focusMode ? '◉ Turn focus mode off' : '◉ Turn focus mode on', action:'toggle-focus'}, {label:'↺ Show remember prompt', action:'toggle-remember'}, {label:'? Show visual code', action:'toggle-legend'},
       {label:'⌁ Tidy map layout', action:'tidy'}, {label:'＋ Create new page', action:'new-page'}, {label:'⧉ Duplicate page', action:'duplicate-page'}, {label:'⇩ Export current page', action:'export'}, {label:'⇩ Export workspace backup', action:'export-workspace'}, {label:'⇧ Import map or workspace', action:'import-file'}
-    ], clientX, clientY, {type:'canvas', point:worldPoint});
+    ], clientX, clientY, {type:'canvas', point:worldPoint, ...extraContext});
   }
   function pageMenu(clientX, clientY){
     const items = [{type:'section', label:'Switch page'}];
@@ -1537,25 +1709,26 @@ a{color:inherit}
     runMenuAction(ctx, action);
   });
 
-  nodeLayer.addEventListener('contextmenu', e => { const el = e.target.closest('.map-node'); if(!el) return; e.preventDefault(); closeMenu(); const n = byId(el.dataset.id); if(!n) return; select(n.id); nodeMenu(n, e.clientX, e.clientY); });
-  edgeLabelLayer.addEventListener('contextmenu', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; e.preventDefault(); closeMenu(); const ed = edgeById(lab.dataset.edgeId); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY); });
-  edgeLayer.addEventListener('contextmenu', e => { const g = e.target.closest('g.edge-group'); if(!g) return; e.preventDefault(); closeMenu(); const ed = edgeById(g.dataset.edgeId); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY); });
-  stage.addEventListener('contextmenu', e => { if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.side-panel') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY); });
+  nodeLayer.addEventListener('contextmenu', e => { const el = e.target.closest('.map-node'); if(!el) return; e.preventDefault(); closeMenu(); const n = byId(el.dataset.id); if(!n) return; select(n.id); nodeMenu(n, e.clientX, e.clientY, {trigger:'contextmenu'}); });
+  edgeLabelLayer.addEventListener('contextmenu', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; e.preventDefault(); closeMenu(); const ed = edgeById(lab.dataset.edgeId); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu'}); });
+  edgeLayer.addEventListener('contextmenu', e => { const g = e.target.closest('g.edge-group'); if(!g) return; e.preventDefault(); closeMenu(); const ed = edgeById(g.dataset.edgeId); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu'}); });
+  stage.addEventListener('contextmenu', e => { if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.side-panel') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY, {trigger:'contextmenu'}); });
 
-  nodeLayer.addEventListener('click', e => { const el = e.target.closest('.map-node'); if(!el) return; if(connectFrom && el.dataset.id !== connectFrom){ addEdge(connectFrom, el.dataset.id); cancelConnect(); return; } select(el.dataset.id); });
-  edgeLabelLayer.addEventListener('click', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; selectEdge(lab.dataset.edgeId); });
-  edgeLayer.addEventListener('click', e => { const g = e.target.closest('g.edge-group'); if(!g) return; selectEdge(g.dataset.edgeId); });
+  nodeLayer.addEventListener('click', e => { const el = e.target.closest('.map-node'); if(!el) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'node', target:el}); if(connectFrom && el.dataset.id !== connectFrom){ addEdge(connectFrom, el.dataset.id); cancelConnect(); return; } select(el.dataset.id); });
+  edgeLabelLayer.addEventListener('click', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'edge', target:lab}); selectEdge(lab.dataset.edgeId); });
+  edgeLayer.addEventListener('click', e => { const g = e.target.closest('g.edge-group'); if(!g) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'edge', target:g}); selectEdge(g.dataset.edgeId); });
   nodeLayer.addEventListener('input', e => { const field = e.target.dataset.field, el = e.target.closest('.map-node'); if(!field || !el) return; const n = byId(el.dataset.id); if(!n) return; n[field] = clean(e.target.textContent) || (field === 'title' ? 'Untitled block' : ''); renderEdges(); save('Saved'); updateSelectionUI(); updatePrompt(); });
   nodeLayer.addEventListener('paste', e => { if(!e.target.closest('[contenteditable]')) return; e.preventDefault(); const text = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, text); });
 
   nodeLayer.addEventListener('pointerdown', e => {
     const resize = e.target.closest('.resize-handle');
-    if(resize){ const el = resize.closest('.map-node'), n = byId(el.dataset.id); if(!n) return; cancelLongPress(e.pointerId); e.preventDefault(); closeMenu(); select(n.id); resizeNode = {id:n.id, sx:e.clientX, sy:e.clientY, w:n.w, h:n.h}; resize.setPointerCapture(e.pointerId); return; }
+    if(resize){ const el = resize.closest('.map-node'), n = byId(el.dataset.id); if(!n) return; cancelLongPress(e.pointerId, 'resize-start', e); e.preventDefault(); closeMenu(); select(n.id); resizeNode = {id:n.id, sx:e.clientX, sy:e.clientY, w:n.w, h:n.h}; resize.setPointerCapture(e.pointerId); logInputDebug('resize-start', e, {mode:'node', target:resize}); return; }
     const handle = e.target.closest('.drag-handle');
     if(handle){
       const el = handle.closest('.map-node'), n = byId(el.dataset.id); if(!n) return;
-      cancelLongPress(e.pointerId);
+      cancelLongPress(e.pointerId, 'drag-start', e);
       e.preventDefault(); closeMenu(); select(n.id); dragNode = {id:n.id, sx:e.clientX, sy:e.clientY, x:n.x, y:n.y}; handle.setPointerCapture(e.pointerId);
+      logInputDebug('drag-start', e, {mode:'node', target:handle});
       return;
     }
     const el = e.target.closest('.map-node');
@@ -1564,14 +1737,14 @@ a{color:inherit}
     if(!node) return;
     e.preventDefault();
     closeMenu();
-    startLongPress({type:'node', id:node.id, pointerId:e.pointerId, clientX:e.clientX, clientY:e.clientY});
+    startLongPress({type:'node', id:node.id, pointerId:e.pointerId, pointerType:e.pointerType, buttons:e.buttons, pressure:e.pressure, tiltX:e.tiltX, tiltY:e.tiltY, clientX:e.clientX, clientY:e.clientY, target:el});
   });
   nodeLayer.addEventListener('pointermove', e => {
     if(resizeNode){ const n = byId(resizeNode.id); if(!n) return; n.w = clamp(Math.round(resizeNode.w + (e.clientX - resizeNode.sx)/view.scale), 160, 640); n.h = clamp(Math.round(resizeNode.h + (e.clientY - resizeNode.sy)/view.scale), 95, 520); const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`); if(el){ el.style.width = n.w + 'px'; el.style.height = n.h + 'px'; } renderEdges(); return; }
     if(!dragNode) return; const n = byId(dragNode.id); if(!n) return; n.x = Math.round(dragNode.x + (e.clientX - dragNode.sx)/view.scale); n.y = Math.round(dragNode.y + (e.clientY - dragNode.sy)/view.scale); const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`); if(el){ el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; } renderEdges();
   });
-  nodeLayer.addEventListener('pointerup', e => { cancelLongPress(e.pointerId); if(resizeNode){ resizeNode=null; save('Resized'); showToast('Resized'); } if(dragNode){ dragNode=null; save('Moved'); showToast('Moved'); } });
-  nodeLayer.addEventListener('pointercancel', e => { cancelLongPress(e.pointerId); if(resizeNode){ resizeNode=null; save('Resized'); } if(dragNode){ dragNode=null; save('Moved'); } });
+  nodeLayer.addEventListener('pointerup', e => { cancelLongPress(e.pointerId, 'pointerup', e); if(resizeNode){ logInputDebug('resize-end', e, {mode:'node'}); resizeNode=null; save('Resized'); showToast('Resized'); } if(dragNode){ logInputDebug('drag-end', e, {mode:'node'}); dragNode=null; save('Moved'); showToast('Moved'); } });
+  nodeLayer.addEventListener('pointercancel', e => { cancelLongPress(e.pointerId, 'pointercancel', e); if(resizeNode){ logInputDebug('resize-end', e, {mode:'node', reason:'pointercancel'}); resizeNode=null; save('Resized'); } if(dragNode){ logInputDebug('drag-end', e, {mode:'node', reason:'pointercancel'}); dragNode=null; save('Moved'); } });
   edgeLabelLayer.addEventListener('pointerdown', e => {
     const label = e.target.closest('.edge-label');
     if(!label || !isTouchLikePointer(e)) return;
@@ -1579,7 +1752,7 @@ a{color:inherit}
     if(!edge) return;
     e.preventDefault();
     closeMenu();
-    startLongPress({type:'edge', id:edge.id, pointerId:e.pointerId, clientX:e.clientX, clientY:e.clientY});
+    startLongPress({type:'edge', id:edge.id, pointerId:e.pointerId, pointerType:e.pointerType, buttons:e.buttons, pressure:e.pressure, tiltX:e.tiltX, tiltY:e.tiltY, clientX:e.clientX, clientY:e.clientY, target:label});
   });
   edgeLayer.addEventListener('pointerdown', e => {
     const group = e.target.closest('g.edge-group');
@@ -1588,25 +1761,25 @@ a{color:inherit}
     if(!edge) return;
     e.preventDefault();
     closeMenu();
-    startLongPress({type:'edge', id:edge.id, pointerId:e.pointerId, clientX:e.clientX, clientY:e.clientY});
+    startLongPress({type:'edge', id:edge.id, pointerId:e.pointerId, pointerType:e.pointerType, buttons:e.buttons, pressure:e.pressure, tiltX:e.tiltX, tiltY:e.tiltY, clientX:e.clientX, clientY:e.clientY, target:group});
   });
 
   stage.addEventListener('pointerdown', e => {
     if(isTouchGesturePointer(e)){
       activeTouchPoints.set(e.pointerId, stageCoords(e.clientX, e.clientY));
       if(activeTouchPoints.size >= 2){
-        cancelLongPress();
+        cancelLongPress(null, 'pinch-start', e);
         stopCanvasPan(false);
         touchGesture = createTouchGestureState();
         return;
       }
     }
     if(e.button !== 0) return;
-    if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.side-panel') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.menu') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return;
+    if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.side-panel') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return;
     e.preventDefault();
     closeMenu();
     if(isTouchLikePointer(e)){
-      startLongPress({type:'canvas', pointerId:e.pointerId, clientX:e.clientX, clientY:e.clientY});
+      startLongPress({type:'canvas', pointerId:e.pointerId, pointerType:e.pointerType, buttons:e.buttons, pressure:e.pressure, tiltX:e.tiltX, tiltY:e.tiltY, clientX:e.clientX, clientY:e.clientY, target:stage});
       return;
     }
     beginCanvasPan(e);
@@ -1615,7 +1788,7 @@ a{color:inherit}
     if(isTouchGesturePointer(e) && activeTouchPoints.has(e.pointerId)){
       activeTouchPoints.set(e.pointerId, stageCoords(e.clientX, e.clientY));
       if(activeTouchPoints.size >= 2){
-        cancelLongPress();
+        cancelLongPress(null, 'pinch-move', e);
         stopCanvasPan(false);
         updateTouchGesture();
         return;
@@ -1625,7 +1798,7 @@ a{color:inherit}
       const moved = Math.hypot(e.clientX - longPressState.clientX, e.clientY - longPressState.clientY);
       if(moved > LONG_PRESS_MOVE){
         const pressType = longPressState.type;
-        cancelLongPress(e.pointerId);
+        cancelLongPress(e.pointerId, 'movement', e);
         if(pressType === 'canvas' && isTouchLikePointer(e) && activeTouchPoints.size < 2) beginCanvasPan(e);
       }
     }
@@ -1635,10 +1808,11 @@ a{color:inherit}
     applyView();
   });
   stage.addEventListener('pointerup', e => {
-    cancelLongPress(e.pointerId);
+    cancelLongPress(e.pointerId, 'pointerup', e);
     if(isTouchGesturePointer(e)){
       activeTouchPoints.delete(e.pointerId);
       if(touchGesture && activeTouchPoints.size < 2){
+        logInputDebug('pinch-end', e, {mode:'canvas'});
         touchGesture = null;
         save('View saved');
       }
@@ -1646,10 +1820,11 @@ a{color:inherit}
     stopCanvasPan(true, e.pointerId);
   });
   stage.addEventListener('pointercancel', e => {
-    cancelLongPress(e.pointerId);
+    cancelLongPress(e.pointerId, 'pointercancel', e);
     if(isTouchGesturePointer(e)){
       activeTouchPoints.delete(e.pointerId);
       if(touchGesture && activeTouchPoints.size < 2){
+        logInputDebug('pinch-end', e, {mode:'canvas', reason:'pointercancel'});
         touchGesture = null;
         save('View saved');
       }
@@ -1707,6 +1882,13 @@ a{color:inherit}
     else if(e.key.toLowerCase() === 'f'){ e.preventDefault(); toggleFocus(); }
   });
   window.addEventListener('resize', () => { applyView(); renderEdges(); applyFocus(); });
+  if(inputDebugState.enabled){
+    document.addEventListener('pointerdown', e => rememberDebugPointer(e), true);
+    document.addEventListener('pointermove', e => {
+      if(e.pointerType === 'touch' || e.pointerType === 'pen') rememberDebugPointer(e);
+    }, true);
+    document.addEventListener('pointerup', e => rememberDebugPointer(e), true);
+  }
 
   document.getElementById('btnCenter').addEventListener('click', recenter);
   document.getElementById('btnZoomIn').addEventListener('click', () => zoomCenter(1.25));
@@ -1787,6 +1969,9 @@ a{color:inherit}
   btnRememberPanel.addEventListener('click', toggleRemember);
   btnVisualPanel.addEventListener('click', toggleLegend);
   btnClosePanel.addEventListener('click', closeSidePanel);
+  inputDebugToggle.addEventListener('click', () => { inputDebugState.collapsed = !inputDebugState.collapsed; updateInputDebugUI(); });
+  inputDebugClear.addEventListener('click', () => { inputDebugState.entries = []; updateInputDebugUI(); showToast('Cleared input diagnostics'); });
+  inputDebugCopy.addEventListener('click', copyInputDebugEntries);
   pageSelect?.addEventListener('change', e => switchPage(e.target.value));
   btnNewPage?.addEventListener('click', createNewPage);
   btnPageMenu?.addEventListener('click', e => { e.stopPropagation(); pageMenu(e.clientX, e.clientY); });
@@ -1796,6 +1981,7 @@ a{color:inherit}
 
   installMarkers();
   renderPageControls();
+  updateInputDebugUI();
   render();
   requestAnimationFrame(() => {
     if(!data.view || (data.view.x === 0 && data.view.y === 0 && data.view.scale === 1)) resetView(); else applyView();

@@ -96,6 +96,8 @@ This Pages deployment is only a static preview of the current repo state. It is 
 
 Tablet-friendly interaction support is now in progress in the current learning-map prototype: major edit actions are being exposed through long-press and a compact selected-item toolbar so tablet and S Pen workflows do not rely on right-click alone.
 
+For real-device Galaxy Tab / S Pen testing, use the manual checklist in `docs/qa/galaxy-tab-spen-manual-qa.md`. An optional diagnostics view is available only when you open `https://Adel199223.github.io/neuro-map-studio/prototypes/current/mindmap.html?debugInput=1`.
+
 ## First Codex task suggestion
 
 Ask Codex to inspect `public/prototypes/current/mindmap.html`, `docs/product/product-requirements.md`, `docs/product/interaction-contract.md`, and `AGENTS.md`; then write an execution plan before changing code.

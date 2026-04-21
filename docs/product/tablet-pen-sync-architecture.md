@@ -11,6 +11,7 @@ Prepare the modular app for a future Galaxy Tab plus S Pen workflow and a comput
 - Do not build the WebSocket sync server yet.
 - Preserve current `localStorage` compatibility while the modular app is still forming.
 - The current readiness slice is the additive long-press plus selected-item toolbar layer in the source-of-truth map prototype. It is only an interaction-prep step, not the later IndexedDB/sync implementation.
+- The next readiness step is a real-device Galaxy Tab / S Pen QA harness: a manual checklist plus an optional `debugInput` diagnostics mode that helps capture pointer metadata without logging learner text.
 
 ## Input abstraction
 
@@ -29,6 +30,7 @@ Recommended interaction modes:
 - A selected-item toolbar exposes block and edge actions without requiring context menus.
 - Canvas-level actions stay reachable through a visible button as well as context menus.
 - The current prototype implementation should keep these actions additive: right-click still works on desktop, while touch and pen gain equivalent long-press and toolbar paths.
+- A temporary diagnostics panel can help confirm what the browser reports for `pointerType`, pressure, tilt, long-press cancellation, pan, and pinch on real tablet hardware. Keep it opt-in and off by default.
 
 ## Tablet UX requirements
 
@@ -40,6 +42,7 @@ Recommended interaction modes:
 - Connection ports should remain usable without hover by supporting explicit connect mode or always-visible-on-selection handles.
 - Toolbars, panels, and read-aloud controls must avoid covering the active block or sentence on smaller tablet screens.
 - Keyboard access must remain available for desktop users and external-keyboard tablet users.
+- Real-device QA should be run from the live Pages prototype on Galaxy Tab hardware before treating the current interaction layer as tablet-ready.
 
 ## Storage abstraction
 

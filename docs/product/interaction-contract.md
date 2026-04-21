@@ -44,6 +44,7 @@ Tablet-safe canvas path:
 
 - keep the left toolbar visible for common canvas actions;
 - long-press empty canvas for the canvas menu.
+- optional input diagnostics may be enabled only for troubleshooting with `?debugInput=1` or the documented localStorage flag, and it must stay off by default.
 
 Right-click block:
 
@@ -75,6 +76,7 @@ Tablet-safe link path:
 - tap the line or label to select the relationship;
 - use the selected-item toolbar for label, relation type, thickness, route, port side, reverse, and delete;
 - long-press the line or label to open the full link menu.
+- when diagnostics is enabled, only interaction metadata should be logged; relationship text and learner-authored content must stay out of the log.
 
 ## Persistence
 

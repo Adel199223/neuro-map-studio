@@ -1,10 +1,11 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const mindmapPath = '/prototypes/current/mindmap.html';
+const debugMindmapPath = `${mindmapPath}?debugInput=1`;
 const lessonPath = '/prototypes/current/lesson.html';
 
-async function resetMindmap(page: Page) {
-  await page.goto(mindmapPath);
+async function resetMindmap(page: Page, path = mindmapPath) {
+  await page.goto(path);
   await page.evaluate(() => localStorage.clear());
   await page.reload();
 }
@@ -63,6 +64,45 @@ async function syntheticClick(locator: Locator, options: { x?: number; y?: numbe
     buttons: 1,
     clientX: box.x + (options.x ?? box.width / 2),
     clientY: box.y + (options.y ?? box.height / 2),
+  });
+}
+
+async function pointerTap(
+  locator: Locator,
+  options: { pointerId?: number; pointerType?: 'mouse' | 'touch' | 'pen'; pressure?: number; tiltX?: number; tiltY?: number } = {},
+) {
+  const box = await locator.boundingBox();
+  if (!box) {
+    throw new Error('Could not determine locator bounding box for pointer tap test.');
+  }
+  const clientX = box.x + box.width / 2;
+  const clientY = box.y + box.height / 2;
+  const payload = {
+    pointerId: options.pointerId ?? 77,
+    pointerType: options.pointerType ?? 'pen',
+    button: 0,
+    buttons: 1,
+    pressure: options.pressure ?? 0.62,
+    tiltX: options.tiltX ?? 12,
+    tiltY: options.tiltY ?? -6,
+    isPrimary: true,
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    clientX,
+    clientY,
+  };
+
+  await locator.dispatchEvent('pointerdown', payload);
+  await locator.dispatchEvent('pointerup', { ...payload, buttons: 0 });
+  await locator.dispatchEvent('click', {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    button: 0,
+    buttons: 0,
+    clientX,
+    clientY,
   });
 }
 
@@ -173,6 +213,52 @@ test.describe('current standalone prototypes', () => {
     await page.keyboard.press('Escape');
     await longPress(page.locator('#stage'), { pointerId: 52, x: 84, y: 96 });
     await expect(page.getByRole('button', { name: /add free block here/i })).toBeVisible();
+  });
+
+  test('input diagnostics stay hidden by default', async ({ page }) => {
+    await resetMindmap(page);
+
+    await expect(page.locator('#inputDebugPanel')).toBeHidden();
+  });
+
+  test('input diagnostics can be enabled, expanded, logged, and cleared', async ({ page }) => {
+    await resetMindmap(page, debugMindmapPath);
+
+    const panel = page.locator('#inputDebugPanel');
+    const log = page.locator('#inputDebugLog');
+    await expect(panel).toBeVisible();
+    await expect(panel).toHaveClass(/collapsed/);
+
+    await page.getByRole('button', { name: /expand input diagnostics/i }).click();
+    await expect(panel).not.toHaveClass(/collapsed/);
+    await expect(page.getByRole('button', { name: /copy diagnostics log/i })).toBeVisible();
+
+    await pointerTap(page.locator('.map-node[data-id="core"]'));
+    await expect(log).toContainText('tap');
+    await expect(log).toContainText('pen');
+    await expect(log).toContainText('pressure=');
+
+    await page.getByRole('button', { name: /clear diagnostics log/i }).click();
+    await expect(log).toHaveText(/no recent input yet\./i);
+  });
+
+  test('selected toolbar stays inside the viewport on a tablet-ish layout', async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await resetMindmap(page);
+
+    await page.locator('.map-node[data-id="core"]').click();
+    const shelf = page.locator('#selectionShelf');
+    await expect(shelf).toBeVisible();
+
+    const box = await shelf.boundingBox();
+    if (!box) {
+      throw new Error('Selection shelf should have a bounding box on tablet viewport.');
+    }
+
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(768);
+    expect(box.y + box.height).toBeLessThanOrEqual(1024);
   });
 
   test('lesson prototype includes glossary and read-aloud controls', async ({ page }) => {
