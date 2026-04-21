@@ -94,6 +94,8 @@ GitHub Pages is the small static live preview for this repo:
 
 This Pages deployment is only a static preview of the current repo state. It is not the planned computer-as-local-server sync system described in `docs/product/tablet-pen-sync-architecture.md`.
 
+Tablet-friendly interaction support is now in progress in the current learning-map prototype: major edit actions are being exposed through long-press and a compact selected-item toolbar so tablet and S Pen workflows do not rely on right-click alone.
+
 ## First Codex task suggestion
 
 Ask Codex to inspect `public/prototypes/current/mindmap.html`, `docs/product/product-requirements.md`, `docs/product/interaction-contract.md`, and `AGENTS.md`; then write an execution plan before changing code.

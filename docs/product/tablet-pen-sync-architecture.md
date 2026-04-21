@@ -10,6 +10,7 @@ Prepare the modular app for a future Galaxy Tab plus S Pen workflow and a comput
 - Stay PWA-first rather than native Android-first.
 - Do not build the WebSocket sync server yet.
 - Preserve current `localStorage` compatibility while the modular app is still forming.
+- The current readiness slice is the additive long-press plus selected-item toolbar layer in the source-of-truth map prototype. It is only an interaction-prep step, not the later IndexedDB/sync implementation.
 
 ## Input abstraction
 
@@ -27,6 +28,7 @@ Recommended interaction modes:
 - Long-press opens the same action set as right-click.
 - A selected-item toolbar exposes block and edge actions without requiring context menus.
 - Canvas-level actions stay reachable through a visible button as well as context menus.
+- The current prototype implementation should keep these actions additive: right-click still works on desktop, while touch and pen gain equivalent long-press and toolbar paths.
 
 ## Tablet UX requirements
 

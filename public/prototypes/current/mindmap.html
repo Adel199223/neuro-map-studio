@@ -255,12 +255,27 @@ a{color:inherit}
 .legend-line.dashed{border-top-style:dashed}.legend-line.dotted{border-top-style:dotted}.legend-line.thin{border-top-width:2px}.legend-line.thick{border-top-width:6px}
 .connect-banner{position:absolute;left:50%;transform:translateX(-50%);bottom:1rem;z-index:20;display:none;align-items:center;gap:.65rem;border:1px solid var(--blue-border);border-radius:999px;background:rgba(230,242,247,.96);padding:.44rem .7rem .44rem .9rem;box-shadow:var(--shadow);}
 .connect-banner.show{display:flex}.connect-banner button{border:1px solid var(--blue-border);border-radius:999px;background:#fff;padding:.25rem .6rem;cursor:pointer;}
-.selection-shelf{position:absolute;left:50%;top:1rem;transform:translateX(-50%);z-index:16;border:1px solid var(--border);border-radius:999px;background:rgba(255,250,242,.94);box-shadow:0 10px 24px rgba(72,54,31,.11);padding:.35rem .55rem;display:none;align-items:center;gap:.45rem;max-width:min(720px,calc(100vw - 165px));white-space:nowrap;}
-.selection-shelf.show{display:flex}.selection-shelf strong{overflow:hidden;text-overflow:ellipsis;max-width:300px;}.selection-shelf button{border:1px solid var(--border);background:#fffaf4;border-radius:999px;padding:.18rem .5rem;cursor:pointer;}
+.selection-shelf{position:absolute;left:50%;top:1rem;transform:translateX(-50%);z-index:16;border:1px solid var(--border);border-radius:22px;background:rgba(255,250,242,.96);box-shadow:0 10px 24px rgba(72,54,31,.11);padding:.38rem .46rem;display:none;align-items:center;gap:.42rem;max-width:min(920px,calc(100vw - 165px));white-space:normal;pointer-events:auto;}
+.selection-shelf.show{display:flex}
+.selection-shelf[hidden]{display:none!important}
+.selection-shelf.anchored{transform:none}
+.selection-shelf.docked{left:50%;top:1rem;transform:translateX(-50%)}
+.selection-shelf.collapsed .selection-actions{display:none}
+.selection-meta{display:flex;align-items:center;gap:.35rem;min-width:0;padding:0 .18rem 0 .08rem}
+.selection-meta span{font-size:.8rem;font-weight:900;color:var(--muted)}
+.selection-meta strong{overflow:hidden;text-overflow:ellipsis;max-width:min(280px,34vw);}
+.selection-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.34rem;max-width:100%}
+.selection-shelf button{border:1px solid var(--border);background:#fffaf4;cursor:pointer}
+.selection-toggle,.selection-action{width:2.8rem;height:2.8rem;min-height:2.8rem;border-radius:16px;display:inline-grid;place-items:center;padding:0;font-weight:900;line-height:1}
+.selection-toggle{flex:0 0 auto}
+.selection-action[hidden]{display:none!important}
+.selection-action.active{background:var(--blue);border-color:var(--blue-border)}
+.selection-action.warn{color:#8a2e2e;border-color:#c89e9e}
+.selection-action.danger-armed{background:#fff0ef;border-color:#d48787;color:#8a2e2e}
 .menu{position:fixed;z-index:90;min-width:256px;max-width:min(360px,calc(100vw - 18px));display:none;border:1px solid var(--border);border-radius:18px;background:#fffaf2;box-shadow:0 20px 42px rgba(0,0,0,.2);padding:.38rem;}
 .menu.show{display:block}.menu-title{padding:.48rem .62rem .38rem;font-weight:900;color:#3a342e;border-bottom:1px solid rgba(217,199,170,.7);margin-bottom:.28rem;}.menu-section{font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;color:#7a6f61;font-weight:900;padding:.48rem .62rem .18rem;}.menu button{width:100%;justify-content:flex-start;text-align:left;border-color:transparent;border-radius:12px;min-height:2rem;background:transparent;padding:.36rem .56rem;}.menu button:hover,.menu button:focus{background:#f7eddb;outline:none}.menu button.danger{color:#8a2e2e}.menu button[disabled]{opacity:.45;cursor:not-allowed}.menu-row{display:flex;flex-wrap:wrap;gap:.35rem;padding:.26rem .4rem .38rem;}.menu-row button{width:auto;min-width:2rem;height:2rem;min-height:2rem;justify-content:center;padding:0 .48rem;border:1px solid var(--border);font-size:.8rem;}.dot-blue{background:var(--blue)!important;border-color:var(--blue-border)!important}.dot-amber{background:var(--amber)!important;border-color:var(--amber-border)!important}.dot-green{background:var(--green)!important;border-color:var(--green-border)!important}.dot-rose{background:var(--rose)!important;border-color:var(--rose-border)!important}.dot-violet{background:var(--violet)!important;border-color:var(--violet-border)!important}
 .import-input{display:none}.toast{position:absolute;right:1rem;bottom:1rem;z-index:22;border:1px solid var(--border);border-radius:999px;background:rgba(255,250,242,.95);color:var(--muted);padding:.45rem .75rem;box-shadow:0 12px 24px rgba(72,54,31,.12);opacity:0;transform:translateY(8px);transition:opacity .18s ease, transform .18s ease;pointer-events:none;}.toast.show{opacity:1;transform:translateY(0)}
-@media(max-width:860px){.topbar{grid-template-columns:1fr auto;gap:.4rem}.pagebar{grid-column:1/3;justify-content:flex-start;min-width:0}.pagebar select{max-width:calc(100vw - 14rem)}.back-link{grid-column:1/3;width:max-content}.title-wrap p{display:none}.status-pill{font-size:.78rem;min-width:0}.side-panel{right:.45rem;top:.45rem}.side-tab{min-width:2.25rem;min-height:2.25rem;padding:.2rem}.panel-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem)}.toolbar{left:.45rem;top:.45rem}.toolbar button,.file-label{width:2.2rem;height:2.2rem;min-height:2.2rem}.map-node{width:235px;min-height:120px}.map-node .node-content{padding:.78rem .75rem 1.2rem}.node-title{font-size:.96rem}.node-body{font-size:.84rem}.selection-shelf{top:auto;bottom:.85rem;max-width:calc(100vw - 1rem)}.connect-banner{bottom:4.2rem;max-width:calc(100vw - 1rem);border-radius:16px}}
+@media(max-width:860px){.topbar{grid-template-columns:1fr auto;gap:.4rem}.pagebar{grid-column:1/3;justify-content:flex-start;min-width:0}.pagebar select{max-width:calc(100vw - 14rem)}.back-link{grid-column:1/3;width:max-content}.title-wrap p{display:none}.status-pill{font-size:.78rem;min-width:0}.side-panel{right:.45rem;top:.45rem}.side-tab{min-width:2.25rem;min-height:2.25rem;padding:.2rem}.panel-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem)}.toolbar{left:.45rem;top:.45rem}.toolbar button,.file-label{width:2.2rem;height:2.2rem;min-height:2.2rem}.map-node{width:235px;min-height:120px}.map-node .node-content{padding:.78rem .75rem 1.2rem}.node-title{font-size:.96rem}.node-body{font-size:.84rem}.selection-shelf{top:auto;bottom:.85rem;max-width:calc(100vw - 1rem)}.selection-shelf.docked{top:auto;bottom:.85rem}.selection-meta strong{max-width:36vw}.selection-toggle,.selection-action{width:2.6rem;height:2.6rem;min-height:2.6rem}.connect-banner{bottom:4.2rem;max-width:calc(100vw - 1rem);border-radius:16px}}
 @media print{.topbar,.pagebar,.toolbar,.side-panel,.menu,.toast,.connect-banner,.selection-shelf{display:none!important}body{overflow:visible;background:white}.stage{overflow:visible}.map-node{break-inside:avoid}}
 </style>
 </head>
@@ -270,7 +285,7 @@ a{color:inherit}
     <a class="back-link" href="lesson.html">← Main lesson</a>
     <div class="title-wrap">
       <h1>Advanced learning map app: Simon Dixon’s debt-power model</h1>
-      <p>Use pages, block shapes, connection ports, and relationship lines to encode meaning. Two-finger scroll pans. Pinch zooms. Right-click blocks, lines, or canvas.</p>
+      <p>Use pages, block shapes, connection ports, and relationship lines to encode meaning. Two-finger scroll pans. Pinch zooms. Right-click or long-press blocks, lines, or canvas.</p>
     </div>
     <div class="pagebar" aria-label="Map pages">
       <label for="pageSelect">Page</label>
@@ -359,11 +374,29 @@ a{color:inherit}
       </div>
     </aside>
 
-    <div class="selection-shelf" id="selectionShelf">
-      <span id="selectionLabel">Selected:</span>
-      <strong id="selectedTitle">none</strong>
-      <button id="shelfAddLinked">＋ linked</button>
-      <button id="shelfCenter">center</button>
+    <div class="selection-shelf" id="selectionShelf" aria-label="Selected item actions" hidden>
+      <button id="shelfToggle" class="selection-toggle" type="button" title="Collapse selected item toolbar" aria-label="Collapse selected item toolbar">▾</button>
+      <div class="selection-meta">
+        <span id="selectionLabel">Selected:</span>
+        <strong id="selectedTitle">none</strong>
+      </div>
+      <div class="selection-actions" id="selectionActions">
+        <button id="shelfAddLinked" class="selection-action" type="button" title="Add linked block" aria-label="Add linked block from selected block">＋↗</button>
+        <button id="shelfEdit" class="selection-action" type="button" title="Edit selected block" aria-label="Edit selected block">✎</button>
+        <button id="shelfDuplicate" class="selection-action" type="button" title="Duplicate selected block" aria-label="Duplicate selected block">⧉</button>
+        <button id="shelfConnect" class="selection-action" type="button" title="Connect selected block" aria-label="Start connection from selected block">⛓</button>
+        <button id="shelfStyle" class="selection-action" type="button" title="Change block style" aria-label="Change selected block style">◧</button>
+        <button id="shelfCenter" class="selection-action" type="button" title="Center selected item" aria-label="Center selected item">◎</button>
+        <button id="shelfFocus" class="selection-action" type="button" title="Toggle focus mode" aria-label="Toggle focus mode from selected block">◉</button>
+        <button id="shelfLabel" class="selection-action" type="button" title="Edit link label" aria-label="Edit selected link label">✎</button>
+        <button id="shelfRelation" class="selection-action" type="button" title="Change relationship type" aria-label="Change selected link relationship type">≋</button>
+        <button id="shelfStrength" class="selection-action" type="button" title="Change link thickness" aria-label="Change selected link importance or thickness">★</button>
+        <button id="shelfRoute" class="selection-action" type="button" title="Change line route" aria-label="Change selected link route">⌁</button>
+        <button id="shelfFromPort" class="selection-action" type="button" title="Change source connection side" aria-label="Change selected link source connection side">↤</button>
+        <button id="shelfToPort" class="selection-action" type="button" title="Change target connection side" aria-label="Change selected link target connection side">↦</button>
+        <button id="shelfReverse" class="selection-action" type="button" title="Reverse selected link" aria-label="Reverse selected link direction">⇄</button>
+        <button id="shelfDelete" class="selection-action warn" type="button" title="Delete selected item" aria-label="Delete selected item">⌫</button>
+      </div>
     </div>
 
     <div class="connect-banner" id="connectBanner">
@@ -392,8 +425,25 @@ a{color:inherit}
   const connectBanner = document.getElementById('connectBanner');
   const connectText = document.getElementById('connectText');
   const selectionShelf = document.getElementById('selectionShelf');
+  const selectionActions = document.getElementById('selectionActions');
   const selectedTitle = document.getElementById('selectedTitle');
   const selectionLabel = document.getElementById('selectionLabel');
+  const shelfToggle = document.getElementById('shelfToggle');
+  const shelfAddLinked = document.getElementById('shelfAddLinked');
+  const shelfEdit = document.getElementById('shelfEdit');
+  const shelfDuplicate = document.getElementById('shelfDuplicate');
+  const shelfConnect = document.getElementById('shelfConnect');
+  const shelfStyle = document.getElementById('shelfStyle');
+  const shelfCenter = document.getElementById('shelfCenter');
+  const shelfFocus = document.getElementById('shelfFocus');
+  const shelfLabel = document.getElementById('shelfLabel');
+  const shelfRelation = document.getElementById('shelfRelation');
+  const shelfStrength = document.getElementById('shelfStrength');
+  const shelfRoute = document.getElementById('shelfRoute');
+  const shelfFromPort = document.getElementById('shelfFromPort');
+  const shelfToPort = document.getElementById('shelfToPort');
+  const shelfReverse = document.getElementById('shelfReverse');
+  const shelfDelete = document.getElementById('shelfDelete');
   const promptText = document.getElementById('promptText');
   const legendCard = document.getElementById('legendCard');
   const panelDrawer = document.getElementById('panelDrawer');
@@ -408,6 +458,7 @@ a{color:inherit}
   const btnDuplicatePage = document.getElementById('btnDuplicatePage');
   const btnRenamePage = document.getElementById('btnRenamePage');
   const btnDeletePage = document.getElementById('btnDeletePage');
+  const importFileInput = document.getElementById('importFile');
 
   const workspaceKey = 'simon-dixon-debt-power-learning-workspace-v20-clean-connectors';
   const legacyStorageKeys = ['simon-dixon-debt-power-learning-workspace-v18-fixed-visibility','simon-dixon-debt-power-learning-workspace-v17','simon-dixon-debt-power-learning-workspace-v16','simon-dixon-debt-power-learning-workspace-v15','simon-dixon-debt-power-learning-map-v14','simon-dixon-debt-power-learning-map-v13'];
@@ -483,6 +534,14 @@ a{color:inherit}
   let focusMode = false;
   let wheelTimer = null;
   let activePanel = null;
+  let shelfCollapsed = false;
+  let pendingEdgeDeleteId = null;
+  let longPressState = null;
+  const activeTouchPoints = new Map();
+  let touchGesture = null;
+
+  const LONG_PRESS_DELAY = 450;
+  const LONG_PRESS_MOVE = 10;
 
   function cloneDefault(){ return JSON.parse(JSON.stringify(defaultMap)); }
   function normalizeMap(map){
@@ -702,6 +761,115 @@ a{color:inherit}
   function edgeById(eid){ return data.edges.find(e => e.id === eid); }
   function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
   function clean(s){ return String(s || '').replace(/\s+/g,' ').trim(); }
+  function stageCoords(clientX, clientY){
+    const r = stage.getBoundingClientRect();
+    return {x:clientX - r.left, y:clientY - r.top};
+  }
+  function worldToStage(x, y){ return {x:view.x + x * view.scale, y:view.y + y * view.scale}; }
+  function isTouchLikePointer(e){ return e.pointerType === 'touch' || e.pointerType === 'pen'; }
+  function isTouchGesturePointer(e){ return e.pointerType === 'touch'; }
+  function menuPointFromButton(button){
+    const rect = button.getBoundingClientRect();
+    return {x:rect.left + rect.width / 2, y:rect.bottom + 8};
+  }
+  function openMenuFromButton(button, title, items, context){
+    const point = menuPointFromButton(button);
+    showMenu(title, items, point.x, point.y, context);
+  }
+  function setButtonVisible(button, visible){ button.hidden = !visible; }
+  function focusNodeEditor(nodeId){
+    const el = nodeLayer.querySelector(`[data-id="${CSS.escape(nodeId)}"]`);
+    if(!el) return;
+    const title = el.querySelector('.node-title');
+    if(title) title.focus();
+  }
+  function clearEdgeDeleteArm(){
+    if(!pendingEdgeDeleteId) return;
+    pendingEdgeDeleteId = null;
+    updateSelectionUI();
+  }
+  function armEdgeDelete(edgeId){
+    pendingEdgeDeleteId = edgeId;
+    updateSelectionUI();
+    showToast('Tap delete again to remove this link');
+  }
+  function cancelLongPress(pointerId=null){
+    if(!longPressState) return;
+    if(pointerId !== null && longPressState.pointerId !== pointerId) return;
+    clearTimeout(longPressState.timer);
+    longPressState = null;
+  }
+  function startLongPress(target){
+    cancelLongPress();
+    if(menu.classList.contains('show')) return;
+    longPressState = {
+      ...target,
+      timer:setTimeout(() => {
+        const active = longPressState;
+        if(!active || active.pointerId !== target.pointerId) return;
+        longPressState = null;
+        closeMenu();
+        if(active.type === 'canvas'){
+          canvasMenu(screenToWorld(active.clientX, active.clientY), active.clientX, active.clientY);
+        }else if(active.type === 'node'){
+          const node = byId(active.id);
+          if(!node) return;
+          select(node.id);
+          nodeMenu(node, active.clientX, active.clientY);
+        }else if(active.type === 'edge'){
+          const edge = edgeById(active.id);
+          if(!edge) return;
+          selectEdge(edge.id);
+          edgeMenu(edge, active.clientX, active.clientY);
+        }
+      }, LONG_PRESS_DELAY)
+    };
+  }
+  function beginCanvasPan(e){
+    cancelLongPress(e.pointerId);
+    panDrag = {pointerId:e.pointerId, sx:e.clientX, sy:e.clientY, x:view.x, y:view.y};
+    stage.classList.add('is-panning');
+    if(stage.setPointerCapture) stage.setPointerCapture(e.pointerId);
+  }
+  function stopCanvasPan(shouldSave=true, pointerId=null){
+    if(!panDrag) return;
+    if(pointerId !== null && panDrag.pointerId !== pointerId) return;
+    panDrag = null;
+    stage.classList.remove('is-panning');
+    if(shouldSave) save('View saved');
+  }
+  function midpoint(a, b){ return {x:(a.x + b.x) / 2, y:(a.y + b.y) / 2}; }
+  function distance(a, b){ return Math.hypot(b.x - a.x, b.y - a.y); }
+  function createTouchGestureState(){
+    const points = [...activeTouchPoints.values()];
+    if(points.length < 2) return null;
+    const [a, b] = points;
+    const startMid = midpoint(a, b);
+    const startDistance = Math.max(1, distance(a, b));
+    return {
+      startMid,
+      startDistance,
+      startViewX:view.x,
+      startViewY:view.y,
+      startScale:view.scale
+    };
+  }
+  function updateTouchGesture(){
+    if(activeTouchPoints.size < 2) return;
+    if(!touchGesture) touchGesture = createTouchGestureState();
+    if(!touchGesture) return;
+    const [a, b] = [...activeTouchPoints.values()];
+    const mid = midpoint(a, b);
+    const dist = Math.max(1, distance(a, b));
+    const factor = dist / touchGesture.startDistance;
+    const nextScale = clamp(touchGesture.startScale * factor, .18, 2.6);
+    const anchorWorldX = (touchGesture.startMid.x - touchGesture.startViewX) / touchGesture.startScale;
+    const anchorWorldY = (touchGesture.startMid.y - touchGesture.startViewY) / touchGesture.startScale;
+    view.scale = nextScale;
+    view.x = mid.x - anchorWorldX * nextScale;
+    view.y = mid.y - anchorWorldY * nextScale;
+    applyView();
+  }
 
   function installMarkers(){
     edgeDefs.innerHTML = '';
@@ -747,6 +915,7 @@ a{color:inherit}
     stage.style.setProperty('--grid-x', (view.x % grid) + 'px');
     stage.style.setProperty('--grid-y', (view.y % grid) + 'px');
     if(zoomPercent) zoomPercent.textContent = Math.round(view.scale * 100) + '%';
+    positionSelectionShelf();
   }
   function screenToWorld(clientX, clientY){ const r = stage.getBoundingClientRect(); return {x:(clientX - r.left - view.x) / view.scale, y:(clientY - r.top - view.y) / view.scale}; }
   function zoomAt(clientX, clientY, factor, shouldSave=true){
@@ -964,9 +1133,62 @@ a{color:inherit}
       label.type = 'button'; label.dataset.edgeId = e.id;
       label.style.left = mid.x + 'px'; label.style.top = mid.y + 'px'; label.style.borderColor = style.color + '66';
       label.textContent = e.label || style.label;
-      label.title = 'Right-click to modify this relationship, connection side, or line route';
+      label.title = 'Right-click or long-press to modify this relationship, connection side, or line route';
       edgeLabelLayer.appendChild(label);
     });
+  }
+  function getSelectionAnchor(){
+    if(selectedId){
+      const node = byId(selectedId);
+      if(node){
+        const rect = nodeRect(node);
+        return worldToStage(rect.cx, rect.y);
+      }
+    }
+    if(selectedEdgeId){
+      const edge = edgeById(selectedEdgeId);
+      if(edge){
+        const from = byId(edge.from), to = byId(edge.to);
+        if(from && to){
+          const fromRect = nodeRect(from), toRect = nodeRect(to);
+          const a = portPoint(fromRect, edge.fromPort || 'auto', toRect);
+          const b = portPoint(toRect, edge.toPort || 'auto', fromRect);
+          const mid = edgeMid(a, b, edge.shape || 'curve');
+          return worldToStage(mid.x, mid.y);
+        }
+      }
+    }
+    return null;
+  }
+  function positionSelectionShelf(){
+    if(selectionShelf.hidden || !selectionShelf.classList.contains('show')) return;
+    selectionShelf.classList.remove('anchored', 'docked');
+    selectionShelf.style.left = '';
+    selectionShelf.style.top = '';
+    const anchor = getSelectionAnchor();
+    const stageRect = stage.getBoundingClientRect();
+    const compact = window.innerWidth <= 860;
+    if(!anchor || compact){
+      selectionShelf.classList.add('docked');
+      return;
+    }
+    const width = selectionShelf.offsetWidth;
+    const height = selectionShelf.offsetHeight;
+    if(!width || !height){
+      selectionShelf.classList.add('docked');
+      return;
+    }
+    const margin = 12;
+    const gap = 12;
+    const left = clamp(anchor.x - width / 2, margin, Math.max(margin, stageRect.width - width - margin));
+    const top = anchor.y - height - gap;
+    if(top < margin){
+      selectionShelf.classList.add('docked');
+      return;
+    }
+    selectionShelf.classList.add('anchored');
+    selectionShelf.style.left = Math.round(left) + 'px';
+    selectionShelf.style.top = Math.round(top) + 'px';
   }
   function applyFocus(){
     document.body.classList.toggle('focus-mode', focusMode);
@@ -998,13 +1220,79 @@ a{color:inherit}
     renderEdges(); updateSelectionUI(); updatePrompt(); applyFocus(); save('Selected link');
   }
   function updateSelectionUI(){
-    if(selectedId && byId(selectedId)){
-      const n = byId(selectedId); selectionLabel.textContent = 'Block:'; selectedTitle.textContent = n.title || 'Untitled block'; selectionShelf.classList.add('show');
-    }else if(selectedEdgeId && edgeById(selectedEdgeId)){
-      const e = edgeById(selectedEdgeId); selectionLabel.textContent = 'Link:'; selectedTitle.textContent = `${byId(e.from)?.title || 'block'} — ${byId(e.to)?.title || 'block'}`; selectionShelf.classList.add('show');
-    }else selectionShelf.classList.remove('show');
+    const node = selectedId ? byId(selectedId) : null;
+    const edge = !node && selectedEdgeId ? edgeById(selectedEdgeId) : null;
+    const hasSelection = !!(node || edge);
+    selectionShelf.classList.toggle('collapsed', shelfCollapsed);
+    shelfToggle.textContent = shelfCollapsed ? '▸' : '▾';
+    shelfToggle.title = shelfCollapsed ? 'Expand selected item toolbar' : 'Collapse selected item toolbar';
+    shelfToggle.setAttribute('aria-label', shelfToggle.title);
+    if(node){
+      pendingEdgeDeleteId = null;
+      selectionLabel.textContent = 'Block:';
+      selectedTitle.textContent = node.title || 'Untitled block';
+      selectionShelf.dataset.mode = 'node';
+      selectionShelf.setAttribute('aria-label', 'Selected block actions');
+      setButtonVisible(shelfAddLinked, true);
+      setButtonVisible(shelfEdit, true);
+      setButtonVisible(shelfDuplicate, true);
+      setButtonVisible(shelfConnect, true);
+      setButtonVisible(shelfStyle, true);
+      setButtonVisible(shelfCenter, true);
+      setButtonVisible(shelfFocus, true);
+      setButtonVisible(shelfLabel, false);
+      setButtonVisible(shelfRelation, false);
+      setButtonVisible(shelfStrength, false);
+      setButtonVisible(shelfRoute, false);
+      setButtonVisible(shelfFromPort, false);
+      setButtonVisible(shelfToPort, false);
+      setButtonVisible(shelfReverse, false);
+      setButtonVisible(shelfDelete, true);
+      shelfDelete.textContent = '⌫';
+      shelfDelete.title = 'Delete selected block';
+      shelfDelete.setAttribute('aria-label', 'Delete selected block');
+    }else if(edge){
+      if(pendingEdgeDeleteId && pendingEdgeDeleteId !== edge.id) pendingEdgeDeleteId = null;
+      selectionLabel.textContent = 'Link:';
+      selectedTitle.textContent = `${byId(edge.from)?.title || 'block'} — ${byId(edge.to)?.title || 'block'}`;
+      selectionShelf.dataset.mode = 'edge';
+      selectionShelf.setAttribute('aria-label', 'Selected link actions');
+      setButtonVisible(shelfAddLinked, false);
+      setButtonVisible(shelfEdit, false);
+      setButtonVisible(shelfDuplicate, false);
+      setButtonVisible(shelfConnect, false);
+      setButtonVisible(shelfStyle, false);
+      setButtonVisible(shelfCenter, false);
+      setButtonVisible(shelfFocus, false);
+      setButtonVisible(shelfLabel, true);
+      setButtonVisible(shelfRelation, true);
+      setButtonVisible(shelfStrength, true);
+      setButtonVisible(shelfRoute, true);
+      setButtonVisible(shelfFromPort, true);
+      setButtonVisible(shelfToPort, true);
+      setButtonVisible(shelfReverse, true);
+      setButtonVisible(shelfDelete, true);
+      const deleteArmed = pendingEdgeDeleteId === edge.id;
+      shelfDelete.textContent = deleteArmed ? '⌫!' : '⌫';
+      shelfDelete.title = deleteArmed ? 'Confirm delete selected link' : 'Delete selected link';
+      shelfDelete.setAttribute('aria-label', shelfDelete.title);
+    }else{
+      pendingEdgeDeleteId = null;
+      selectionShelf.dataset.mode = '';
+      selectionShelf.classList.remove('show', 'anchored', 'docked');
+      selectionShelf.hidden = true;
+      selectionShelf.style.left = '';
+      selectionShelf.style.top = '';
+    }
+    if(hasSelection){
+      selectionShelf.hidden = false;
+      selectionShelf.classList.add('show');
+      positionSelectionShelf();
+    }
+    shelfDelete.classList.toggle('danger-armed', !!(edge && pendingEdgeDeleteId === edge.id));
     document.getElementById('btnConnect').classList.toggle('active', !!connectFrom);
     document.getElementById('btnFocus').classList.toggle('active', focusMode);
+    shelfFocus.classList.toggle('active', focusMode && !!node);
   }
   function updatePrompt(){
     if(selectedEdgeId){
@@ -1051,7 +1339,7 @@ a{color:inherit}
     if(!from || !to || from===to || !byId(from) || !byId(to)) return;
     if(data.edges.some(e => e.from === from && e.to === to)){ showToast('Already connected'); return; }
     const e = {id:edgeId(), from, to, relation:opts.relation || 'causes', strength:opts.strength || 3, shape:opts.shape || 'curve', fromPort:opts.fromPort || 'auto', toPort:opts.toPort || 'auto', label:opts.label || ''};
-    data.edges.push(e); selectedEdgeId = e.id; selectedId = null; render(); save('Connected'); showToast('Connected. Right-click the line or label to style it.');
+    data.edges.push(e); selectedEdgeId = e.id; selectedId = null; render(); save('Connected'); showToast('Connected. Use the link toolbar or right-click/long-press to style it.');
   }
   function deleteEdge(edgeId){ data.edges = data.edges.filter(e => e.id !== edgeId); selectedEdgeId = null; render(); save('Link deleted'); showToast('Link deleted'); }
   function reverseEdge(edgeId){ const e = edgeById(edgeId); if(!e) return; const old = e.from; e.from = e.to; e.to = old; const oldPort = e.fromPort; e.fromPort = e.toPort || 'auto'; e.toPort = oldPort || 'auto'; render(); save('Link reversed'); }
@@ -1168,7 +1456,7 @@ a{color:inherit}
       {label:'＋ Add free block here', action:'add-free-here'}, {label:'＋↗ Add linked block from selected here', action:'add-linked-here', disabled:!selected},
       {label:'◎ Recenter full map', action:'recenter'}, {label:'1× Reset zoom around selected', action:'reset-view'},
       {label:focusMode ? '◉ Turn focus mode off' : '◉ Turn focus mode on', action:'toggle-focus'}, {label:'↺ Show remember prompt', action:'toggle-remember'}, {label:'? Show visual code', action:'toggle-legend'},
-      {label:'⌁ Tidy map layout', action:'tidy'}, {label:'＋ Create new page', action:'new-page'}, {label:'⧉ Duplicate page', action:'duplicate-page'}, {label:'⇩ Export workspace backup', action:'export-workspace'}
+      {label:'⌁ Tidy map layout', action:'tidy'}, {label:'＋ Create new page', action:'new-page'}, {label:'⧉ Duplicate page', action:'duplicate-page'}, {label:'⇩ Export current page', action:'export'}, {label:'⇩ Export workspace backup', action:'export-workspace'}, {label:'⇧ Import map or workspace', action:'import-file'}
     ], clientX, clientY, {type:'canvas', point:worldPoint});
   }
   function pageMenu(clientX, clientY){
@@ -1185,10 +1473,8 @@ a{color:inherit}
     );
     showMenu('Map pages', items, clientX || window.innerWidth - 240, clientY || 70, {type:'page-menu'});
   }
-
-  menu.addEventListener('click', e => {
-    const b = e.target.closest('button[data-action]'); if(!b || b.disabled || !menuContext) return;
-    const action = b.dataset.action, ctx = menuContext; if(action === 'noop') return; closeMenu();
+  function runMenuAction(ctx, action){
+    if(!ctx || !action || action === 'noop') return;
     if(ctx.type === 'page-menu'){
       if(action.startsWith('switch-page-')) switchPage(action.replace('switch-page-',''));
       else if(action === 'new-page') createNewPage();
@@ -1198,9 +1484,12 @@ a{color:inherit}
       else if(action === 'export') exportMap();
       else if(action === 'export-workspace') exportWorkspace();
     }else if(ctx.type === 'node'){
-      const n = byId(ctx.id); if(!n) return; const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`);
-      if(action === 'edit-title') el?.querySelector('.node-title')?.focus();
-      else if(action === 'edit-body') el?.querySelector('.node-body')?.focus();
+      const n = byId(ctx.id); if(!n) return;
+      if(action === 'edit-title') focusNodeEditor(n.id);
+      else if(action === 'edit-body'){
+        const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`);
+        el?.querySelector('.node-body')?.focus();
+      }
       else if(action === 'add-linked-node') addLinkedFrom(n.id);
       else if(action.startsWith('add-linked-')) addLinkedFrom(n.id, undefined, undefined, action.replace('add-linked-',''));
       else if(action === 'start-connect') startConnect(n.id);
@@ -1215,15 +1504,15 @@ a{color:inherit}
       else if(action.startsWith('size-')) setNodeSize(n.id, action.replace('size-',''));
       else if(action.startsWith('importance-')) setNodeImportance(n.id, action.replace('importance-',''));
     }else if(ctx.type === 'edge'){
-      const e2 = edgeById(ctx.id); if(!e2) return;
-      if(action === 'edge-label') setEdgeLabel(e2.id);
-      else if(action === 'edge-reverse') reverseEdge(e2.id);
-      else if(action === 'edge-delete') deleteEdge(e2.id);
-      else if(action.startsWith('relation-')) setEdgeRelation(e2.id, action.replace('relation-',''));
-      else if(action.startsWith('strength-')) setEdgeStrength(e2.id, action.replace('strength-',''));
-      else if(action.startsWith('edge-shape-')) setEdgeShape(e2.id, action.replace('edge-shape-',''));
-      else if(action.startsWith('port-from-')) setEdgePort(e2.id, 'from', action.replace('port-from-',''));
-      else if(action.startsWith('port-to-')) setEdgePort(e2.id, 'to', action.replace('port-to-',''));
+      const edge = edgeById(ctx.id); if(!edge) return;
+      if(action === 'edge-label') setEdgeLabel(edge.id);
+      else if(action === 'edge-reverse') reverseEdge(edge.id);
+      else if(action === 'edge-delete') deleteEdge(edge.id);
+      else if(action.startsWith('relation-')) setEdgeRelation(edge.id, action.replace('relation-',''));
+      else if(action.startsWith('strength-')) setEdgeStrength(edge.id, action.replace('strength-',''));
+      else if(action.startsWith('edge-shape-')) setEdgeShape(edge.id, action.replace('edge-shape-',''));
+      else if(action.startsWith('port-from-')) setEdgePort(edge.id, 'from', action.replace('port-from-',''));
+      else if(action.startsWith('port-to-')) setEdgePort(edge.id, 'to', action.replace('port-to-',''));
     }else if(ctx.type === 'canvas'){
       const p = ctx.point;
       if(action === 'add-free-here') addNodeAt(p.x, p.y);
@@ -1238,13 +1527,20 @@ a{color:inherit}
       else if(action === 'duplicate-page') duplicateCurrentPage();
       else if(action === 'export-workspace') exportWorkspace();
       else if(action === 'export') exportMap();
+      else if(action === 'import-file') importFileInput?.click();
     }
+  }
+
+  menu.addEventListener('click', e => {
+    const b = e.target.closest('button[data-action]'); if(!b || b.disabled || !menuContext) return;
+    const action = b.dataset.action, ctx = menuContext; if(action === 'noop') return; closeMenu();
+    runMenuAction(ctx, action);
   });
 
   nodeLayer.addEventListener('contextmenu', e => { const el = e.target.closest('.map-node'); if(!el) return; e.preventDefault(); closeMenu(); const n = byId(el.dataset.id); if(!n) return; select(n.id); nodeMenu(n, e.clientX, e.clientY); });
   edgeLabelLayer.addEventListener('contextmenu', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; e.preventDefault(); closeMenu(); const ed = edgeById(lab.dataset.edgeId); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY); });
   edgeLayer.addEventListener('contextmenu', e => { const g = e.target.closest('g.edge-group'); if(!g) return; e.preventDefault(); closeMenu(); const ed = edgeById(g.dataset.edgeId); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY); });
-  stage.addEventListener('contextmenu', e => { if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.side-panel') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY); });
+  stage.addEventListener('contextmenu', e => { if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.side-panel') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY); });
 
   nodeLayer.addEventListener('click', e => { const el = e.target.closest('.map-node'); if(!el) return; if(connectFrom && el.dataset.id !== connectFrom){ addEdge(connectFrom, el.dataset.id); cancelConnect(); return; } select(el.dataset.id); });
   edgeLabelLayer.addEventListener('click', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; selectEdge(lab.dataset.edgeId); });
@@ -1254,22 +1550,112 @@ a{color:inherit}
 
   nodeLayer.addEventListener('pointerdown', e => {
     const resize = e.target.closest('.resize-handle');
-    if(resize){ const el = resize.closest('.map-node'), n = byId(el.dataset.id); if(!n) return; e.preventDefault(); closeMenu(); select(n.id); resizeNode = {id:n.id, sx:e.clientX, sy:e.clientY, w:n.w, h:n.h}; resize.setPointerCapture(e.pointerId); return; }
-    const handle = e.target.closest('.drag-handle'); if(!handle) return;
-    const el = handle.closest('.map-node'), n = byId(el.dataset.id); if(!n) return;
-    e.preventDefault(); closeMenu(); select(n.id); dragNode = {id:n.id, sx:e.clientX, sy:e.clientY, x:n.x, y:n.y}; handle.setPointerCapture(e.pointerId);
+    if(resize){ const el = resize.closest('.map-node'), n = byId(el.dataset.id); if(!n) return; cancelLongPress(e.pointerId); e.preventDefault(); closeMenu(); select(n.id); resizeNode = {id:n.id, sx:e.clientX, sy:e.clientY, w:n.w, h:n.h}; resize.setPointerCapture(e.pointerId); return; }
+    const handle = e.target.closest('.drag-handle');
+    if(handle){
+      const el = handle.closest('.map-node'), n = byId(el.dataset.id); if(!n) return;
+      cancelLongPress(e.pointerId);
+      e.preventDefault(); closeMenu(); select(n.id); dragNode = {id:n.id, sx:e.clientX, sy:e.clientY, x:n.x, y:n.y}; handle.setPointerCapture(e.pointerId);
+      return;
+    }
+    const el = e.target.closest('.map-node');
+    if(!el || !isTouchLikePointer(e) || e.target.closest('[contenteditable]')) return;
+    const node = byId(el.dataset.id);
+    if(!node) return;
+    e.preventDefault();
+    closeMenu();
+    startLongPress({type:'node', id:node.id, pointerId:e.pointerId, clientX:e.clientX, clientY:e.clientY});
   });
   nodeLayer.addEventListener('pointermove', e => {
     if(resizeNode){ const n = byId(resizeNode.id); if(!n) return; n.w = clamp(Math.round(resizeNode.w + (e.clientX - resizeNode.sx)/view.scale), 160, 640); n.h = clamp(Math.round(resizeNode.h + (e.clientY - resizeNode.sy)/view.scale), 95, 520); const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`); if(el){ el.style.width = n.w + 'px'; el.style.height = n.h + 'px'; } renderEdges(); return; }
     if(!dragNode) return; const n = byId(dragNode.id); if(!n) return; n.x = Math.round(dragNode.x + (e.clientX - dragNode.sx)/view.scale); n.y = Math.round(dragNode.y + (e.clientY - dragNode.sy)/view.scale); const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`); if(el){ el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; } renderEdges();
   });
-  nodeLayer.addEventListener('pointerup', () => { if(resizeNode){ resizeNode=null; save('Resized'); showToast('Resized'); } if(dragNode){ dragNode=null; save('Moved'); showToast('Moved'); } });
-  nodeLayer.addEventListener('pointercancel', () => { if(resizeNode){ resizeNode=null; save('Resized'); } if(dragNode){ dragNode=null; save('Moved'); } });
+  nodeLayer.addEventListener('pointerup', e => { cancelLongPress(e.pointerId); if(resizeNode){ resizeNode=null; save('Resized'); showToast('Resized'); } if(dragNode){ dragNode=null; save('Moved'); showToast('Moved'); } });
+  nodeLayer.addEventListener('pointercancel', e => { cancelLongPress(e.pointerId); if(resizeNode){ resizeNode=null; save('Resized'); } if(dragNode){ dragNode=null; save('Moved'); } });
+  edgeLabelLayer.addEventListener('pointerdown', e => {
+    const label = e.target.closest('.edge-label');
+    if(!label || !isTouchLikePointer(e)) return;
+    const edge = edgeById(label.dataset.edgeId);
+    if(!edge) return;
+    e.preventDefault();
+    closeMenu();
+    startLongPress({type:'edge', id:edge.id, pointerId:e.pointerId, clientX:e.clientX, clientY:e.clientY});
+  });
+  edgeLayer.addEventListener('pointerdown', e => {
+    const group = e.target.closest('g.edge-group');
+    if(!group || !isTouchLikePointer(e)) return;
+    const edge = edgeById(group.dataset.edgeId);
+    if(!edge) return;
+    e.preventDefault();
+    closeMenu();
+    startLongPress({type:'edge', id:edge.id, pointerId:e.pointerId, clientX:e.clientX, clientY:e.clientY});
+  });
 
-  stage.addEventListener('pointerdown', e => { if(e.button !== 0) return; if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.side-panel') || e.target.closest('.menu') || e.target.closest('.edge-label')) return; e.preventDefault(); closeMenu(); panDrag = {sx:e.clientX, sy:e.clientY, x:view.x, y:view.y}; stage.classList.add('is-panning'); stage.setPointerCapture(e.pointerId); });
-  stage.addEventListener('pointermove', e => { if(!panDrag) return; view.x = panDrag.x + (e.clientX - panDrag.sx); view.y = panDrag.y + (e.clientY - panDrag.sy); applyView(); });
-  stage.addEventListener('pointerup', () => { if(!panDrag) return; panDrag = null; stage.classList.remove('is-panning'); save('View saved'); });
-  stage.addEventListener('pointercancel', () => { if(!panDrag) return; panDrag = null; stage.classList.remove('is-panning'); save('View saved'); });
+  stage.addEventListener('pointerdown', e => {
+    if(isTouchGesturePointer(e)){
+      activeTouchPoints.set(e.pointerId, stageCoords(e.clientX, e.clientY));
+      if(activeTouchPoints.size >= 2){
+        cancelLongPress();
+        stopCanvasPan(false);
+        touchGesture = createTouchGestureState();
+        return;
+      }
+    }
+    if(e.button !== 0) return;
+    if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.side-panel') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.menu') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return;
+    e.preventDefault();
+    closeMenu();
+    if(isTouchLikePointer(e)){
+      startLongPress({type:'canvas', pointerId:e.pointerId, clientX:e.clientX, clientY:e.clientY});
+      return;
+    }
+    beginCanvasPan(e);
+  });
+  stage.addEventListener('pointermove', e => {
+    if(isTouchGesturePointer(e) && activeTouchPoints.has(e.pointerId)){
+      activeTouchPoints.set(e.pointerId, stageCoords(e.clientX, e.clientY));
+      if(activeTouchPoints.size >= 2){
+        cancelLongPress();
+        stopCanvasPan(false);
+        updateTouchGesture();
+        return;
+      }
+    }
+    if(longPressState && longPressState.pointerId === e.pointerId){
+      const moved = Math.hypot(e.clientX - longPressState.clientX, e.clientY - longPressState.clientY);
+      if(moved > LONG_PRESS_MOVE){
+        const pressType = longPressState.type;
+        cancelLongPress(e.pointerId);
+        if(pressType === 'canvas' && isTouchLikePointer(e) && activeTouchPoints.size < 2) beginCanvasPan(e);
+      }
+    }
+    if(!panDrag || panDrag.pointerId !== e.pointerId) return;
+    view.x = panDrag.x + (e.clientX - panDrag.sx);
+    view.y = panDrag.y + (e.clientY - panDrag.sy);
+    applyView();
+  });
+  stage.addEventListener('pointerup', e => {
+    cancelLongPress(e.pointerId);
+    if(isTouchGesturePointer(e)){
+      activeTouchPoints.delete(e.pointerId);
+      if(touchGesture && activeTouchPoints.size < 2){
+        touchGesture = null;
+        save('View saved');
+      }
+    }
+    stopCanvasPan(true, e.pointerId);
+  });
+  stage.addEventListener('pointercancel', e => {
+    cancelLongPress(e.pointerId);
+    if(isTouchGesturePointer(e)){
+      activeTouchPoints.delete(e.pointerId);
+      if(touchGesture && activeTouchPoints.size < 2){
+        touchGesture = null;
+        save('View saved');
+      }
+    }
+    stopCanvasPan(true, e.pointerId);
+  });
   stage.addEventListener('wheel', e => {
     if(e.target.closest('.menu')) return;
     e.preventDefault(); closeMenu();
@@ -1308,9 +1694,9 @@ a{color:inherit}
   function toggleLegend(){ toggleSidePanel('legend'); }
   function toggleRemember(){ toggleSidePanel('remember'); }
 
-  document.addEventListener('click', e => { if(!e.target.closest('.menu')) closeMenu(); });
+  document.addEventListener('click', e => { if(!e.target.closest('.menu')) closeMenu(); if(!e.target.closest('#shelfDelete')) clearEdgeDeleteArm(); });
   document.addEventListener('keydown', e => {
-    if(e.key === 'Escape'){ closeMenu(); if(connectFrom) cancelConnect(); return; }
+    if(e.key === 'Escape'){ closeMenu(); clearEdgeDeleteArm(); if(connectFrom) cancelConnect(); return; }
     const editing = document.activeElement && document.activeElement.closest('[contenteditable]'); if(editing) return;
     if(e.key === 'Home'){ e.preventDefault(); recenter(); }
     else if(e.key === '+' || e.key === '='){ e.preventDefault(); zoomCenter(1.25); }
@@ -1334,11 +1720,70 @@ a{color:inherit}
   document.getElementById('btnLegend').addEventListener('click', toggleLegend);
   document.getElementById('btnTidy').addEventListener('click', tidy);
   document.getElementById('btnExport').addEventListener('click', exportWorkspace);
-  document.getElementById('importFile').addEventListener('change', e => importMap(e.target.files?.[0]));
+  importFileInput.addEventListener('change', e => importMap(e.target.files?.[0]));
   document.getElementById('btnResetMap').addEventListener('click', resetMap);
   document.getElementById('cancelConnect').addEventListener('click', cancelConnect);
-  document.getElementById('shelfAddLinked').addEventListener('click', () => selectedId && addLinkedFrom(selectedId));
-  document.getElementById('shelfCenter').addEventListener('click', () => selectedId ? centerOnNode(selectedId) : (selectedEdgeId && edgeById(selectedEdgeId) ? centerOnNode(edgeById(selectedEdgeId).from) : null));
+  shelfToggle.addEventListener('click', () => { shelfCollapsed = !shelfCollapsed; updateSelectionUI(); });
+  shelfAddLinked.addEventListener('click', () => selectedId && addLinkedFrom(selectedId));
+  shelfEdit.addEventListener('click', () => selectedId && focusNodeEditor(selectedId));
+  shelfDuplicate.addEventListener('click', () => selectedId && duplicateNode(selectedId));
+  shelfConnect.addEventListener('click', () => selectedId && startConnect(selectedId));
+  shelfStyle.addEventListener('click', () => {
+    if(!selectedId) return;
+    openMenuFromButton(shelfStyle, 'Block style', [
+      {type:'section', label:'Block color'}, {type:'colors'},
+      {type:'section', label:'Block shape'}, {type:'shapes'},
+      {type:'section', label:'Block size'}, {type:'sizes'},
+      {type:'section', label:'Importance'}, {type:'importance'}
+    ], {type:'node', id:selectedId});
+  });
+  shelfCenter.addEventListener('click', () => selectedId && centerOnNode(selectedId));
+  shelfFocus.addEventListener('click', toggleFocus);
+  shelfLabel.addEventListener('click', () => selectedEdgeId && setEdgeLabel(selectedEdgeId));
+  shelfRelation.addEventListener('click', () => {
+    if(!selectedEdgeId) return;
+    openMenuFromButton(shelfRelation, 'Relationship type', [
+      {type:'section', label:'Relationship type'}, {type:'relations'}
+    ], {type:'edge', id:selectedEdgeId});
+  });
+  shelfStrength.addEventListener('click', () => {
+    if(!selectedEdgeId) return;
+    openMenuFromButton(shelfStrength, 'Importance / thickness', [
+      {type:'section', label:'Importance / thickness'}, {type:'strengths'}
+    ], {type:'edge', id:selectedEdgeId});
+  });
+  shelfRoute.addEventListener('click', () => {
+    if(!selectedEdgeId) return;
+    openMenuFromButton(shelfRoute, 'Line route', [
+      {type:'section', label:'Line route'}, {type:'edgeShapes'}
+    ], {type:'edge', id:selectedEdgeId});
+  });
+  shelfFromPort.addEventListener('click', () => {
+    if(!selectedEdgeId) return;
+    openMenuFromButton(shelfFromPort, 'Source connection side', [
+      {type:'section', label:'From-side connection point'}, {type:'fromPorts'}
+    ], {type:'edge', id:selectedEdgeId});
+  });
+  shelfToPort.addEventListener('click', () => {
+    if(!selectedEdgeId) return;
+    openMenuFromButton(shelfToPort, 'Target connection side', [
+      {type:'section', label:'To-side connection point'}, {type:'toPorts'}
+    ], {type:'edge', id:selectedEdgeId});
+  });
+  shelfReverse.addEventListener('click', () => selectedEdgeId && reverseEdge(selectedEdgeId));
+  shelfDelete.addEventListener('click', () => {
+    if(selectedId){
+      deleteNode(selectedId);
+      return;
+    }
+    if(!selectedEdgeId) return;
+    if(pendingEdgeDeleteId === selectedEdgeId){
+      pendingEdgeDeleteId = null;
+      deleteEdge(selectedEdgeId);
+      return;
+    }
+    armEdgeDelete(selectedEdgeId);
+  });
   btnRememberPanel.addEventListener('click', toggleRemember);
   btnVisualPanel.addEventListener('click', toggleLegend);
   btnClosePanel.addEventListener('click', closeSidePanel);

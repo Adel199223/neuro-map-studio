@@ -26,14 +26,24 @@
 - Line routes should avoid giant arcs when blocks are close together.
 - Relationship labels should remain readable but small.
 
-## Context menus
+## Context menus and tablet-safe alternatives
+
+- Right-click remains available on desktop, but it must not be the only way to edit the map.
+- Long-press on canvas, blocks, and relationship labels/lines should open the same editing vocabulary as right-click when the pointer is touch or pen.
+- A selected-item toolbar should expose the most common block and link actions without forcing a context-menu open.
+- The selected-item toolbar should stay compact, touch-sized, low-noise, and collapsible if it starts blocking the working area.
 
 Right-click empty canvas:
 
 - add free block;
 - add linked block from selected block;
-- paste/import if available;
+- import if available;
 - recenter/reset/tidy/export.
+
+Tablet-safe canvas path:
+
+- keep the left toolbar visible for common canvas actions;
+- long-press empty canvas for the canvas menu.
 
 Right-click block:
 
@@ -44,6 +54,12 @@ Right-click block:
 - center on block;
 - delete safely.
 
+Tablet-safe block path:
+
+- tap to select the block;
+- use the selected-item toolbar for add linked block, edit, duplicate, connect, style, center/focus, and delete;
+- long-press the block to open the full block menu.
+
 Right-click line or label:
 
 - change relation type;
@@ -53,6 +69,12 @@ Right-click line or label:
 - rename label;
 - reverse;
 - delete.
+
+Tablet-safe link path:
+
+- tap the line or label to select the relationship;
+- use the selected-item toolbar for label, relation type, thickness, route, port side, reverse, and delete;
+- long-press the line or label to open the full link menu.
 
 ## Persistence
 
