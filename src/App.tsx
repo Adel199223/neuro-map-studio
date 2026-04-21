@@ -1,7 +1,15 @@
 import { seedWorkspace } from './data/simonDixonSeed';
 
-const prototypeMindMap = '/prototypes/current/mindmap.html';
-const prototypeLesson = '/prototypes/current/lesson.html';
+const docsUrl = 'https://github.com/Adel199223/neuro-map-studio/tree/main/docs';
+
+function withBase(path: string) {
+  const normalizedBase = import.meta.env.BASE_URL.replace(/\/+$/, '');
+  const normalizedPath = path.replace(/^\/+/, '');
+  return `${normalizedBase}/${normalizedPath}`;
+}
+
+const prototypeMindMap = withBase('prototypes/current/mindmap.html');
+const prototypeLesson = withBase('prototypes/current/lesson.html');
 
 export default function App() {
   return (
@@ -18,8 +26,9 @@ export default function App() {
             Open current learning map prototype
           </a>
           <a href={prototypeLesson}>Open current lesson prototype</a>
-          <a href="/docs/" aria-disabled="true">
-            Read docs in repo
+          <a href={docsUrl}>Read docs on GitHub</a>
+          <a href="https://adel199223.github.io/neuro-map-studio/" rel="noreferrer">
+            Live preview URL
           </a>
         </div>
       </section>

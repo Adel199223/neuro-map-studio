@@ -84,6 +84,16 @@ npm run package:verify
 
 This creates `artifacts/neuro-map-studio-review-context.zip`, includes required dot-directories such as `.agents/`, and checks the extracted copy with `node scripts/doctor.mjs` before you share it.
 
+## Live preview
+
+GitHub Pages is the small static live preview for this repo:
+
+- App root: `https://Adel199223.github.io/neuro-map-studio/`
+- Current learning map prototype: `https://Adel199223.github.io/neuro-map-studio/prototypes/current/mindmap.html`
+- Current lesson prototype: `https://Adel199223.github.io/neuro-map-studio/prototypes/current/lesson.html`
+
+This Pages deployment is only a static preview of the current repo state. It is not the planned computer-as-local-server sync system described in `docs/product/tablet-pen-sync-architecture.md`.
+
 ## First Codex task suggestion
 
 Ask Codex to inspect `public/prototypes/current/mindmap.html`, `docs/product/product-requirements.md`, `docs/product/interaction-contract.md`, and `AGENTS.md`; then write an execution plan before changing code.

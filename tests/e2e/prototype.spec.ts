@@ -4,6 +4,18 @@ const mindmapPath = '/prototypes/current/mindmap.html';
 const lessonPath = '/prototypes/current/lesson.html';
 
 test.describe('current standalone prototypes', () => {
+  test('root app exposes prototype entry links', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: /open current learning map prototype/i })).toHaveAttribute(
+      'href',
+      '/prototypes/current/mindmap.html',
+    );
+    await expect(page.getByRole('link', { name: /open current lesson prototype/i })).toHaveAttribute(
+      'href',
+      '/prototypes/current/lesson.html',
+    );
+  });
+
   test('learning map loads article-specific blocks', async ({ page }) => {
     await page.goto(mindmapPath);
     await page.evaluate(() => localStorage.clear());
