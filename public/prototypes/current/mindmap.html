@@ -726,19 +726,34 @@ a{color:inherit}
       pointerId:getPointerId(source),
       openedAt:Date.now(),
       mode:context?.type || '',
+      itemId:context?.id || '',
       edgeId:context?.type === 'edge' ? context?.id : '',
       hitKind:context?.hitKind || ''
     };
   }
-  function shouldSuppressRecentContextMenu(source){
+  function shouldSuppressRecentContextMenu(source, target=null, extraDetails={}){
     if(!recentLongPressMenu) return false;
     if(Date.now() - recentLongPressMenu.openedAt > RECENT_LONG_PRESS_MENU_MS) return false;
     const pointerId = getPointerId(source);
-    if(pointerId !== null && recentLongPressMenu.pointerId !== null && pointerId !== recentLongPressMenu.pointerId) return false;
+    const sourceTarget = source?.target instanceof Element ? source.target : null;
+    const targetEl = target instanceof Element ? target : sourceTarget;
+    if(sourceTarget?.closest?.('.menu') && menu.classList.contains('show')) return true;
+    if(pointerId !== null && recentLongPressMenu.pointerId !== null){
+      if(pointerId === recentLongPressMenu.pointerId) return true;
+      if(recentLongPressMenu.mode === 'node'){
+        const nodeTarget = sourceTarget?.closest?.('.map-node') || targetEl?.closest?.('.map-node');
+        if(nodeTarget?.dataset?.id === recentLongPressMenu.itemId) return true;
+      }
+      if(recentLongPressMenu.mode === 'edge'){
+        const edgeId = extraDetails.edgeId || sourceTarget?.closest?.('[data-edge-id]')?.dataset?.edgeId || targetEl?.closest?.('[data-edge-id]')?.dataset?.edgeId || '';
+        if(edgeId && edgeId === (recentLongPressMenu.edgeId || recentLongPressMenu.itemId)) return true;
+      }
+      return false;
+    }
     return true;
   }
   function suppressRecentContextMenu(source, mode, target, extraDetails={}){
-    if(!shouldSuppressRecentContextMenu(source)) return false;
+    if(!shouldSuppressRecentContextMenu(source, target, extraDetails)) return false;
     source.preventDefault?.();
     source.stopPropagation?.();
     logInputDebug('contextmenu-suppressed', source, {
@@ -1927,11 +1942,16 @@ a{color:inherit}
     const action = b.dataset.action, ctx = menuContext; if(action === 'noop') return; closeMenu();
     runMenuAction(ctx, action);
   });
+  menu.addEventListener('contextmenu', e => {
+    if(suppressRecentContextMenu(e, recentLongPressMenu?.mode || 'menu', menu, {edgeId:recentLongPressMenu?.edgeId || '', hitKind:recentLongPressMenu?.hitKind || ''})) return;
+    e.preventDefault();
+    e.stopPropagation();
+  });
 
   nodeLayer.addEventListener('contextmenu', e => { const el = e.target.closest('.map-node') || e.target.closest('#nodeLayer') || e.target.closest('.drag-handle') || e.target.closest('.resize-handle') || e.target.closest('.connection-port'); if(!el) return; if(suppressGestureContextMenu(e, 'node', e.target.closest('.drag-handle') || e.target.closest('.resize-handle') || e.target.closest('.connection-port') || el)) return; if(suppressRecentContextMenu(e, 'node', el)) return; e.preventDefault(); closeMenu(); const nodeEl = e.target.closest('.map-node'); const n = nodeEl ? byId(nodeEl.dataset.id) : null; if(!n) return; select(n.id); nodeMenu(n, e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
   edgeLabelLayer.addEventListener('contextmenu', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; const ed = edgeById(lab.dataset.edgeId); if(suppressGestureContextMenu(e, 'edge', lab, {edgeId:ed?.id, hitKind:'edge-label'})) return; if(suppressRecentContextMenu(e, 'edge', lab, {edgeId:ed?.id, hitKind:'edge-label'})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind:'edge-label'}); });
   edgeLayer.addEventListener('contextmenu', e => { const g = e.target.closest('g.edge-group'); if(!g) return; const ed = edgeById(g.dataset.edgeId); const hitKind = e.target.closest('.edge-hit') ? 'edge-hit-target' : 'edge-group'; if(suppressGestureContextMenu(e, 'edge', g, {edgeId:ed?.id, hitKind})) return; if(suppressRecentContextMenu(e, 'edge', g, {edgeId:ed?.id, hitKind})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind}); });
-  stage.addEventListener('contextmenu', e => { if(suppressGestureContextMenu(e, 'canvas', e.target.closest('#stage') || stage)) return; if(suppressRecentContextMenu(e, 'canvas', stage)) return; if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.side-panel') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
+  stage.addEventListener('contextmenu', e => { if(suppressGestureContextMenu(e, 'canvas', e.target.closest('#stage') || stage)) return; if(suppressRecentContextMenu(e, 'canvas', stage)) return; if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.side-panel') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
 
   nodeLayer.addEventListener('click', e => { const el = e.target.closest('.map-node'); if(!el) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'node', target:el}); if(connectFrom && el.dataset.id !== connectFrom){ addEdge(connectFrom, el.dataset.id); cancelConnect(); return; } select(el.dataset.id); });
   edgeLabelLayer.addEventListener('click', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'edge', target:lab}); selectEdge(lab.dataset.edgeId); });

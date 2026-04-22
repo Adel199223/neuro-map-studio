@@ -183,6 +183,13 @@ async function countDebugLines(log: Locator) {
   });
 }
 
+async function countDebugOccurrences(log: Locator, pattern: string) {
+  return log.evaluate(
+    (node, needle) => (node.textContent || '').split(needle).length - 1,
+    pattern,
+  );
+}
+
 test.describe('current standalone prototypes', () => {
   test('root app exposes prototype entry links', async ({ page }) => {
     await page.goto('/');
@@ -316,6 +323,31 @@ test.describe('current standalone prototypes', () => {
     await expect(log).toContainText('contextmenu-suppressed');
     await expect(log).not.toContainText('mode=canvas | reason=contextmenu');
     await expect(page.getByRole('button', { name: /add free block here/i })).toHaveCount(0);
+  });
+
+  test('touch long-press on a node opens one node menu and suppresses follow-up menu contextmenu', async ({ page }) => {
+    await resetMindmap(page, debugMindmapPath);
+
+    const panel = page.locator('#inputDebugPanel');
+    const log = page.locator('#inputDebugLog');
+    await expect(panel).toBeVisible();
+    await page.getByRole('button', { name: /expand input diagnostics/i }).click();
+
+    const coreNode = page.locator('.map-node[data-id="core"]');
+    await longPress(coreNode, { pointerId: 58 });
+
+    await expect(page.locator('#contextMenu')).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.locator('#contextMenu').getByRole('button', { name: /add linked block/i })).toBeVisible();
+    expect(await countDebugOccurrences(log, 'menu-open')).toBe(1);
+    await expect(log).toContainText('mode=node');
+    await expect(log).toContainText('reason=long-press');
+    await expect(log).not.toContainText('mode=canvas | reason=contextmenu | target=div#contextMenu.menu');
+
+    await contextMenu(page.locator('#contextMenu'), { x: 18, y: 18 });
+    await expect(log).toContainText('contextmenu-suppressed');
+    await expect(log).toContainText('mode=node | reason=recent-long-press');
+    await expect(log).not.toContainText('mode=canvas | reason=contextmenu | target=div#contextMenu.menu');
+    expect(await countDebugOccurrences(log, 'menu-open')).toBe(1);
   });
 
   test('touch drag handle moves a node and keeps touch-action plus capture diagnostics', async ({ page }) => {
