@@ -31,7 +31,7 @@ localStorage.removeItem("neuro-map-studio:debug-input")
 3. Tap the same or another block with S Pen.
    - Expected: selection works the same way and the toolbar remains reachable.
 4. Drag a block by its handle with S Pen.
-   - Expected: the block moves cleanly and the canvas does not open a long-press menu.
+   - Expected: the block moves cleanly and keeps moving without immediately ending after a few millimeters. The canvas should not open a long-press menu.
 5. Drag a block by its handle with a finger.
    - Expected: the block moves cleanly and does not accidentally pan the whole canvas.
 6. Long-press a block with S Pen or finger.
@@ -82,4 +82,5 @@ Anything else that felt awkward:
 - Expand the diagnostics panel only when you need it.
 - Use Clear before reproducing a bug so the log stays short.
 - Use Copy after reproducing the bug and paste the result into ChatGPT or Codex with your written report.
+- For drag-handle issues, look for `capture-requested`, `capture-acquired`, `capture-lost`, and whether a drag ends with `reason=pointercancel`.
 - The diagnostics panel is designed to log interaction metadata only. It should not capture node text, link text, or exported workspace content.

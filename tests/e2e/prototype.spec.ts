@@ -106,6 +106,40 @@ async function pointerTap(
   });
 }
 
+async function dragByHandle(
+  page: Page,
+  nodeId: string,
+  options: { pointerId?: number; pointerType?: 'mouse' | 'touch' | 'pen'; deltaX?: number; deltaY?: number } = {},
+) {
+  const handle = page.locator(`.map-node[data-id="${nodeId}"] .drag-handle`);
+  const moveTarget = page.locator('#nodeLayer');
+  const box = await handle.boundingBox();
+  if (!box) {
+    throw new Error('Could not determine drag handle bounding box for pointer drag test.');
+  }
+  const clientX = box.x + box.width / 2;
+  const clientY = box.y + box.height / 2;
+  const payload = {
+    pointerId: options.pointerId ?? 91,
+    pointerType: options.pointerType ?? 'touch',
+    button: 0,
+    buttons: 1,
+    pressure: 1,
+    isPrimary: true,
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    clientX,
+    clientY,
+  };
+  const moveX = clientX + (options.deltaX ?? 88);
+  const moveY = clientY + (options.deltaY ?? 64);
+
+  await handle.dispatchEvent('pointerdown', payload);
+  await moveTarget.dispatchEvent('pointermove', { ...payload, clientX: moveX, clientY: moveY });
+  await moveTarget.dispatchEvent('pointerup', { ...payload, buttons: 0, pressure: 0, clientX: moveX, clientY: moveY });
+}
+
 test.describe('current standalone prototypes', () => {
   test('root app exposes prototype entry links', async ({ page }) => {
     await page.goto('/');
@@ -213,6 +247,47 @@ test.describe('current standalone prototypes', () => {
     await page.keyboard.press('Escape');
     await longPress(page.locator('#stage'), { pointerId: 52, x: 84, y: 96 });
     await expect(page.getByRole('button', { name: /add free block here/i })).toBeVisible();
+  });
+
+  test('touch drag handle moves a node and keeps touch-action plus capture diagnostics', async ({ page }) => {
+    await resetMindmap(page, debugMindmapPath);
+
+    const panel = page.locator('#inputDebugPanel');
+    const log = page.locator('#inputDebugLog');
+    await expect(panel).toBeVisible();
+    await page.getByRole('button', { name: /expand input diagnostics/i }).click();
+    const clearButton = page.getByRole('button', { name: /clear diagnostics log/i });
+    if (await clearButton.isEnabled()) {
+      await clearButton.click();
+    }
+
+    const touchActions = await page.evaluate(() => ({
+      stage: getComputedStyle(document.getElementById('stage')!).touchAction,
+      nodeLayer: getComputedStyle(document.getElementById('nodeLayer')!).touchAction,
+      handle: getComputedStyle(document.querySelector('.drag-handle')!).touchAction,
+    }));
+    expect(touchActions.stage).toBe('none');
+    expect(touchActions.nodeLayer).toBe('none');
+    expect(touchActions.handle).toBe('none');
+
+    const before = await page.locator('.map-node[data-id="core"]').evaluate((node) => ({
+      left: node.getBoundingClientRect().left,
+      top: node.getBoundingClientRect().top,
+    }));
+
+    await dragByHandle(page, 'core', { pointerType: 'touch' });
+
+    const after = await page.locator('.map-node[data-id="core"]').evaluate((node) => ({
+      left: node.getBoundingClientRect().left,
+      top: node.getBoundingClientRect().top,
+    }));
+
+    expect(Math.abs(after.left - before.left)).toBeGreaterThan(20);
+    expect(Math.abs(after.top - before.top)).toBeGreaterThan(20);
+    await expect(log).toContainText('drag-start');
+    await expect(log).toContainText('capture-requested');
+    await expect(log).toContainText('drag-end');
+    await expect(log).not.toContainText('reason=pointercancel');
   });
 
   test('input diagnostics stay hidden by default', async ({ page }) => {
