@@ -160,7 +160,7 @@ a{color:inherit}
   hyphens:none;
 }
 .drag-gesture-lock,.drag-gesture-lock *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
-.stage.drag-gesture-lock,.node-layer.drag-gesture-lock,.drag-handle{touch-action:none;}
+.stage.drag-gesture-lock,.node-layer.drag-gesture-lock,.drag-handle,.resize-handle{touch-action:none;}
 .node-content{
   position:relative;
   z-index:1;
@@ -213,7 +213,7 @@ a{color:inherit}
 .drag-handle:active{cursor:grabbing}
 .drag-handle-icon{width:2rem;height:2rem;min-height:2rem;border:1px solid rgba(155,128,88,.4);border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.58);box-shadow:0 4px 10px rgba(72,54,31,.08);pointer-events:none;}
 .node-tag{display:inline-flex;margin-top:.55rem;border:1px solid rgba(155,128,88,.25);background:rgba(255,255,255,.5);border-radius:999px;padding:.12rem .45rem;color:#6a5f50;font-size:.76rem;font-weight:800;}
-.resize-handle{position:absolute;right:.35rem;bottom:.35rem;z-index:5;width:1.15rem;height:1.15rem;border-radius:6px;border:1px solid rgba(155,128,88,.38);background:rgba(255,255,255,.65);cursor:nwse-resize;display:grid;place-items:center;color:#7b6a55;font-size:.7rem;}
+.resize-handle{position:absolute;right:.35rem;bottom:.35rem;z-index:5;width:1.15rem;height:1.15rem;border-radius:6px;border:1px solid rgba(155,128,88,.38);background:rgba(255,255,255,.65);cursor:nwse-resize;display:grid;place-items:center;color:#7b6a55;font-size:.7rem;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
 .resize-handle::before{content:'↘';line-height:1;}
 .connection-port{
   position:absolute;
@@ -580,7 +580,9 @@ a{color:inherit}
   const activeTouchPoints = new Map();
   let touchGesture = null;
   const pointerGestureOwners = new Map();
+  const gestureLockReasons = new Set();
   let recentLongPressMenu = null;
+  let dragInteractionState = null;
 
   const DEBUG_INPUT_KEY = 'neuro-map-studio:debug-input';
   const LONG_PRESS_DELAY = 450;
@@ -588,6 +590,7 @@ a{color:inherit}
   const EDGE_HIT_WIDTH = 32;
   const EDGE_HIT_WIDTH_COARSE = 40;
   const RECENT_LONG_PRESS_MENU_MS = 900;
+  const RECENT_DRAG_CONTEXTMENU_MS = 700;
   const inputDebugState = {
     enabled: (() => {
       try{
@@ -1016,6 +1019,86 @@ a{color:inherit}
     pendingEdgeDeleteId = null;
     updateSelectionUI();
   }
+  function getGestureSurfaceKind(target){
+    const el = target instanceof Element ? target : null;
+    if(!el) return '';
+    if(el.closest('.drag-handle')) return 'drag-handle';
+    if(el.closest('.resize-handle')) return 'resize-handle';
+    if(el.closest('.connection-port')) return 'connection-port';
+    if(el.closest('#nodeLayer')) return 'node-layer';
+    if(el.closest('#stage')) return 'stage';
+    return '';
+  }
+  function clearGestureSelection(){
+    try{
+      if(document.activeElement?.closest?.('[contenteditable]')) return;
+      const selection = window.getSelection?.();
+      if(selection && selection.rangeCount) selection.removeAllRanges();
+    }catch(e){}
+  }
+  function syncGestureLockUI(){
+    const active = gestureLockReasons.size > 0 || !!connectFrom;
+    document.body.classList.toggle('drag-gesture-lock', active);
+    stage.classList.toggle('drag-gesture-lock', active);
+    nodeLayer.classList.toggle('drag-gesture-lock', active);
+    if(active) clearGestureSelection();
+  }
+  function setGestureLock(reason, active){
+    if(!reason) return;
+    if(active) gestureLockReasons.add(reason);
+    else gestureLockReasons.delete(reason);
+    syncGestureLockUI();
+  }
+  function noteDragInteraction(kind, pointerId, target){
+    dragInteractionState = {
+      active:true,
+      kind,
+      pointerId:Number.isFinite(pointerId) ? pointerId : null,
+      target:target instanceof Element ? target : null,
+      startedAt:Date.now(),
+      endedAt:0,
+      reason:''
+    };
+  }
+  function finishDragInteraction(pointerId=null, reason='', target=null){
+    if(!dragInteractionState) return;
+    if(pointerId !== null && dragInteractionState.pointerId !== null && dragInteractionState.pointerId !== pointerId) return;
+    dragInteractionState = {
+      ...dragInteractionState,
+      active:false,
+      endedAt:Date.now(),
+      reason,
+      target:target instanceof Element ? target : dragInteractionState.target
+    };
+  }
+  function getDragContextSuppression(target){
+    if(!dragInteractionState) return null;
+    const surfaceKind = getGestureSurfaceKind(target);
+    if(!surfaceKind) return null;
+    if(dragInteractionState.active){
+      return {reason:'active-drag', surfaceKind};
+    }
+    if(Date.now() - dragInteractionState.endedAt > RECENT_DRAG_CONTEXTMENU_MS) return null;
+    if(surfaceKind === dragInteractionState.kind || surfaceKind === 'node-layer' || surfaceKind === 'stage'){
+      return {reason:'recent-drag', surfaceKind};
+    }
+    return null;
+  }
+  function suppressGestureContextMenu(source, mode, target, extraDetails={}){
+    const suppression = getDragContextSuppression(target || source?.target);
+    if(!suppression) return false;
+    source.preventDefault?.();
+    source.stopPropagation?.();
+    logInputDebug('contextmenu-suppressed', source, {
+      mode,
+      reason:suppression.reason,
+      target:target || source?.target,
+      edgeId:extraDetails.edgeId || '',
+      hitKind:extraDetails.hitKind || '',
+      suppressed:'drag-gesture'
+    });
+    return true;
+  }
   function getLongPressDebugDetails(source, reason=''){
     return {
       mode:source.type,
@@ -1025,11 +1108,6 @@ a{color:inherit}
       hitKind:source.hitKind || '',
       suppressed:source.suppressed || ''
     };
-  }
-  function setDragGestureLock(active){
-    document.body.classList.toggle('drag-gesture-lock', active);
-    stage.classList.toggle('drag-gesture-lock', active);
-    nodeLayer.classList.toggle('drag-gesture-lock', active);
   }
   function requestPointerCapture(target, pointerId, source, mode='node'){
     if(!target?.setPointerCapture) return false;
@@ -1056,13 +1134,19 @@ a{color:inherit}
     const pointerId = Number.isFinite(source?.pointerId) ? source.pointerId : null;
     if(pointerId !== null && active.pointerId !== pointerId) return false;
     dragNode = null;
-    setDragGestureLock(false);
+    setGestureLock('node-drag', false);
+    const dragReason = reason === 'pointercancel' && active.captureAcquired
+      ? 'pointercancel-after-capture'
+      : reason === 'lostpointercapture' && active.captureAcquired
+        ? 'lostpointercapture-after-capture'
+        : reason;
+    finishDragInteraction(active.pointerId, dragReason, source?.target || active.handle);
     if(reason === 'lostpointercapture'){
       logInputDebug('capture-lost', source || inputDebugState.lastPointer, {mode:'node', reason:'lostpointercapture', target:active.captureTarget});
     }else{
       releasePointerCapture(active.captureTarget, active.pointerId);
     }
-    logInputDebug('drag-end', source || inputDebugState.lastPointer, {mode:'node', reason:reason === 'pointerup' ? '' : reason, target:active.handle});
+    logInputDebug('drag-end', source || inputDebugState.lastPointer, {mode:'node', reason:dragReason === 'pointerup' ? '' : dragReason, target:active.handle});
     save('Moved');
     if(reason === 'pointerup') showToast('Moved');
     return true;
@@ -1075,6 +1159,7 @@ a{color:inherit}
   function cancelLongPress(pointerId=null, reason='cancel', source=null){
     if(!longPressState) return;
     if(pointerId !== null && longPressState.pointerId !== pointerId) return;
+    if(longPressState.lockReason) setGestureLock(longPressState.lockReason, false);
     logInputDebug('long-press-cancel', source || longPressState, getLongPressDebugDetails(longPressState, reason));
     clearTimeout(longPressState.timer);
     longPressState = null;
@@ -1083,12 +1168,16 @@ a{color:inherit}
     cancelLongPress();
     if(dragNode || resizeNode) return;
     if(menu.classList.contains('show')) return;
+    const lockReason = `long-press-${target.type}-${Number.isFinite(target.pointerId) ? target.pointerId : 'active'}`;
+    setGestureLock(lockReason, true);
     logInputDebug('long-press-start', target, getLongPressDebugDetails(target));
     longPressState = {
       ...target,
+      lockReason,
       timer:setTimeout(() => {
         const active = longPressState;
         if(!active || active.pointerId !== target.pointerId) return;
+        if(active.lockReason) setGestureLock(active.lockReason, false);
         longPressState = null;
         logInputDebug('long-press-fire', active, getLongPressDebugDetails(active));
         closeMenu();
@@ -1111,6 +1200,7 @@ a{color:inherit}
   function beginCanvasPan(e){
     cancelLongPress(e.pointerId, 'pan-start', e);
     panDrag = {pointerId:e.pointerId, sx:e.clientX, sy:e.clientY, x:view.x, y:view.y};
+    setGestureLock('canvas-pan', true);
     stage.classList.add('is-panning');
     if(stage.setPointerCapture) stage.setPointerCapture(e.pointerId);
     logInputDebug('pan-start', e, {mode:'canvas', target:stage});
@@ -1118,6 +1208,7 @@ a{color:inherit}
   function stopCanvasPan(shouldSave=true, pointerId=null){
     if(!panDrag) return;
     if(pointerId !== null && panDrag.pointerId !== pointerId) return;
+    setGestureLock('canvas-pan', false);
     logInputDebug('pan-end', inputDebugState.lastPointer, {mode:'canvas', target:stage});
     panDrag = null;
     stage.classList.remove('is-panning');
@@ -1131,6 +1222,7 @@ a{color:inherit}
     const [a, b] = points;
     const startMid = midpoint(a, b);
     const startDistance = Math.max(1, distance(a, b));
+    setGestureLock('canvas-pinch', true);
     logInputDebug('pinch-start', inputDebugState.lastPointer, {mode:'canvas', target:stage});
     return {
       startMid,
@@ -1299,7 +1391,7 @@ a{color:inherit}
     }));
   }
 
-  function render(){ renderPageControls(); renderNodes(); requestAnimationFrame(() => { renderEdges(); applyFocus(); }); updateSelectionUI(); applyView(); }
+  function render(){ renderPageControls(); renderNodes(); requestAnimationFrame(() => { renderEdges(); applyFocus(); }); updateSelectionUI(); applyView(); syncGestureLockUI(); }
   function renderNodes(){
     nodeLayer.innerHTML = '';
     data.nodes.forEach(n => {
@@ -1642,8 +1734,8 @@ a{color:inherit}
   function setEdgeShape(edgeId, shape){ const e = edgeById(edgeId); if(!e) return; e.shape = shape; render(); save('Line route changed'); }
   function setEdgePort(edgeId, end, port){ const e = edgeById(edgeId); if(!e || !ports.includes(port)) return; if(end === 'from') e.fromPort = port; else e.toPort = port; render(); save('Connection side changed'); showToast('Connection side changed'); }
   function setEdgeLabel(edgeId){ const e = edgeById(edgeId); if(!e) return; const style = relationStyles[e.relation]; const txt = prompt('Short label for this link:', e.label || style.label); if(txt === null) return; e.label = clean(txt); render(); save('Link label changed'); }
-  function startConnect(nodeId){ if(!byId(nodeId)) return; connectFrom = nodeId; render(); const source = byId(nodeId); connectText.textContent = `Connecting from “${source.title || 'block'}”: click another block.`; connectBanner.classList.add('show'); showToast('Click target block'); logInputDebug('connect-start', inputDebugState.lastPointer, {mode:'node'}); }
-  function cancelConnect(){ connectFrom = null; connectBanner.classList.remove('show'); render(); }
+  function startConnect(nodeId){ if(!byId(nodeId)) return; connectFrom = nodeId; syncGestureLockUI(); render(); const source = byId(nodeId); connectText.textContent = `Connecting from “${source.title || 'block'}”: click another block.`; connectBanner.classList.add('show'); showToast('Click target block'); logInputDebug('connect-start', inputDebugState.lastPointer, {mode:'node'}); }
+  function cancelConnect(){ connectFrom = null; syncGestureLockUI(); connectBanner.classList.remove('show'); render(); }
 
   function tidy(){
     const positions = { core:[-120,-40], money:[-620,-40], dependence:[-380,190], cheap:[-50,190], assets:[310,120], policy:[310,-170], public:[-50,-315], assetmgr:[-50,475], government:[-625,-315], crises:[-925,-110], media:[-760,275], bitcoin:[310,460], exit:[-380,675] };
@@ -1836,10 +1928,10 @@ a{color:inherit}
     runMenuAction(ctx, action);
   });
 
-  nodeLayer.addEventListener('contextmenu', e => { const el = e.target.closest('.map-node'); if(!el) return; if(suppressRecentContextMenu(e, 'node', el)) return; e.preventDefault(); closeMenu(); const n = byId(el.dataset.id); if(!n) return; select(n.id); nodeMenu(n, e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
-  edgeLabelLayer.addEventListener('contextmenu', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; const ed = edgeById(lab.dataset.edgeId); if(suppressRecentContextMenu(e, 'edge', lab, {edgeId:ed?.id, hitKind:'edge-label'})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind:'edge-label'}); });
-  edgeLayer.addEventListener('contextmenu', e => { const g = e.target.closest('g.edge-group'); if(!g) return; const ed = edgeById(g.dataset.edgeId); const hitKind = e.target.closest('.edge-hit') ? 'edge-hit-target' : 'edge-group'; if(suppressRecentContextMenu(e, 'edge', g, {edgeId:ed?.id, hitKind})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind}); });
-  stage.addEventListener('contextmenu', e => { if(suppressRecentContextMenu(e, 'canvas', stage)) return; if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.side-panel') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
+  nodeLayer.addEventListener('contextmenu', e => { const el = e.target.closest('.map-node') || e.target.closest('#nodeLayer') || e.target.closest('.drag-handle') || e.target.closest('.resize-handle') || e.target.closest('.connection-port'); if(!el) return; if(suppressGestureContextMenu(e, 'node', e.target.closest('.drag-handle') || e.target.closest('.resize-handle') || e.target.closest('.connection-port') || el)) return; if(suppressRecentContextMenu(e, 'node', el)) return; e.preventDefault(); closeMenu(); const nodeEl = e.target.closest('.map-node'); const n = nodeEl ? byId(nodeEl.dataset.id) : null; if(!n) return; select(n.id); nodeMenu(n, e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
+  edgeLabelLayer.addEventListener('contextmenu', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; const ed = edgeById(lab.dataset.edgeId); if(suppressGestureContextMenu(e, 'edge', lab, {edgeId:ed?.id, hitKind:'edge-label'})) return; if(suppressRecentContextMenu(e, 'edge', lab, {edgeId:ed?.id, hitKind:'edge-label'})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind:'edge-label'}); });
+  edgeLayer.addEventListener('contextmenu', e => { const g = e.target.closest('g.edge-group'); if(!g) return; const ed = edgeById(g.dataset.edgeId); const hitKind = e.target.closest('.edge-hit') ? 'edge-hit-target' : 'edge-group'; if(suppressGestureContextMenu(e, 'edge', g, {edgeId:ed?.id, hitKind})) return; if(suppressRecentContextMenu(e, 'edge', g, {edgeId:ed?.id, hitKind})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind}); });
+  stage.addEventListener('contextmenu', e => { if(suppressGestureContextMenu(e, 'canvas', e.target.closest('#stage') || stage)) return; if(suppressRecentContextMenu(e, 'canvas', stage)) return; if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.side-panel') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
 
   nodeLayer.addEventListener('click', e => { const el = e.target.closest('.map-node'); if(!el) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'node', target:el}); if(connectFrom && el.dataset.id !== connectFrom){ addEdge(connectFrom, el.dataset.id); cancelConnect(); return; } select(el.dataset.id); });
   edgeLabelLayer.addEventListener('click', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'edge', target:lab}); selectEdge(lab.dataset.edgeId); });
@@ -1850,14 +1942,14 @@ a{color:inherit}
   nodeLayer.addEventListener('pointerdown', e => {
     if(dragNode && dragNode.pointerId !== e.pointerId) return;
     const resize = e.target.closest('.resize-handle');
-    if(resize){ const el = resize.closest('.map-node'), n = byId(el.dataset.id); if(!n) return; cancelLongPress(e.pointerId, 'resize-start', e); e.preventDefault(); closeMenu(); select(n.id); resizeNode = {id:n.id, sx:e.clientX, sy:e.clientY, w:n.w, h:n.h}; resize.setPointerCapture(e.pointerId); logInputDebug('resize-start', e, {mode:'node', target:resize}); return; }
+    if(resize){ const el = resize.closest('.map-node'), n = byId(el.dataset.id); if(!n) return; cancelLongPress(e.pointerId, 'resize-start', e); e.preventDefault(); closeMenu(); clearEdgeDeleteArm(); select(n.id); resizeNode = {id:n.id, pointerId:e.pointerId, sx:e.clientX, sy:e.clientY, w:n.w, h:n.h, handle:resize}; noteDragInteraction('resize-handle', e.pointerId, resize); setGestureLock('node-resize', true); resize.setPointerCapture(e.pointerId); logInputDebug('resize-start', e, {mode:'node', target:resize}); return; }
     const handle = e.target.closest('.drag-handle');
     if(handle){
       const el = handle.closest('.map-node'), n = byId(el.dataset.id); if(!n) return;
       cancelLongPress(e.pointerId, 'drag-start', e);
-      e.preventDefault(); e.stopPropagation(); closeMenu(); select(n.id); dragNode = {id:n.id, pointerId:e.pointerId, sx:e.clientX, sy:e.clientY, x:n.x, y:n.y, handle, captureTarget:nodeLayer}; setDragGestureLock(true);
+      e.preventDefault(); e.stopPropagation(); closeMenu(); clearEdgeDeleteArm(); select(n.id); dragNode = {id:n.id, pointerId:e.pointerId, sx:e.clientX, sy:e.clientY, x:n.x, y:n.y, handle, captureTarget:nodeLayer, captureAcquired:false}; noteDragInteraction('drag-handle', e.pointerId, handle); setGestureLock('node-drag', true);
       logInputDebug('drag-start', e, {mode:'node', target:handle});
-      requestPointerCapture(nodeLayer, e.pointerId, e, 'node');
+      dragNode.captureAcquired = requestPointerCapture(nodeLayer, e.pointerId, e, 'node');
       return;
     }
     const el = e.target.closest('.map-node');
@@ -1872,8 +1964,8 @@ a{color:inherit}
     if(resizeNode){ const n = byId(resizeNode.id); if(!n) return; n.w = clamp(Math.round(resizeNode.w + (e.clientX - resizeNode.sx)/view.scale), 160, 640); n.h = clamp(Math.round(resizeNode.h + (e.clientY - resizeNode.sy)/view.scale), 95, 520); const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`); if(el){ el.style.width = n.w + 'px'; el.style.height = n.h + 'px'; } renderEdges(); return; }
     if(!dragNode || dragNode.pointerId !== e.pointerId) return; e.preventDefault(); const n = byId(dragNode.id); if(!n) return; n.x = Math.round(dragNode.x + (e.clientX - dragNode.sx)/view.scale); n.y = Math.round(dragNode.y + (e.clientY - dragNode.sy)/view.scale); const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`); if(el){ el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; } renderEdges();
   });
-  nodeLayer.addEventListener('pointerup', e => { cancelLongPress(e.pointerId, 'pointerup', e); if(resizeNode){ logInputDebug('resize-end', e, {mode:'node'}); resizeNode=null; save('Resized'); showToast('Resized'); } finishNodeDrag(e, 'pointerup'); });
-  nodeLayer.addEventListener('pointercancel', e => { cancelLongPress(e.pointerId, 'pointercancel', e); if(resizeNode){ logInputDebug('resize-end', e, {mode:'node', reason:'pointercancel'}); resizeNode=null; save('Resized'); } finishNodeDrag(e, 'pointercancel'); });
+  nodeLayer.addEventListener('pointerup', e => { cancelLongPress(e.pointerId, 'pointerup', e); if(resizeNode && resizeNode.pointerId === e.pointerId){ setGestureLock('node-resize', false); finishDragInteraction(e.pointerId, 'pointerup', resizeNode.handle); logInputDebug('resize-end', e, {mode:'node'}); resizeNode=null; save('Resized'); showToast('Resized'); } finishNodeDrag(e, 'pointerup'); });
+  nodeLayer.addEventListener('pointercancel', e => { cancelLongPress(e.pointerId, 'pointercancel', e); if(resizeNode && resizeNode.pointerId === e.pointerId){ setGestureLock('node-resize', false); finishDragInteraction(e.pointerId, 'pointercancel', resizeNode.handle); logInputDebug('resize-end', e, {mode:'node', reason:'pointercancel'}); resizeNode=null; save('Resized'); } finishNodeDrag(e, 'pointercancel'); });
   nodeLayer.addEventListener('lostpointercapture', e => {
     if(!dragNode || dragNode.pointerId !== e.pointerId) return;
     finishNodeDrag(e, 'lostpointercapture');
@@ -1954,6 +2046,7 @@ a{color:inherit}
     if(isTouchGesturePointer(e)){
       activeTouchPoints.delete(e.pointerId);
       if(touchGesture && activeTouchPoints.size < 2){
+        setGestureLock('canvas-pinch', false);
         logInputDebug('pinch-end', e, {mode:'canvas'});
         touchGesture = null;
         save('View saved');
@@ -1966,6 +2059,7 @@ a{color:inherit}
     if(isTouchGesturePointer(e)){
       activeTouchPoints.delete(e.pointerId);
       if(touchGesture && activeTouchPoints.size < 2){
+        setGestureLock('canvas-pinch', false);
         logInputDebug('pinch-end', e, {mode:'canvas', reason:'pointercancel'});
         touchGesture = null;
         save('View saved');
@@ -2012,6 +2106,7 @@ a{color:inherit}
   function toggleRemember(){ toggleSidePanel('remember'); }
 
   document.addEventListener('click', e => { if(!e.target.closest('.menu')) closeMenu(); if(!e.target.closest('#shelfDelete')) clearEdgeDeleteArm(); });
+  document.addEventListener('selectionchange', () => { if(gestureLockReasons.size > 0 || !!connectFrom) clearGestureSelection(); });
   document.addEventListener('keydown', e => {
     if(e.key === 'Escape'){ closeMenu(); clearEdgeDeleteArm(); if(connectFrom) cancelConnect(); return; }
     const editing = document.activeElement && document.activeElement.closest('[contenteditable]'); if(editing) return;

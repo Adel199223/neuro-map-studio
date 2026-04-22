@@ -140,6 +140,41 @@ async function dragByHandle(
   await moveTarget.dispatchEvent('pointerup', { ...payload, buttons: 0, pressure: 0, clientX: moveX, clientY: moveY });
 }
 
+async function beginHandleDrag(
+  page: Page,
+  nodeId: string,
+  options: { pointerId?: number; pointerType?: 'mouse' | 'touch' | 'pen'; deltaX?: number; deltaY?: number } = {},
+) {
+  const handle = page.locator(`.map-node[data-id="${nodeId}"] .drag-handle`);
+  const moveTarget = page.locator('#nodeLayer');
+  const box = await handle.boundingBox();
+  if (!box) {
+    throw new Error('Could not determine drag handle bounding box for pointer drag test.');
+  }
+  const clientX = box.x + box.width / 2;
+  const clientY = box.y + box.height / 2;
+  const payload = {
+    pointerId: options.pointerId ?? 101,
+    pointerType: options.pointerType ?? 'touch',
+    button: 0,
+    buttons: 1,
+    pressure: 1,
+    isPrimary: true,
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    clientX,
+    clientY,
+  };
+  const moveX = clientX + (options.deltaX ?? 72);
+  const moveY = clientY + (options.deltaY ?? 52);
+
+  await handle.dispatchEvent('pointerdown', payload);
+  await moveTarget.dispatchEvent('pointermove', { ...payload, clientX: moveX, clientY: moveY });
+
+  return { handle, moveTarget, payload, moveX, moveY };
+}
+
 async function countDebugLines(log: Locator) {
   return log.evaluate((node) => {
     const text = node.textContent?.trim() || '';
@@ -322,6 +357,59 @@ test.describe('current standalone prototypes', () => {
     await expect(log).toContainText('capture-requested');
     await expect(log).toContainText('drag-end');
     await expect(log).not.toContainText('reason=pointercancel');
+  });
+
+  test('drag contextmenu is suppressed during active and recent drag, and gesture lock clears after drag', async ({ page }) => {
+    await resetMindmap(page, debugMindmapPath);
+
+    const panel = page.locator('#inputDebugPanel');
+    const log = page.locator('#inputDebugLog');
+    await expect(panel).toBeVisible();
+    await page.getByRole('button', { name: /expand input diagnostics/i }).click();
+
+    const { handle, moveTarget, payload, moveX, moveY } = await beginHandleDrag(page, 'core', { pointerType: 'touch' });
+
+    const lockStateDuringDrag = await page.evaluate(() => ({
+      body: document.body.classList.contains('drag-gesture-lock'),
+      stage: document.getElementById('stage')!.classList.contains('drag-gesture-lock'),
+      nodeLayer: document.getElementById('nodeLayer')!.classList.contains('drag-gesture-lock'),
+    }));
+    expect(lockStateDuringDrag.body).toBe(true);
+    expect(lockStateDuringDrag.stage).toBe(true);
+    expect(lockStateDuringDrag.nodeLayer).toBe(true);
+
+    await contextMenu(handle);
+    await expect(log).toContainText('contextmenu-suppressed');
+    await expect(log).toContainText('reason=active-drag');
+    await expect(page.locator('#contextMenu')).toHaveAttribute('aria-hidden', 'true');
+    await expect(page.locator('#contextMenu').getByRole('button', { name: /add linked block/i })).toHaveCount(0);
+    await expect(page.locator('#contextMenu').getByRole('button', { name: /add free block here/i })).toHaveCount(0);
+
+    await moveTarget.dispatchEvent('pointerup', { ...payload, buttons: 0, pressure: 0, clientX: moveX, clientY: moveY });
+    await contextMenu(handle);
+    await expect(log).toContainText('reason=recent-drag');
+
+    const lockStateAfterDrag = await page.evaluate(() => ({
+      body: document.body.classList.contains('drag-gesture-lock'),
+      stage: document.getElementById('stage')!.classList.contains('drag-gesture-lock'),
+      nodeLayer: document.getElementById('nodeLayer')!.classList.contains('drag-gesture-lock'),
+    }));
+    expect(lockStateAfterDrag.body).toBe(false);
+    expect(lockStateAfterDrag.stage).toBe(false);
+    expect(lockStateAfterDrag.nodeLayer).toBe(false);
+
+    const titleState = await page.locator('.map-node[data-id="core"] .node-title').evaluate((el) => {
+      el.focus();
+      const htmlEl = el instanceof HTMLElement ? el : null;
+      return {
+        active: document.activeElement === el,
+        editable: htmlEl ? htmlEl.isContentEditable : false,
+        userSelect: getComputedStyle(el).userSelect,
+      };
+    });
+    expect(titleState.active).toBe(true);
+    expect(titleState.editable).toBe(true);
+    expect(titleState.userSelect).toBe('text');
   });
 
   test('input diagnostics stay hidden by default', async ({ page }) => {

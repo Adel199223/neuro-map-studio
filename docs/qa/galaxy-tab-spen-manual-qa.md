@@ -34,27 +34,31 @@ localStorage.removeItem("neuro-map-studio:debug-input")
    - Expected: the block moves cleanly and keeps moving without immediately ending after a few millimeters. The canvas should not open a long-press menu.
 5. Drag a block by its handle with a finger.
    - Expected: the block moves cleanly and does not accidentally pan the whole canvas.
-6. Long-press a block with S Pen or finger.
+6. While dragging, or immediately after releasing the handle, confirm that no context menu opens on the handle or canvas.
+   - Expected: dragging stays uninterrupted. If the browser attempts a menu, diagnostics should show `contextmenu-suppressed` with `reason=active-drag` or `reason=recent-drag`.
+7. Check whether map manipulation leaves any accidental text highlight inside a node.
+   - Expected: dragging, resizing, panning, pinching, and connect mode should not leave node text selected. Intentional text editing should still work once the gesture ends.
+8. Long-press a block with S Pen or finger.
    - Expected: the block menu opens.
-7. Long-press empty canvas.
+9. Long-press empty canvas.
    - Expected: the canvas menu opens near the press location.
-8. Long-press a relationship line or label.
+10. Long-press a relationship line or label.
    - Expected: the link menu opens.
-9. Select a block and use the selected-item toolbar.
+11. Select a block and use the selected-item toolbar.
    - Check add linked block, edit, duplicate, connect, style, center/focus, and delete reachability.
-10. Select a link and use the selected-item toolbar.
+12. Select a link and use the selected-item toolbar.
     - Check edit label, relationship type, thickness, route, port side, reverse, and delete reachability.
-11. Pinch zoom in and out several times.
+13. Pinch zoom in and out several times.
     - Expected: zoom feels stable and does not drift away from the visual anchor.
-12. Two-finger pan around the canvas.
+14. Two-finger pan around the canvas.
     - Expected: the canvas moves instead of the whole page scrolling.
-13. Try an accidental one-finger page scroll near the map edges.
+15. Try an accidental one-finger page scroll near the map edges.
     - Expected: map interaction remains usable and the page does not get into a broken state.
-14. Check whether the selected toolbar or a context menu blocks the selected block or link too much.
+16. Check whether the selected toolbar or a context menu blocks the selected block or link too much.
     - Expected: the UI stays usable without covering the active item too badly.
-15. Try tapping connection ports after selecting a block.
+17. Try tapping connection ports after selecting a block.
     - Expected: ports feel tappable enough for follow-up interaction.
-16. Export the workspace, then import it again after a few tablet edits.
+18. Export the workspace, then import it again after a few tablet edits.
     - Expected: the workspace restores cleanly.
 
 ## Edge / relationship line long-press
@@ -97,5 +101,6 @@ Anything else that felt awkward:
 - Use Copy after reproducing the bug and paste the full retained log into ChatGPT or Codex with your written report.
 - The panel now keeps a longer rolling history so full gesture sequences are easier to review.
 - For drag-handle issues, look for `capture-requested`, `capture-acquired`, `capture-lost`, and whether a drag ends with `reason=pointercancel`.
+- For accidental menu issues during map manipulation, look for `contextmenu-suppressed` with `reason=active-drag` or `reason=recent-drag`.
 - For edge long-press issues, look for `mode=edge`, `edge=...`, `hit=edge-hit-target` or `hit=edge-label`, and `contextmenu-suppressed` when the native menu is blocked.
 - The diagnostics panel is designed to log interaction metadata only. It should not capture node text, link text, or exported workspace content.

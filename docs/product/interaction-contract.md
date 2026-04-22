@@ -79,6 +79,8 @@ Tablet-safe link path:
 - relationship hit targets should be generous enough for S Pen and finger, even when the visible line stays thin.
 - if a pointer lands on a relationship hit target or label, edge long-press takes priority over canvas long-press for that gesture.
 - after a custom long-press opens a menu, the app should suppress the duplicate native `contextmenu` open for the same gesture.
+- active drag or resize gestures, and the short recent-drag window just after release, take priority over `contextmenu` on drag handles, resize surfaces, and the captured node-layer/canvas surface.
+- gesture lock should suppress accidental text selection during map manipulation, but node title/body text must remain editable and text-selectable once the gesture ends.
 - when diagnostics is enabled, only interaction metadata should be logged; relationship text and learner-authored content must stay out of the log.
 
 ## Persistence
