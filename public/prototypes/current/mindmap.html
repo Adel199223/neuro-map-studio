@@ -116,7 +116,7 @@ a{color:inherit}
   text-rendering:geometricPrecision;backface-visibility:hidden;}
 .edge-layer{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:auto;z-index:0;}
 .edge-group{pointer-events:auto;}
-.edge-hit{fill:none;stroke:transparent;stroke-width:20;stroke-linecap:round;stroke-linejoin:round;pointer-events:stroke;cursor:context-menu;}
+.edge-hit{fill:none;stroke:transparent;stroke-width:20;stroke-linecap:round;stroke-linejoin:round;pointer-events:stroke;cursor:context-menu;touch-action:none;}
 .edge{fill:none;opacity:.84;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;}
 .edge.selected{filter:drop-shadow(0 0 4px rgba(64,64,64,.3));opacity:1;}
 .edge-label-layer{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none;z-index:1;}
@@ -125,6 +125,7 @@ a{color:inherit}
   transform:translate(-50%,-50%);
   white-space:nowrap;
   pointer-events:auto;
+  touch-action:none;
   border:1px solid rgba(217,199,170,.75);
   border-radius:999px;
   background:rgba(255,250,242,.93);
@@ -578,10 +579,15 @@ a{color:inherit}
   let longPressState = null;
   const activeTouchPoints = new Map();
   let touchGesture = null;
+  const pointerGestureOwners = new Map();
+  let recentLongPressMenu = null;
 
   const DEBUG_INPUT_KEY = 'neuro-map-studio:debug-input';
   const LONG_PRESS_DELAY = 450;
   const LONG_PRESS_MOVE = 10;
+  const EDGE_HIT_WIDTH = 32;
+  const EDGE_HIT_WIDTH_COARSE = 40;
+  const RECENT_LONG_PRESS_MENU_MS = 900;
   const inputDebugState = {
     enabled: (() => {
       try{
@@ -596,7 +602,7 @@ a{color:inherit}
     })(),
     collapsed: true,
     entries: [],
-    maxEntries: 25,
+    maxEntries: 150,
     lastPointer: null
   };
 
@@ -646,7 +652,15 @@ a{color:inherit}
     if(entry.mode) parts.push(`mode=${entry.mode}`);
     if(entry.reason) parts.push(`reason=${entry.reason}`);
     if(entry.target) parts.push(`target=${entry.target}`);
+    if(entry.detail) parts.push(entry.detail);
     return parts.join(' | ');
+  }
+  function getDebugDetail(details={}){
+    const bits = [];
+    if(details.edgeId) bits.push(`edge=${details.edgeId}`);
+    if(details.hitKind) bits.push(`hit=${details.hitKind}`);
+    if(details.suppressed) bits.push(`suppressed=${details.suppressed}`);
+    return bits.join(' ');
   }
   function updateInputDebugUI(){
     if(!inputDebugState.enabled){
@@ -659,7 +673,7 @@ a{color:inherit}
     inputDebugToggle.title = inputDebugState.collapsed ? 'Expand input diagnostics' : 'Collapse input diagnostics';
     inputDebugToggle.setAttribute('aria-label', inputDebugToggle.title);
     inputDebugSummary.textContent = inputDebugState.entries.length
-      ? `${inputDebugState.entries.length} recent interactions`
+      ? `${inputDebugState.entries.length}/${inputDebugState.maxEntries} recent interactions`
       : 'Interaction metadata only';
     inputDebugLog.textContent = inputDebugState.entries.length
       ? inputDebugState.entries.map(formatDebugEntry).join('\n')
@@ -682,11 +696,57 @@ a{color:inherit}
       tiltY: Number.isFinite(meta.tiltY) ? meta.tiltY : '',
       mode: details.mode || '',
       reason: details.reason || '',
-      target: details.targetSummary || describeDebugTarget(details.target || source?.target)
+      target: details.targetSummary || describeDebugTarget(details.target || source?.target),
+      detail: getDebugDetail(details)
     };
     inputDebugState.entries.unshift(entry);
     if(inputDebugState.entries.length > inputDebugState.maxEntries) inputDebugState.entries.length = inputDebugState.maxEntries;
     updateInputDebugUI();
+  }
+  function getPointerId(source){
+    return Number.isFinite(source?.pointerId) ? source.pointerId : null;
+  }
+  function setPointerGestureOwner(pointerId, owner){
+    if(!Number.isFinite(pointerId)) return;
+    pointerGestureOwners.set(pointerId, owner);
+  }
+  function getPointerGestureOwner(pointerId){
+    if(!Number.isFinite(pointerId)) return null;
+    return pointerGestureOwners.get(pointerId) || null;
+  }
+  function clearPointerGestureOwner(pointerId){
+    if(!Number.isFinite(pointerId)) return;
+    pointerGestureOwners.delete(pointerId);
+  }
+  function noteRecentLongPressMenu(source, context){
+    recentLongPressMenu = {
+      pointerId:getPointerId(source),
+      openedAt:Date.now(),
+      mode:context?.type || '',
+      edgeId:context?.type === 'edge' ? context?.id : '',
+      hitKind:context?.hitKind || ''
+    };
+  }
+  function shouldSuppressRecentContextMenu(source){
+    if(!recentLongPressMenu) return false;
+    if(Date.now() - recentLongPressMenu.openedAt > RECENT_LONG_PRESS_MENU_MS) return false;
+    const pointerId = getPointerId(source);
+    if(pointerId !== null && recentLongPressMenu.pointerId !== null && pointerId !== recentLongPressMenu.pointerId) return false;
+    return true;
+  }
+  function suppressRecentContextMenu(source, mode, target, extraDetails={}){
+    if(!shouldSuppressRecentContextMenu(source)) return false;
+    source.preventDefault?.();
+    source.stopPropagation?.();
+    logInputDebug('contextmenu-suppressed', source, {
+      mode,
+      reason:'recent-long-press',
+      target,
+      edgeId:extraDetails.edgeId || recentLongPressMenu?.edgeId || '',
+      hitKind:extraDetails.hitKind || recentLongPressMenu?.hitKind || '',
+      suppressed:'native-contextmenu'
+    });
+    return true;
   }
   async function copyInputDebugEntries(){
     if(!inputDebugState.entries.length) return;
@@ -956,6 +1016,16 @@ a{color:inherit}
     pendingEdgeDeleteId = null;
     updateSelectionUI();
   }
+  function getLongPressDebugDetails(source, reason=''){
+    return {
+      mode:source.type,
+      reason,
+      target:source.target,
+      edgeId:source.type === 'edge' ? (source.edgeId || source.id) : '',
+      hitKind:source.hitKind || '',
+      suppressed:source.suppressed || ''
+    };
+  }
   function setDragGestureLock(active){
     document.body.classList.toggle('drag-gesture-lock', active);
     stage.classList.toggle('drag-gesture-lock', active);
@@ -1005,7 +1075,7 @@ a{color:inherit}
   function cancelLongPress(pointerId=null, reason='cancel', source=null){
     if(!longPressState) return;
     if(pointerId !== null && longPressState.pointerId !== pointerId) return;
-    logInputDebug('long-press-cancel', source || longPressState, {mode:longPressState.type, reason, target:longPressState.target});
+    logInputDebug('long-press-cancel', source || longPressState, getLongPressDebugDetails(longPressState, reason));
     clearTimeout(longPressState.timer);
     longPressState = null;
   }
@@ -1013,27 +1083,27 @@ a{color:inherit}
     cancelLongPress();
     if(dragNode || resizeNode) return;
     if(menu.classList.contains('show')) return;
-    logInputDebug('long-press-start', target, {mode:target.type, target:target.target});
+    logInputDebug('long-press-start', target, getLongPressDebugDetails(target));
     longPressState = {
       ...target,
       timer:setTimeout(() => {
         const active = longPressState;
         if(!active || active.pointerId !== target.pointerId) return;
         longPressState = null;
-        logInputDebug('long-press-fire', active, {mode:active.type, target:active.target});
+        logInputDebug('long-press-fire', active, getLongPressDebugDetails(active));
         closeMenu();
         if(active.type === 'canvas'){
-          canvasMenu(screenToWorld(active.clientX, active.clientY), active.clientX, active.clientY, {trigger:'long-press'});
+          canvasMenu(screenToWorld(active.clientX, active.clientY), active.clientX, active.clientY, {trigger:'long-press', source:active});
         }else if(active.type === 'node'){
           const node = byId(active.id);
           if(!node) return;
           select(node.id);
-          nodeMenu(node, active.clientX, active.clientY, {trigger:'long-press'});
+          nodeMenu(node, active.clientX, active.clientY, {trigger:'long-press', source:active});
         }else if(active.type === 'edge'){
           const edge = edgeById(active.id);
           if(!edge) return;
           selectEdge(edge.id);
-          edgeMenu(edge, active.clientX, active.clientY, {trigger:'long-press'});
+          edgeMenu(edge, active.clientX, active.clientY, {trigger:'long-press', source:active, hitKind:active.hitKind});
         }
       }, LONG_PRESS_DELAY)
     };
@@ -1337,8 +1407,9 @@ a{color:inherit}
       const g = document.createElementNS('http://www.w3.org/2000/svg','g'); g.setAttribute('class','edge-group'); g.dataset.edgeId = e.id;
       const hit = document.createElementNS('http://www.w3.org/2000/svg','path');
       hit.setAttribute('class', 'edge-hit');
+      hit.dataset.edgeId = e.id;
       hit.setAttribute('d', d);
-      hit.setAttribute('stroke-width', String(Math.max(18, style.base + e.strength*.58 + 12)));
+      hit.setAttribute('stroke-width', String(Math.max(window.matchMedia('(pointer:coarse)').matches ? EDGE_HIT_WIDTH_COARSE : EDGE_HIT_WIDTH, style.base + e.strength*.58 + 12)));
       g.appendChild(hit);
       const p = document.createElementNS('http://www.w3.org/2000/svg','path');
       p.setAttribute('class', 'edge' + (e.id === selectedEdgeId ? ' selected' : ''));
@@ -1623,7 +1694,15 @@ a{color:inherit}
 
   function showMenu(title, items, clientX, clientY, context){
     menuContext = context || null;
-    logInputDebug('menu-open', inputDebugState.lastPointer, {mode:context?.type || 'menu', reason:context?.trigger || 'direct'});
+    const source = context?.source || inputDebugState.lastPointer;
+    logInputDebug('menu-open', source, {
+      mode:context?.type || 'menu',
+      reason:context?.trigger || 'direct',
+      target:context?.source?.target || source?.target,
+      edgeId:context?.type === 'edge' ? context?.id : context?.source?.edgeId,
+      hitKind:context?.hitKind || context?.source?.hitKind || ''
+    });
+    if(context?.trigger === 'long-press') noteRecentLongPressMenu(source, context);
     menu.innerHTML = '';
     const heading = document.createElement('div'); heading.className = 'menu-title'; heading.textContent = title; menu.appendChild(heading);
     items.forEach(item => {
@@ -1757,10 +1836,10 @@ a{color:inherit}
     runMenuAction(ctx, action);
   });
 
-  nodeLayer.addEventListener('contextmenu', e => { const el = e.target.closest('.map-node'); if(!el) return; e.preventDefault(); closeMenu(); const n = byId(el.dataset.id); if(!n) return; select(n.id); nodeMenu(n, e.clientX, e.clientY, {trigger:'contextmenu'}); });
-  edgeLabelLayer.addEventListener('contextmenu', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; e.preventDefault(); closeMenu(); const ed = edgeById(lab.dataset.edgeId); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu'}); });
-  edgeLayer.addEventListener('contextmenu', e => { const g = e.target.closest('g.edge-group'); if(!g) return; e.preventDefault(); closeMenu(); const ed = edgeById(g.dataset.edgeId); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu'}); });
-  stage.addEventListener('contextmenu', e => { if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.side-panel') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY, {trigger:'contextmenu'}); });
+  nodeLayer.addEventListener('contextmenu', e => { const el = e.target.closest('.map-node'); if(!el) return; if(suppressRecentContextMenu(e, 'node', el)) return; e.preventDefault(); closeMenu(); const n = byId(el.dataset.id); if(!n) return; select(n.id); nodeMenu(n, e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
+  edgeLabelLayer.addEventListener('contextmenu', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; const ed = edgeById(lab.dataset.edgeId); if(suppressRecentContextMenu(e, 'edge', lab, {edgeId:ed?.id, hitKind:'edge-label'})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind:'edge-label'}); });
+  edgeLayer.addEventListener('contextmenu', e => { const g = e.target.closest('g.edge-group'); if(!g) return; const ed = edgeById(g.dataset.edgeId); const hitKind = e.target.closest('.edge-hit') ? 'edge-hit-target' : 'edge-group'; if(suppressRecentContextMenu(e, 'edge', g, {edgeId:ed?.id, hitKind})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind}); });
+  stage.addEventListener('contextmenu', e => { if(suppressRecentContextMenu(e, 'canvas', stage)) return; if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.side-panel') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
 
   nodeLayer.addEventListener('click', e => { const el = e.target.closest('.map-node'); if(!el) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'node', target:el}); if(connectFrom && el.dataset.id !== connectFrom){ addEdge(connectFrom, el.dataset.id); cancelConnect(); return; } select(el.dataset.id); });
   edgeLabelLayer.addEventListener('click', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'edge', target:lab}); selectEdge(lab.dataset.edgeId); });
@@ -1805,8 +1884,11 @@ a{color:inherit}
     const edge = edgeById(label.dataset.edgeId);
     if(!edge) return;
     e.preventDefault();
+    e.stopPropagation();
     closeMenu();
-    startLongPress({type:'edge', id:edge.id, pointerId:e.pointerId, pointerType:e.pointerType, buttons:e.buttons, pressure:e.pressure, tiltX:e.tiltX, tiltY:e.tiltY, clientX:e.clientX, clientY:e.clientY, target:label});
+    selectEdge(edge.id);
+    setPointerGestureOwner(e.pointerId, {owner:'edge', edgeId:edge.id, hitKind:'edge-label'});
+    startLongPress({type:'edge', id:edge.id, edgeId:edge.id, hitKind:'edge-label', suppressed:'canvas-long-press', pointerId:e.pointerId, pointerType:e.pointerType, buttons:e.buttons, pressure:e.pressure, tiltX:e.tiltX, tiltY:e.tiltY, clientX:e.clientX, clientY:e.clientY, target:label});
   });
   edgeLayer.addEventListener('pointerdown', e => {
     const group = e.target.closest('g.edge-group');
@@ -1814,12 +1896,17 @@ a{color:inherit}
     const edge = edgeById(group.dataset.edgeId);
     if(!edge) return;
     e.preventDefault();
+    e.stopPropagation();
     closeMenu();
-    startLongPress({type:'edge', id:edge.id, pointerId:e.pointerId, pointerType:e.pointerType, buttons:e.buttons, pressure:e.pressure, tiltX:e.tiltX, tiltY:e.tiltY, clientX:e.clientX, clientY:e.clientY, target:group});
+    const hitKind = e.target.closest('.edge-hit') ? 'edge-hit-target' : 'edge-group';
+    selectEdge(edge.id);
+    setPointerGestureOwner(e.pointerId, {owner:'edge', edgeId:edge.id, hitKind});
+    startLongPress({type:'edge', id:edge.id, edgeId:edge.id, hitKind, suppressed:'canvas-long-press', pointerId:e.pointerId, pointerType:e.pointerType, buttons:e.buttons, pressure:e.pressure, tiltX:e.tiltX, tiltY:e.tiltY, clientX:e.clientX, clientY:e.clientY, target:group});
   });
 
   stage.addEventListener('pointerdown', e => {
     if(dragNode) return;
+    if(getPointerGestureOwner(e.pointerId)) return;
     if(isTouchGesturePointer(e)){
       activeTouchPoints.set(e.pointerId, stageCoords(e.clientX, e.clientY));
       if(activeTouchPoints.size >= 2){
@@ -1944,6 +2031,8 @@ a{color:inherit}
     }, true);
     document.addEventListener('pointerup', e => rememberDebugPointer(e), true);
   }
+  document.addEventListener('pointerup', e => clearPointerGestureOwner(e.pointerId), true);
+  document.addEventListener('pointercancel', e => clearPointerGestureOwner(e.pointerId), true);
 
   document.getElementById('btnCenter').addEventListener('click', recenter);
   document.getElementById('btnZoomIn').addEventListener('click', () => zoomCenter(1.25));

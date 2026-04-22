@@ -76,6 +76,9 @@ Tablet-safe link path:
 - tap the line or label to select the relationship;
 - use the selected-item toolbar for label, relation type, thickness, route, port side, reverse, and delete;
 - long-press the line or label to open the full link menu.
+- relationship hit targets should be generous enough for S Pen and finger, even when the visible line stays thin.
+- if a pointer lands on a relationship hit target or label, edge long-press takes priority over canvas long-press for that gesture.
+- after a custom long-press opens a menu, the app should suppress the duplicate native `contextmenu` open for the same gesture.
 - when diagnostics is enabled, only interaction metadata should be logged; relationship text and learner-authored content must stay out of the log.
 
 ## Persistence

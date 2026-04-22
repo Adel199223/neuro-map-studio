@@ -140,6 +140,14 @@ async function dragByHandle(
   await moveTarget.dispatchEvent('pointerup', { ...payload, buttons: 0, pressure: 0, clientX: moveX, clientY: moveY });
 }
 
+async function countDebugLines(log: Locator) {
+  return log.evaluate((node) => {
+    const text = node.textContent?.trim() || '';
+    if (!text || /no recent input yet\./i.test(text)) return 0;
+    return text.split('\n').filter(Boolean).length;
+  });
+}
+
 test.describe('current standalone prototypes', () => {
   test('root app exposes prototype entry links', async ({ page }) => {
     await page.goto('/');
@@ -249,6 +257,32 @@ test.describe('current standalone prototypes', () => {
     await expect(page.getByRole('button', { name: /add free block here/i })).toBeVisible();
   });
 
+  test('touch long-press on an edge hit target opens the link menu and suppresses duplicate contextmenu', async ({ page }) => {
+    await resetMindmap(page, debugMindmapPath);
+
+    const panel = page.locator('#inputDebugPanel');
+    const log = page.locator('#inputDebugLog');
+    await expect(panel).toBeVisible();
+    await page.getByRole('button', { name: /expand input diagnostics/i }).click();
+
+    const hitTarget = page.locator('.edge-hit').first();
+    const hitWidth = await hitTarget.evaluate((path) => Number(path.getAttribute('stroke-width') || '0'));
+    expect(hitWidth).toBeGreaterThanOrEqual(32);
+
+    await longPress(hitTarget, { pointerId: 61 });
+    await expect(page.getByRole('button', { name: /rename link label/i })).toBeVisible();
+    await expect(page.locator('#selectionShelf')).toBeVisible();
+    await expect(log).toContainText('mode=edge');
+    await expect(log).toContainText('hit=edge-hit-target');
+    await expect(log).toContainText('edge=e1');
+    await expect(log).not.toContainText('mode=canvas | reason=long-press');
+
+    await contextMenu(page.locator('#stage'), { x: 120, y: 120 });
+    await expect(log).toContainText('contextmenu-suppressed');
+    await expect(log).not.toContainText('mode=canvas | reason=contextmenu');
+    await expect(page.getByRole('button', { name: /add free block here/i })).toHaveCount(0);
+  });
+
   test('touch drag handle moves a node and keeps touch-action plus capture diagnostics', async ({ page }) => {
     await resetMindmap(page, debugMindmapPath);
 
@@ -315,6 +349,25 @@ test.describe('current standalone prototypes', () => {
 
     await page.getByRole('button', { name: /clear diagnostics log/i }).click();
     await expect(log).toHaveText(/no recent input yet\./i);
+  });
+
+  test('input diagnostics retain more than 25 recent events', async ({ page }) => {
+    await resetMindmap(page, debugMindmapPath);
+
+    const panel = page.locator('#inputDebugPanel');
+    const log = page.locator('#inputDebugLog');
+    await expect(panel).toBeVisible();
+    await page.getByRole('button', { name: /expand input diagnostics/i }).click();
+
+    const coreNode = page.locator('.map-node[data-id="core"]');
+    for (let i = 0; i < 30; i += 1) {
+      await pointerTap(coreNode, { pointerId: 120 + i, pointerType: 'touch', pressure: 0.5 });
+    }
+
+    expect(await countDebugLines(log)).toBeGreaterThan(25);
+    await expect(page.locator('#inputDebugSummary')).toContainText('/150 recent interactions');
+    await expect(page.getByRole('button', { name: /copy diagnostics log/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /clear diagnostics log/i })).toBeEnabled();
   });
 
   test('selected toolbar stays inside the viewport on a tablet-ish layout', async ({ page }) => {

@@ -57,6 +57,19 @@ localStorage.removeItem("neuro-map-studio:debug-input")
 16. Export the workspace, then import it again after a few tablet edits.
     - Expected: the workspace restores cleanly.
 
+## Edge / relationship line long-press
+
+1. Open the diagnostics URL.
+2. Long-press a visible relationship line with S Pen.
+   - Expected: the link menu or selected-link toolbar opens.
+   - Expected debug signal: `mode=edge`, not `mode=canvas`.
+3. Long-press a visible relationship line with a finger.
+   - Expected: the same link-focused behavior without needing unrealistically precise targeting.
+4. Confirm the canvas menu does not open for the same gesture.
+   - Expected debug signal: no duplicate `menu-open` in `mode=canvas` for the same long-press.
+5. Long-press empty space afterward.
+   - Expected: canvas long-press still opens the canvas menu normally.
+
 ## What to report back
 
 Copy and fill this template:
@@ -81,6 +94,8 @@ Anything else that felt awkward:
 
 - Expand the diagnostics panel only when you need it.
 - Use Clear before reproducing a bug so the log stays short.
-- Use Copy after reproducing the bug and paste the result into ChatGPT or Codex with your written report.
+- Use Copy after reproducing the bug and paste the full retained log into ChatGPT or Codex with your written report.
+- The panel now keeps a longer rolling history so full gesture sequences are easier to review.
 - For drag-handle issues, look for `capture-requested`, `capture-acquired`, `capture-lost`, and whether a drag ends with `reason=pointercancel`.
+- For edge long-press issues, look for `mode=edge`, `edge=...`, `hit=edge-hit-target` or `hit=edge-label`, and `contextmenu-suppressed` when the native menu is blocked.
 - The diagnostics panel is designed to log interaction metadata only. It should not capture node text, link text, or exported workspace content.
