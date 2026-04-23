@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 
 const mindmapPath = '/prototypes/current/mindmap.html';
 const debugMindmapPath = `${mindmapPath}?debugInput=1`;
@@ -270,6 +271,152 @@ test.describe('current standalone prototypes', () => {
     await expect(page.getByRole('heading', { name: /Neuroscience study/i })).toBeVisible();
   });
 
+  test('workspace backup export includes schema metadata and all local stores', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto('/');
+    await expect(page.locator('.status').first()).toContainText(/Workspace ready/i);
+
+    await page.evaluate(async () => {
+      const runtime = window as unknown as Window & {
+        neuroMapWorkspaceStore: {
+          createProject: (fields: Record<string, string>) => Promise<{ id: string }>;
+          createDocument: (projectId: string, fields: Record<string, string>) => Promise<{ id: string }>;
+          createPage: (projectId: string, fields: Record<string, string>) => Promise<{ id: string }>;
+          linkPageDocument: (pageId: string, documentId: string, relationship: string) => Promise<unknown>;
+          savePageState: (pageId: string, pageType: string, data: Record<string, string>) => Promise<unknown>;
+        };
+      };
+      const store = runtime.neuroMapWorkspaceStore;
+      const project = await store.createProject({
+        title: 'Backup export project',
+        description: 'Project included in a JSON backup.',
+        theme: 'backup-test',
+      });
+      const documentRecord = await store.createDocument(project.id, {
+        title: 'Backup source document',
+        type: 'note',
+        description: 'A source that should be exported.',
+      });
+      const pageRecord = await store.createPage(project.id, {
+        title: 'Backup notes page',
+        type: 'notes',
+        description: 'A page that should have runtime state.',
+      });
+      await store.linkPageDocument(pageRecord.id, documentRecord.id, 'source');
+      await store.savePageState(pageRecord.id, 'notes', {
+        kind: 'notes-editor',
+        prompt: 'Backup prompt',
+        body: 'Backup body',
+        nextQuestion: 'What should restore?',
+      });
+    });
+
+    await page.getByText(/Backup & restore/i).click();
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: /Export workspace backup/i }).click();
+    const download = await downloadPromise;
+    const downloadPath = await download.path();
+    if (!downloadPath) throw new Error('Expected a downloaded backup file.');
+    const backup = JSON.parse(readFileSync(downloadPath, 'utf8')) as {
+      schemaVersion: number;
+      app: { name: string };
+      storage: { dbVersion: number; pageStateVersion: number };
+      projects: Array<{ title: string }>;
+      documents: Array<{ title: string }>;
+      pages: Array<{ title: string }>;
+      pageDocumentLinks: unknown[];
+      pageStates: Array<{ data: unknown }>;
+    };
+
+    expect(backup.schemaVersion).toBe(1);
+    expect(backup.app.name).toBe('Neuro Map Studio');
+    expect(backup.storage.dbVersion).toBeGreaterThanOrEqual(2);
+    expect(backup.storage.pageStateVersion).toBe(1);
+    expect(backup.projects.some((project) => project.title === 'Backup export project')).toBe(true);
+    expect(backup.documents.some((documentRecord) => documentRecord.title === 'Backup source document')).toBe(true);
+    expect(backup.pages.some((pageRecord) => pageRecord.title === 'Backup notes page')).toBe(true);
+    expect(backup.pageDocumentLinks.length).toBeGreaterThan(0);
+    expect(backup.pageStates.length).toBeGreaterThan(0);
+  });
+
+  test('workspace backup import merges valid data and persists after reload', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto('/');
+    await expect(page.locator('.status').first()).toContainText(/Workspace ready/i);
+    const backup = await page.evaluate(async () => {
+      const runtime = window as unknown as Window & {
+        neuroMapWorkspaceStore: {
+          createProject: (fields: Record<string, string>) => Promise<{ id: string }>;
+          createDocument: (projectId: string, fields: Record<string, string>) => Promise<{ id: string }>;
+          createPage: (projectId: string, fields: Record<string, string>) => Promise<{ id: string }>;
+          linkPageDocument: (pageId: string, documentId: string, relationship: string) => Promise<unknown>;
+          savePageState: (pageId: string, pageType: string, data: Record<string, string>) => Promise<unknown>;
+          exportWorkspaceBackup: () => Promise<unknown>;
+        };
+      };
+      const store = runtime.neuroMapWorkspaceStore;
+      const project = await store.createProject({
+        title: 'Backup import project',
+        description: 'Imported project should survive reload.',
+        theme: 'import-test',
+      });
+      const documentRecord = await store.createDocument(project.id, {
+        title: 'Imported source',
+        type: 'note',
+        description: 'Imported document metadata.',
+      });
+      const pageRecord = await store.createPage(project.id, {
+        title: 'Imported notes page',
+        type: 'notes',
+        description: 'Imported runtime page.',
+      });
+      await store.linkPageDocument(pageRecord.id, documentRecord.id, 'related');
+      await store.savePageState(pageRecord.id, 'notes', {
+        kind: 'notes-editor',
+        prompt: 'Imported prompt',
+        body: 'Imported body',
+        nextQuestion: 'What came from backup?',
+      });
+      return store.exportWorkspaceBackup();
+    });
+
+    await clearWorkspaceDatabase(page);
+    await page.goto('/');
+    await page.getByText(/Backup & restore/i).click();
+    await page.getByLabel(/Import workspace backup/i).setInputFiles({
+      name: 'backup.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(backup)),
+    });
+
+    await expect(page.getByText(/Backup merged safely/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Backup import project/i })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('heading', { name: /Backup import project/i })).toBeVisible();
+
+    await page.locator('.project-card').filter({ hasText: 'Backup import project' }).getByRole('link', { name: /Open project/i }).click();
+    await expect(page.getByRole('heading', { name: /Imported notes page/i })).toBeVisible();
+    await expect(page.getByText(/Imported notes page uses Imported source as related/i)).toBeVisible();
+  });
+
+  test('workspace backup import rejects invalid JSON without replacing local data', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: /Geopolitics & Economics/i })).toBeVisible();
+
+    await page.getByText(/Backup & restore/i).click();
+    await page.getByLabel(/Import workspace backup/i).setInputFiles({
+      name: 'not-a-backup.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify({ schemaVersion: 999, projects: 'nope' })),
+    });
+
+    await expect(page.getByText(/Backup rejected/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Geopolitics & Economics/i })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('heading', { name: /Geopolitics & Economics/i })).toBeVisible();
+  });
+
   test('empty projects show create prompts instead of dead lesson or map shortcuts', async ({ page }) => {
     await clearWorkspaceDatabase(page);
     await page.goto('/');
@@ -410,11 +557,11 @@ test.describe('current standalone prototypes', () => {
 
     await page.goto(projectPath);
     const notesCard = page.locator('.page-card').filter({ hasText: 'Working notes' });
-    await expect(notesCard.getByRole('link', { name: /Open page/i })).toHaveAttribute(
+    await expect(notesCard.getByRole('link', { name: /Open notes/i })).toHaveAttribute(
       'href',
       /page\.html\?pageId=/,
     );
-    await notesCard.getByRole('link', { name: /Open page/i }).click();
+    await notesCard.getByRole('link', { name: /Open notes/i }).click();
     await expect(page).toHaveURL(createdNotesUrl);
     await expect(page.getByRole('heading', { name: /Working notes/i })).toBeVisible();
   });
@@ -531,10 +678,15 @@ test.describe('current standalone prototypes', () => {
     await expect(page.getByRole('heading', { name: /Blank systems map/i })).toBeVisible();
     await expect(page.locator('.map-node')).toHaveCount(1);
     await expect(page.locator('.map-node', { hasText: 'Main idea' })).toBeVisible();
+    await expect(page.locator('#mapStarterPanel')).toBeVisible();
 
-    await page.getByRole('button', { name: /add free block/i }).click();
+    await page.getByRole('button', { name: /Add central question/i }).click();
     await expect(page.locator('.map-node')).toHaveCount(2);
+    await expect(page.locator('.map-node', { hasText: 'Central question' })).toBeVisible();
     await expect(page.locator('#saveStatus')).toContainText(/Added block/i);
+    await page.reload();
+    await expect(page.locator('.map-node', { hasText: 'Central question' })).toBeVisible();
+    await expect(page.locator('#mapStarterPanel')).toBeHidden();
 
     await page.goto(`${pageRuntimePath}?pageId=simon-dixon-debt-power-map`);
     await expect(page.locator('.map-node')).toHaveCount(13);
@@ -543,6 +695,37 @@ test.describe('current standalone prototypes', () => {
     await page.goto(createdMapUrl);
     await expect(page.getByRole('heading', { name: /Blank systems map/i })).toBeVisible();
     await expect(page.locator('.map-node')).toHaveCount(2);
+  });
+
+  test('new map starter can add document blocks or explain when no documents exist', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto(projectPath);
+
+    await openDetails(page, '#pageCreatePanel');
+    await page.locator('#pageForm').getByLabel(/Title/i).fill('Starter document map');
+    await page.locator('#pageForm').getByLabel(/Type/i).selectOption('map');
+    await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
+
+    await expect(page.locator('#mapStarterPanel')).toBeVisible();
+    await page.getByRole('button', { name: /Add source\/document block/i }).click();
+    await expect(page.locator('#documentPicker')).toBeVisible();
+    await page.locator('#documentPicker').getByRole('button', { name: /Simon Dixon debt-power/i }).click();
+    await expect(page.locator('.map-node.type-document')).toContainText(/Simon Dixon debt-power interview\/model/i);
+
+    await page.goto('/');
+    await page.getByLabel(/Project title/i).fill('No document project');
+    await page.getByLabel(/Theme or domain/i).fill('starter');
+    await page.getByLabel(/Short description/i).fill('A project with no documents.');
+    await page.getByRole('button', { name: /create project locally/i }).click();
+    await page.locator('.project-card').filter({ hasText: 'No document project' }).getByRole('link', { name: /Open project/i }).click();
+    await page.getByRole('button', { name: /Create a map page/i }).click();
+    await page.locator('#pageForm').getByLabel(/Title/i).fill('No docs map');
+    await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
+
+    await expect(page.locator('#mapStarterPanel')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Add a document first/i })).toBeVisible();
+    await page.getByRole('button', { name: /Add a document first/i }).click();
+    await expect(page.locator('#saveStatus')).toContainText(/Add document metadata/i);
   });
 
   test('seeded map migrates legacy localStorage into page-owned state without deleting the legacy save', async ({ page }) => {
@@ -619,7 +802,7 @@ test.describe('current standalone prototypes', () => {
       'href',
       /project\.html\?projectId=geopolitics-economics/,
     );
-    await expect(page.getByRole('link', { name: /^lesson$/i })).toHaveAttribute(
+    await expect(page.getByRole('link', { name: /open related lesson/i })).toHaveAttribute(
       'href',
       /page\.html\?pageId=simon-dixon-linear-lesson/,
     );

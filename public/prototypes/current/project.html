@@ -81,6 +81,8 @@ label{display:grid;gap:4px;font-weight:900;color:var(--muted)}
     <p class="lede" id="projectDescription">Opening your local workspace.</p>
     <div class="actions" aria-label="Project shortcuts">
       <a class="button" href="/">Workspace home</a>
+      <button type="button" data-action="prepare-page" data-page-type="notes">Create page</button>
+      <button type="button" data-action="prepare-document">Create document</button>
       <a class="button primary" id="primaryLessonLink" href="page.html">Open lesson</a>
       <a class="button" id="primaryMapLink" href="page.html">Open editable map</a>
     </div>
@@ -217,6 +219,9 @@ function pageTypeLabel(type){
 function pageOpenLabel(page){
   if(page?.type === 'lesson') return 'Open lesson';
   if(page?.type === 'map') return 'Open map';
+  if(page?.type === 'notes') return 'Open notes';
+  if(page?.type === 'review') return 'Open review';
+  if(page?.type === 'glossary') return 'Open glossary';
   return 'Open page';
 }
 
@@ -408,6 +413,13 @@ document.addEventListener('click', async event => {
     }
     titleInput.focus();
     setStatus(`Ready to create a ${requestedType} page.`);
+  }
+  if(action === 'prepare-document'){
+    const panel = document.getElementById('documentCreatePanel');
+    const form = document.getElementById('documentForm');
+    panel.open = true;
+    form.elements.title.focus();
+    setStatus('Ready to add a reusable project document.');
   }
 });
 

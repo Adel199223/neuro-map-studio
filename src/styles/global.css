@@ -80,8 +80,29 @@ h3 { margin: 0 0 0.45rem; }
 .section-block { margin-top: 26px; }
 .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .create-card,
+.backup-details,
 .dev-details { margin-top: 18px; }
+.backup-details summary,
 .dev-details summary { cursor: pointer; font-weight: 700; }
+.file-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ccb284;
+  border-radius: 999px;
+  padding: 0.85rem 1.1rem;
+  background: #fffdf7;
+  color: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.file-action input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
 form {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

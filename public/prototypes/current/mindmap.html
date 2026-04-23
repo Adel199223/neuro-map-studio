@@ -302,18 +302,25 @@ a{color:inherit}
 .input-debug-log{margin:0;border:1px solid rgba(217,199,170,.78);border-radius:14px;background:rgba(255,255,255,.62);padding:.5rem .55rem;min-height:5.2rem;max-height:min(38vh,280px);overflow:auto;font:inherit;font-size:.74rem;line-height:1.34;white-space:pre-wrap;word-break:break-word}
 .menu{position:fixed;z-index:90;min-width:256px;max-width:min(360px,calc(100vw - 18px));display:none;border:1px solid var(--border);border-radius:18px;background:#fffaf2;box-shadow:0 20px 42px rgba(0,0,0,.2);padding:.38rem;}
 .menu.show{display:block}.menu-title{padding:.48rem .62rem .38rem;font-weight:900;color:#3a342e;border-bottom:1px solid rgba(217,199,170,.7);margin-bottom:.28rem;}.menu-section{font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;color:#7a6f61;font-weight:900;padding:.48rem .62rem .18rem;}.menu button{width:100%;justify-content:flex-start;text-align:left;border-color:transparent;border-radius:12px;min-height:2rem;background:transparent;padding:.36rem .56rem;}.menu button:hover,.menu button:focus{background:#f7eddb;outline:none}.menu button.danger{color:#8a2e2e}.menu button[disabled]{opacity:.45;cursor:not-allowed}.menu-row{display:flex;flex-wrap:wrap;gap:.35rem;padding:.26rem .4rem .38rem;}.menu-row button{width:auto;min-width:2rem;height:2rem;min-height:2rem;justify-content:center;padding:0 .48rem;border:1px solid var(--border);font-size:.8rem;}.dot-blue{background:var(--blue)!important;border-color:var(--blue-border)!important}.dot-amber{background:var(--amber)!important;border-color:var(--amber-border)!important}.dot-green{background:var(--green)!important;border-color:var(--green-border)!important}.dot-rose{background:var(--rose)!important;border-color:var(--rose-border)!important}.dot-violet{background:var(--violet)!important;border-color:var(--violet-border)!important}
-.document-picker,.document-detail-card{position:absolute;z-index:42;right:1rem;top:5rem;width:min(360px,calc(100vw - 2rem));max-height:min(70dvh,520px);overflow:auto;border:1px solid var(--border);border-radius:22px;background:#fffaf2;box-shadow:0 20px 42px rgba(0,0,0,.18);padding:1rem;}
+.document-picker,.document-detail-card{position:absolute;z-index:90;right:1rem;top:5rem;width:min(360px,calc(100vw - 2rem));max-height:min(70dvh,520px);overflow:auto;border:1px solid var(--border);border-radius:22px;background:#fffaf2;box-shadow:0 20px 42px rgba(0,0,0,.18);padding:1rem;}
 .document-picker h2,.document-detail-card h2{margin:.1rem 0 .45rem;font-size:1.15rem;}
 .document-picker-list{display:grid;gap:.55rem;margin-top:.75rem;}
 .document-picker-item{width:100%;min-height:3rem;border:1px solid var(--border);border-radius:15px;background:rgba(255,255,255,.58);text-align:left;padding:.62rem .72rem;font:inherit;cursor:pointer;}
 .document-picker-item strong,.document-detail-card strong{display:block;}
 .document-picker-item span,.document-detail-card span{display:block;color:var(--muted);font-size:.84rem;line-height:1.35;}
+.map-starter{position:absolute;z-index:80;right:1rem;top:5rem;width:min(340px,calc(100vw - 2rem));border:1px solid var(--border);border-radius:22px;background:rgba(255,250,242,.96);box-shadow:0 18px 40px rgba(72,54,31,.16);padding:1rem;display:grid;gap:.55rem;pointer-events:auto;}
+.map-starter[hidden]{display:none!important;}
+.map-starter h2{margin:0;font-size:1.12rem;}
+.map-starter p{margin:0;color:var(--muted);font-size:.9rem;line-height:1.45;}
+.map-starter-actions{display:grid;gap:.45rem;}
+.map-starter-actions button{width:100%;justify-content:flex-start;border-radius:16px;background:rgba(255,255,255,.7);min-height:2.65rem;cursor:pointer;}
+.map-starter-actions button.primary{background:var(--green);border-color:var(--green-border);}
 .document-panel-actions{display:flex;justify-content:flex-end;gap:.5rem;margin-top:.8rem;}
 .document-panel-actions button{min-height:2.4rem;border:1px solid var(--border);border-radius:999px;background:#fffdf7;font:inherit;font-weight:900;cursor:pointer;padding:.4rem .75rem;}
 .import-input{display:none}.toast{position:absolute;right:1rem;bottom:1rem;z-index:22;border:1px solid var(--border);border-radius:999px;background:rgba(255,250,242,.95);color:var(--muted);padding:.45rem .75rem;box-shadow:0 12px 24px rgba(72,54,31,.12);opacity:0;transform:translateY(8px);transition:opacity .18s ease, transform .18s ease;pointer-events:none;}.toast.show{opacity:1;transform:translateY(0)}
 @media(max-width:860px){.topbar{grid-template-columns:1fr auto;gap:.4rem}.pagebar{grid-column:1/3;justify-content:flex-start;min-width:0}.pagebar select{max-width:calc(100vw - 14rem)}.back-link{grid-column:1/3;width:max-content}.status-pill{font-size:.78rem;min-width:0}.side-panel{right:.45rem;top:.45rem}.side-tab{min-width:2.25rem;min-height:2.25rem;padding:.2rem}.panel-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem)}.toolbar{left:.45rem;top:.45rem}.toolbar button,.file-label{width:2.2rem;height:2.2rem;min-height:2.2rem}.zoom-dock{right:max(.5rem, env(safe-area-inset-right));bottom:calc(max(.5rem, env(safe-area-inset-bottom)) + var(--zoom-dock-lift, 0px))}.zoom-dock button{width:2.85rem;height:2.85rem;min-height:2.85rem}.zoom-dock button.zoom-readout{width:3.85rem}.map-node{width:235px;min-height:120px}.map-node .node-content{padding:.78rem .75rem 1.2rem}.node-title{font-size:.96rem}.node-body{font-size:.84rem}.selection-shelf{top:auto;bottom:.85rem;max-width:calc(100vw - 1rem)}.selection-shelf.docked{top:auto;bottom:.85rem}.selection-meta strong{max-width:36vw}.selection-toggle,.selection-action{width:2.75rem;height:2.75rem;min-height:2.75rem}.connect-banner{bottom:4.2rem;max-width:calc(100vw - 1rem);border-radius:16px}.input-debug{left:.5rem;bottom:.5rem;width:calc(100vw - 1rem);max-width:calc(100vw - 1rem)}}
 @media (pointer:coarse){.menu button{min-height:2.75rem;padding:.46rem .62rem}.menu-row button{min-width:2.75rem;height:2.75rem;min-height:2.75rem}.selection-toggle,.selection-action{width:2.95rem;height:2.95rem;min-height:2.95rem}.input-debug button{min-height:2.75rem}.drag-handle{width:3rem;height:3rem;min-height:3rem}.drag-handle-icon{width:2.1rem;height:2.1rem;min-height:2.1rem}.map-node.shape-oval .drag-handle{width:2.65rem;height:2.65rem;min-height:2.65rem}.map-node.shape-oval .drag-handle-icon{width:1.85rem;height:1.85rem;min-height:1.85rem}.zoom-dock button{width:3rem;height:3rem;min-height:3rem}.zoom-dock button.zoom-readout{width:4rem}}
-@media print{.topbar,.pagebar,.toolbar,.zoom-dock,.side-panel,.menu,.toast,.connect-banner,.selection-shelf,.input-debug,.document-picker,.document-detail-card{display:none!important}body{overflow:visible;background:white}.stage{overflow:visible}.map-node{break-inside:avoid}}
+@media print{.topbar,.pagebar,.toolbar,.zoom-dock,.side-panel,.menu,.toast,.connect-banner,.selection-shelf,.input-debug,.document-picker,.document-detail-card,.map-starter{display:none!important}body{overflow:visible;background:white}.stage{overflow:visible}.map-node{break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -471,6 +478,17 @@ a{color:inherit}
       <p id="documentDetailDescription"></p>
       <div class="document-panel-actions"><button id="documentDetailClose" type="button">Close</button></div>
     </aside>
+    <aside class="map-starter" id="mapStarterPanel" aria-label="Map starter" hidden>
+      <h2>Start this map gently</h2>
+      <p>Use one small move to turn the blank map into a learning path. You can ignore this panel anytime.</p>
+      <div class="map-starter-actions">
+        <button class="primary" id="starterAddQuestion" type="button">Add central question</button>
+        <button id="starterAddEvidence" type="button">Add evidence block</button>
+        <button id="starterAddDocument" type="button">Add source/document block</button>
+        <button id="starterHide" type="button">Hide starter</button>
+      </div>
+      <p class="mini" id="starterDocumentHint">Document blocks use the project document library.</p>
+    </aside>
     <div class="toast" id="toast" aria-live="polite">Saved</div>
     <aside class="input-debug collapsed" id="inputDebugPanel" aria-label="Input diagnostics" hidden>
       <div class="input-debug-header">
@@ -566,6 +584,12 @@ import {
   const documentDetailMeta = document.getElementById('documentDetailMeta');
   const documentDetailDescription = document.getElementById('documentDetailDescription');
   const documentDetailClose = document.getElementById('documentDetailClose');
+  const mapStarterPanel = document.getElementById('mapStarterPanel');
+  const starterAddQuestion = document.getElementById('starterAddQuestion');
+  const starterAddEvidence = document.getElementById('starterAddEvidence');
+  const starterAddDocument = document.getElementById('starterAddDocument');
+  const starterHide = document.getElementById('starterHide');
+  const starterDocumentHint = document.getElementById('starterDocumentHint');
   const projectBackLink = document.getElementById('projectBackLink');
   const lessonBackLink = document.getElementById('lessonBackLink');
   const projectKicker = document.getElementById('projectKicker');
@@ -665,6 +689,7 @@ import {
   let runtimeProject = null;
   let runtimeProjectPages = [];
   let runtimePageInitialized = false;
+  let starterHidden = false;
 
   const DEBUG_INPUT_KEY = 'neuro-map-studio:debug-input';
   const LONG_PRESS_DELAY = 450;
@@ -1005,7 +1030,8 @@ import {
       if(runtimePageInitialized && runtimePageId){
         await savePageState(runtimePageId, 'map', {
           kind:'map-workspace',
-          workspace
+          workspace,
+          starterHidden
         });
       }
       setStatus(msg);
@@ -1043,6 +1069,12 @@ import {
     const lessonPage = runtimeProjectPages.find(page => page.type === 'lesson');
     if(lessonPage){
       lessonBackLink.href = pageRuntimeHref(lessonPage.id);
+      lessonBackLink.textContent = 'Open related lesson';
+      lessonBackLink.hidden = false;
+    }else{
+      lessonBackLink.removeAttribute('href');
+      lessonBackLink.textContent = 'No related lesson yet';
+      lessonBackLink.hidden = true;
     }
     if(runtimePageRecord?.title){
       mapPageTitle.textContent = runtimePageRecord.title;
@@ -1064,14 +1096,15 @@ import {
       }
       updateRuntimeChrome();
       const storedWorkspace = workspaceFromPageStateData(context.pageState?.data);
+      starterHidden = Boolean(context.pageState?.data?.starterHidden);
       if(storedWorkspace){
         workspace = storedWorkspace;
       }else if(context.pageState?.data?.kind === 'seeded-debt-power-map' || runtimePageId === SEED_MAP_PAGE_ID){
         workspace = loadWorkspaceFallback();
-        await savePageState(runtimePageId, 'map', { kind:'map-workspace', workspace });
+        await savePageState(runtimePageId, 'map', { kind:'map-workspace', workspace, starterHidden });
       }else{
         workspace = blankPageWorkspace(context.page?.title || 'Untitled map');
-        await savePageState(runtimePageId, 'map', { kind:'map-workspace', workspace });
+        await savePageState(runtimePageId, 'map', { kind:'map-workspace', workspace, starterHidden });
       }
       data = activePage().map;
       view = Object.assign({x:0,y:0,scale:1}, data.view || {});
@@ -1665,7 +1698,7 @@ import {
     }));
   }
 
-  function render(){ renderPageControls(); renderNodes(); requestAnimationFrame(() => { renderEdges(); applyFocus(); }); updateSelectionUI(); applyView(); syncGestureLockUI(); }
+  function render(){ renderPageControls(); renderNodes(); requestAnimationFrame(() => { renderEdges(); applyFocus(); }); updateSelectionUI(); applyView(); syncGestureLockUI(); renderMapStarter(); }
   function renderNodes(){
     nodeLayer.innerHTML = '';
     data.nodes.forEach(n => {
@@ -2058,6 +2091,7 @@ import {
     pendingDocumentBlockPoint = worldPoint;
     renderDocumentPicker();
     documentDetailCard.hidden = true;
+    mapStarterPanel.hidden = true;
     documentPicker.hidden = false;
     closeMenu();
     documentPicker.querySelector('button')?.focus();
@@ -2065,6 +2099,87 @@ import {
   function closeDocumentPicker(){
     documentPicker.hidden = true;
     pendingDocumentBlockPoint = null;
+    renderMapStarter();
+  }
+  function isFreshStarterMap(){
+    if(runtimePageId === SEED_MAP_PAGE_ID) return false;
+    if(!data || !Array.isArray(data.nodes) || !Array.isArray(data.edges)) return false;
+    if(data.edges.length) return false;
+    if(data.nodes.length !== 1) return false;
+    const onlyNode = data.nodes[0];
+    return onlyNode.id === 'core' || clean(onlyNode.title || '').toLowerCase() === 'main idea';
+  }
+  function starterPosition(offsetX=360, offsetY=0, w=268, h=145){
+    const core = byId('core') || data.nodes[0];
+    if(core) return {x:core.x + offsetX, y:core.y + offsetY};
+    const sr = stage.getBoundingClientRect();
+    const center = screenToWorld(sr.left + sr.width/2, sr.top + sr.height/2);
+    return {x:center.x - w/2, y:center.y - h/2};
+  }
+  function renderMapStarter(){
+    if(!mapStarterPanel) return;
+    const shouldShow = runtimePageInitialized && !starterHidden && isFreshStarterMap();
+    mapStarterPanel.hidden = !shouldShow;
+    if(!shouldShow) return;
+    const hasDocuments = projectDocuments.length > 0;
+    starterAddDocument.textContent = hasDocuments ? 'Add source/document block' : 'Add a document first';
+    starterDocumentHint.textContent = hasDocuments
+      ? `${projectDocuments.length} project ${projectDocuments.length === 1 ? 'document' : 'documents'} available.`
+      : 'Add document metadata on the project page before making document blocks.';
+  }
+  function addStarterQuestion(){
+    const p = starterPosition(360, -8);
+    addNodeAt(p.x, p.y, {
+      title:'Central question',
+      body:'What question should this map help you answer?',
+      group:'amber',
+      shape:'pill',
+      tag:'question',
+      nodeType:'question',
+      w:300,
+      h:132
+    });
+    renderMapStarter();
+  }
+  function addStarterEvidence(){
+    const p = starterPosition(360, 170);
+    addNodeAt(p.x, p.y, {
+      title:'Evidence to check',
+      body:'What source, example, or observation supports this idea?',
+      group:'green',
+      shape:'note',
+      tag:'evidence',
+      nodeType:'evidence',
+      w:300,
+      h:150
+    });
+    renderMapStarter();
+  }
+  async function addStarterDocumentBlock(){
+    if(!projectDocuments.length) await refreshProjectDocuments();
+    if(!projectDocuments.length){
+      showToast('Add a document first');
+      setStatus('Add document metadata on the project page before adding document blocks.');
+      renderMapStarter();
+      return;
+    }
+    const p = starterPosition(360, 330, 300, 170);
+    openDocumentPicker({x:p.x + 150, y:p.y + 85});
+  }
+  function handleMapStarterClick(event){
+    const button = event.target.closest('button');
+    if(!button || !mapStarterPanel.contains(button)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if(button === starterAddQuestion) addStarterQuestion();
+    else if(button === starterAddEvidence) addStarterEvidence();
+    else if(button === starterAddDocument) void addStarterDocumentBlock();
+    else if(button === starterHide){
+      starterHidden = true;
+      renderMapStarter();
+      void persistWorkspaceState('Starter hidden');
+      showToast('Starter hidden');
+    }
   }
   function addDocumentBlock(documentId, worldPoint=null){
     const documentRecord = documentById(documentId);
@@ -2582,6 +2697,9 @@ import {
   document.getElementById('btnAddLinked').addEventListener('click', () => selectedId ? addLinkedFrom(selectedId) : addFreeAtCenter());
   document.getElementById('btnAddFree').addEventListener('click', addFreeAtCenter);
   document.getElementById('btnAddDocumentBlock').addEventListener('click', () => openDocumentPicker());
+  mapStarterPanel.addEventListener('pointerdown', event => event.stopPropagation(), true);
+  mapStarterPanel.addEventListener('pointerup', event => event.stopPropagation(), true);
+  mapStarterPanel.addEventListener('click', handleMapStarterClick);
   document.getElementById('btnConnect').addEventListener('click', () => selectedId && startConnect(selectedId));
   document.getElementById('btnFocus').addEventListener('click', toggleFocus);
   document.getElementById('btnLegend').addEventListener('click', toggleLegend);

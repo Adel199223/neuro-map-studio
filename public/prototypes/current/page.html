@@ -137,6 +137,12 @@ function itemId(prefix){
 }
 
 function normalizeLessonState(data){
+  const starterSections = [
+    {id:itemId('section'), heading:'What is this page about?', body:''},
+    {id:itemId('section'), heading:'Key ideas', body:''},
+    {id:itemId('section'), heading:'Questions to answer', body:''},
+    {id:itemId('section'), heading:'Related documents', body:''}
+  ];
   if(data?.kind === 'lesson-editor'){
     return {
       kind:'lesson-editor',
@@ -147,19 +153,16 @@ function normalizeLessonState(data){
             heading:String(section.heading || 'Section'),
             body:String(section.body || '')
           }))
-        : [{id:itemId('section'), heading:'What this page is for', body:''}],
-      reflectionQuestion:String(data.reflectionQuestion || 'Why does this page belong in the project?'),
+        : starterSections,
+      reflectionQuestion:String(data.reflectionQuestion || 'What should I be able to explain after using this page?'),
       reflectionAnswer:String(data.reflectionAnswer || '')
     };
   }
   return {
     kind:'lesson-editor',
     summary:'',
-    sections:[
-      {id:itemId('section'), heading:'What this page is for', body:''},
-      {id:itemId('section'), heading:'Key moves', body:''}
-    ],
-    reflectionQuestion:'Why does this page belong in the project?',
+    sections:starterSections,
+    reflectionQuestion:'What should I be able to explain after using this page?',
     reflectionAnswer:''
   };
 }
@@ -167,30 +170,37 @@ function normalizeLessonState(data){
 function normalizeNotesState(data){
   return {
     kind:'notes-editor',
-    prompt:String(data?.prompt || 'What belongs on this page?'),
+    prompt:String(data?.prompt || 'Quick notes'),
     body:String(data?.body || ''),
-    nextStep:String(data?.nextStep || '')
+    importantTerms:String(data?.importantTerms || ''),
+    confusingPoints:String(data?.confusingPoints || ''),
+    nextQuestion:String(data?.nextQuestion || data?.nextStep || ''),
+    nextStep:String(data?.nextStep || data?.nextQuestion || '')
   };
 }
 
 function normalizeReviewState(data){
   return {
     kind:'review-editor',
-    intro:String(data?.intro || 'Turn the source into calm retrieval prompts.'),
+    intro:String(data?.intro || 'Use this page for short recall practice. Keep the prompts small and answer from memory first.'),
     prompts:Array.isArray(data?.prompts) && data.prompts.length
       ? data.prompts.map(prompt => ({
           id:String(prompt.id || itemId('prompt')),
           question:String(prompt.question || ''),
           answer:String(prompt.answer || '')
         }))
-      : [{id:itemId('prompt'), question:'What is the main idea to retrieve?', answer:''}]
+      : [
+          {id:itemId('prompt'), question:'Recall prompt: what is the main idea to remember?', answer:''},
+          {id:itemId('prompt'), question:'Explain in your own words: what causes what?', answer:''},
+          {id:itemId('prompt'), question:'What evidence supports this?', answer:''}
+        ]
   };
 }
 
 function normalizeGlossaryState(data){
   return {
     kind:'glossary-editor',
-    intro:String(data?.intro || 'Collect plain-language definitions here.'),
+    intro:String(data?.intro || 'Collect short, plain-language definitions for terms that slow you down.'),
     terms:Array.isArray(data?.terms) && data.terms.length
       ? data.terms.map(term => ({
           id:String(term.id || itemId('term')),
@@ -401,29 +411,42 @@ function renderNotesEditor(){
     <div class="editor-grid">
       <article class="editor-card notes">
         <p class="meta">${escapeHtml(context.page.type === 'glossary' ? 'Glossary page' : 'Notes page')}</p>
-        <label>Prompt
+        <label>Quick notes prompt
           <input id="notesPrompt" value="${escapeHtml(state.prompt)}" />
         </label>
-        <label>Main notes
+        <label>Quick notes
           <textarea id="notesBody" placeholder="Capture the important ideas in plain language.">${escapeHtml(state.body)}</textarea>
         </label>
-        <label>Next step
-          <textarea id="notesNextStep" placeholder="What should you test, revise, or connect next?">${escapeHtml(state.nextStep)}</textarea>
+        <label>Important terms
+          <textarea id="notesImportantTerms" placeholder="Terms, phrases, or names to define later.">${escapeHtml(state.importantTerms)}</textarea>
+        </label>
+        <label>Confusing points
+          <textarea id="notesConfusingPoints" placeholder="What still feels unclear?">${escapeHtml(state.confusingPoints)}</textarea>
+        </label>
+        <label>Next question
+          <textarea id="notesNextStep" placeholder="What question should this page answer next?">${escapeHtml(state.nextQuestion || state.nextStep)}</textarea>
         </label>
       </article>
     </div>
   `;
   const promptInput = document.getElementById('notesPrompt');
   const bodyInput = document.getElementById('notesBody');
+  const importantTermsInput = document.getElementById('notesImportantTerms');
+  const confusingPointsInput = document.getElementById('notesConfusingPoints');
   const nextStepInput = document.getElementById('notesNextStep');
   const pushState = () => {
     state.prompt = promptInput.value;
     state.body = bodyInput.value;
+    state.importantTerms = importantTermsInput.value;
+    state.confusingPoints = confusingPointsInput.value;
+    state.nextQuestion = nextStepInput.value;
     state.nextStep = nextStepInput.value;
     persistState(state);
   };
   promptInput.addEventListener('input', pushState);
   bodyInput.addEventListener('input', pushState);
+  importantTermsInput.addEventListener('input', pushState);
+  confusingPointsInput.addEventListener('input', pushState);
   nextStepInput.addEventListener('input', pushState);
 }
 

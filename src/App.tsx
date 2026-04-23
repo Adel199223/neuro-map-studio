@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { FormEvent } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 
 const docsUrl = 'https://github.com/Adel199223/neuro-map-studio/tree/main/docs';
 
@@ -24,6 +24,17 @@ interface WorkspaceSnapshot {
 
 interface WorkspaceStore {
   getWorkspaceSnapshot: () => Promise<WorkspaceSnapshot>;
+  exportWorkspaceBackup: () => Promise<Record<string, unknown>>;
+  validateWorkspaceBackup: (payload: unknown) => { ok: boolean; errors: string[] };
+  importWorkspaceBackup: (
+    payload: unknown,
+    options?: { mode: 'merge' },
+  ) => Promise<{
+    ok: boolean;
+    errors: string[];
+    imported: Record<string, number>;
+    skipped: Record<string, number>;
+  }>;
   createProject: (fields: {
     title: string;
     description?: string;
@@ -59,6 +70,7 @@ export default function App() {
   const [store, setStore] = useState<WorkspaceStore | null>(null);
   const [snapshot, setSnapshot] = useState<WorkspaceSnapshot | null>(null);
   const [status, setStatus] = useState('Loading local workspace...');
+  const [backupStatus, setBackupStatus] = useState('Backups include workspace metadata and page state.');
 
   async function refresh(nextStore = store) {
     if (!nextStore) return;
@@ -102,6 +114,56 @@ export default function App() {
     formElement.reset();
     await refresh();
     setStatus('Project created locally');
+  }
+
+  function backupFileName() {
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    return `neuro-map-studio-workspace-backup-${stamp}.json`;
+  }
+
+  async function handleExportBackup() {
+    if (!store) return;
+    setBackupStatus('Preparing workspace backup...');
+    const backup = await store.exportWorkspaceBackup();
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = backupFileName();
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setBackupStatus('Workspace backup exported as JSON.');
+  }
+
+  function summarizeImport(result: { imported: Record<string, number>; skipped: Record<string, number> }) {
+    const importedTotal = Object.values(result.imported).reduce((sum, value) => sum + value, 0);
+    const skippedTotal = Object.values(result.skipped).reduce((sum, value) => sum + value, 0);
+    return `Imported ${importedTotal} new records. Skipped ${skippedTotal} existing records.`;
+  }
+
+  async function handleImportBackup(event: ChangeEvent<HTMLInputElement>) {
+    if (!store) return;
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (!file) return;
+    try {
+      setBackupStatus('Reading backup JSON...');
+      const payload = JSON.parse(await file.text()) as unknown;
+      const validation = store.validateWorkspaceBackup(payload);
+      if (!validation.ok) {
+        setBackupStatus(`Backup rejected: ${validation.errors.join(' ')}`);
+        return;
+      }
+      const result = await store.importWorkspaceBackup(payload, { mode: 'merge' });
+      if (!result.ok) {
+        setBackupStatus(`Backup rejected: ${result.errors.join(' ')}`);
+        return;
+      }
+      await refresh();
+      setBackupStatus(`Backup merged safely. ${summarizeImport(result)}`);
+    } catch {
+      setBackupStatus('Backup rejected: choose a valid Neuro Map Studio JSON backup.');
+    }
   }
 
   const projects = snapshot
@@ -191,6 +253,31 @@ export default function App() {
           </div>
         </form>
       </section>
+
+      <details className="card backup-details">
+        <summary>Backup & restore</summary>
+        <p>
+          Export a plain JSON backup before doing serious learning work. Import is merge-only here:
+          existing local records are kept, and matching backup IDs are skipped.
+        </p>
+        <div className="actions">
+          <button className="primary" type="button" onClick={() => void handleExportBackup()}>
+            Export workspace backup
+          </button>
+          <label className="file-action">
+            Import workspace backup
+            <input
+              aria-label="Import workspace backup"
+              accept="application/json,.json"
+              type="file"
+              onChange={(event) => void handleImportBackup(event)}
+            />
+          </label>
+        </div>
+        <p className="status" role="status" aria-live="polite">
+          {backupStatus}
+        </p>
+      </details>
 
       <details className="card dev-details">
         <summary>Development links</summary>

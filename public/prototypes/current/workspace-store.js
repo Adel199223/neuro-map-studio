@@ -26,6 +26,9 @@ const DOCUMENT_TYPES = ['pdf', 'docx', 'html', 'note', 'web', 'video'];
 const LINK_RELATIONSHIPS = ['source', 'attachment', 'related', 'evidence', 'further-reading'];
 const PROTECTED_PAGE_IDS = new Set([SEED_LESSON_PAGE_ID, SEED_MAP_PAGE_ID]);
 const PAGE_STATE_VERSION = 1;
+const BACKUP_SCHEMA_VERSION = 1;
+const APP_NAME = 'Neuro Map Studio';
+const APP_VERSION = '0.1.0';
 const DEFAULT_MAP_INNER_PAGE_ID = 'page-main';
 
 function now() {
@@ -122,16 +125,26 @@ function defaultLessonEditorState(page) {
     sections: [
       {
         id: id('section'),
-        heading: 'What this page is for',
-        body: `Explain the big idea behind “${clean(page.title, 'this lesson')}” in plain language.`,
+        heading: 'What is this page about?',
+        body: `Explain the big idea behind "${clean(page.title, 'this lesson')}" in plain language.`,
       },
       {
         id: id('section'),
-        heading: 'Key moves',
+        heading: 'Key ideas',
+        body: '',
+      },
+      {
+        id: id('section'),
+        heading: 'Questions to answer',
+        body: '',
+      },
+      {
+        id: id('section'),
+        heading: 'Related documents',
         body: '',
       },
     ],
-    reflectionQuestion: 'Why does this page belong in the project?',
+    reflectionQuestion: 'What should I be able to explain after using this page?',
     reflectionAnswer: '',
   };
 }
@@ -139,8 +152,11 @@ function defaultLessonEditorState(page) {
 function defaultNotesState(page) {
   return {
     kind: 'notes-editor',
-    prompt: `What do you want ${clean(page.title, 'this page')} to capture?`,
+    prompt: `Quick notes for ${clean(page.title, 'this page')}`,
     body: '',
+    importantTerms: '',
+    confusingPoints: '',
+    nextQuestion: '',
     nextStep: '',
   };
 }
@@ -148,11 +164,21 @@ function defaultNotesState(page) {
 function defaultReviewState() {
   return {
     kind: 'review-editor',
-    intro: 'Turn the source into a few retrieval prompts.',
+    intro: 'Use this page for short recall practice. Keep the prompts small and answer from memory first.',
     prompts: [
       {
         id: id('prompt'),
-        question: 'What is the main idea to remember here?',
+        question: 'Recall prompt: what is the main idea to remember?',
+        answer: '',
+      },
+      {
+        id: id('prompt'),
+        question: 'Explain in your own words: what causes what?',
+        answer: '',
+      },
+      {
+        id: id('prompt'),
+        question: 'What evidence supports this?',
         answer: '',
       },
     ],
@@ -162,7 +188,7 @@ function defaultReviewState() {
 function defaultGlossaryState() {
   return {
     kind: 'glossary-editor',
-    intro: 'Collect short, plain-language definitions here.',
+    intro: 'Collect short, plain-language definitions for terms that slow you down.',
     terms: [
       {
         id: id('term'),
@@ -180,6 +206,7 @@ function initialPageStateData(page) {
     return {
       kind: 'map-workspace',
       workspace: blankMapWorkspace(page.title || 'Untitled map'),
+      starterHidden: false,
     };
   }
   if (page.type === 'lesson') return defaultLessonEditorState(page);
@@ -208,6 +235,51 @@ function normalizePageRecord(page) {
     slug: clean(page.slug, slugFromTitle(page.title)),
     protected: Boolean(page.protected) || PROTECTED_PAGE_IDS.has(page.id),
   };
+}
+
+function normalizeBackupArray(value) {
+  return Array.isArray(value) ? value.filter((item) => item && typeof item === 'object') : [];
+}
+
+function validateRecordList(list, name, requiredFields) {
+  const errors = [];
+  if (!Array.isArray(list)) {
+    errors.push(`${name} must be an array.`);
+    return errors;
+  }
+  list.forEach((record, index) => {
+    if (!record || typeof record !== 'object') {
+      errors.push(`${name}[${index}] must be an object.`);
+      return;
+    }
+    requiredFields.forEach((field) => {
+      if (typeof record[field] !== 'string' || !record[field].trim()) {
+        errors.push(`${name}[${index}].${field} is required.`);
+      }
+    });
+  });
+  return errors;
+}
+
+function backupValidationErrors(payload) {
+  const errors = [];
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return ['Backup must be a JSON object.'];
+  }
+  if (payload.schemaVersion !== BACKUP_SCHEMA_VERSION) {
+    errors.push(`Unsupported backup schemaVersion. Expected ${BACKUP_SCHEMA_VERSION}.`);
+  }
+  if (!payload.workspace || typeof payload.workspace !== 'object') {
+    errors.push('Backup must include a workspace object.');
+  } else if (typeof payload.workspace.id !== 'string' || !payload.workspace.id.trim()) {
+    errors.push('workspace.id is required.');
+  }
+  errors.push(...validateRecordList(payload.projects, 'projects', ['id', 'title']));
+  errors.push(...validateRecordList(payload.documents, 'documents', ['id', 'projectId', 'title']));
+  errors.push(...validateRecordList(payload.pages, 'pages', ['id', 'projectId', 'title']));
+  errors.push(...validateRecordList(payload.pageDocumentLinks, 'pageDocumentLinks', ['id', 'pageId', 'documentId']));
+  errors.push(...validateRecordList(payload.pageStates, 'pageStates', ['id', 'pageId']));
+  return errors;
 }
 
 function requestToPromise(request) {
@@ -410,6 +482,183 @@ export async function getWorkspaceSnapshot() {
       getAll(stores.pageStates),
     ]);
     return { workspace, projects, documents, pages, pageDocumentLinks, pageStates };
+  });
+}
+
+export function validateWorkspaceBackup(payload) {
+  const errors = backupValidationErrors(payload);
+  return {
+    ok: errors.length === 0,
+    errors,
+  };
+}
+
+export async function exportWorkspaceBackup() {
+  const snapshot = await getWorkspaceSnapshot();
+  return {
+    schemaVersion: BACKUP_SCHEMA_VERSION,
+    exportedAt: now(),
+    app: {
+      name: APP_NAME,
+      version: APP_VERSION,
+    },
+    storage: {
+      dbName: DB_NAME,
+      dbVersion: DB_VERSION,
+      pageStateVersion: PAGE_STATE_VERSION,
+    },
+    workspace: deepClone(snapshot.workspace),
+    projects: deepClone(snapshot.projects),
+    documents: deepClone(snapshot.documents),
+    pages: deepClone(snapshot.pages),
+    pageDocumentLinks: deepClone(snapshot.pageDocumentLinks),
+    pageStates: deepClone(snapshot.pageStates),
+  };
+}
+
+async function importRecordsMerge(stores, storeName, records, normalizeRecord = (record) => record) {
+  const existing = await getAll(stores[storeName]);
+  const existingIds = new Set(existing.map((record) => record.id));
+  const result = { imported: 0, skipped: 0 };
+  records.forEach((record) => {
+    if (!record?.id || existingIds.has(record.id)) {
+      result.skipped += 1;
+      return;
+    }
+    stores[storeName].put(normalizeRecord(record));
+    existingIds.add(record.id);
+    result.imported += 1;
+  });
+  return result;
+}
+
+async function mergeBackupWorkspace(stores, backupWorkspace) {
+  const existing = await requestToPromise(stores.workspaces.get(backupWorkspace.id));
+  if (!existing) {
+    stores.workspaces.put({
+      ...backupWorkspace,
+      projectOrder: Array.isArray(backupWorkspace.projectOrder) ? backupWorkspace.projectOrder : [],
+      currentProjectId: clean(backupWorkspace.currentProjectId),
+      createdAt: backupWorkspace.createdAt || now(),
+      updatedAt: now(),
+    });
+    return { imported: 1, skipped: 0 };
+  }
+  const mergedProjectOrder = Array.from(
+    new Set([...(existing.projectOrder || []), ...(backupWorkspace.projectOrder || [])]),
+  );
+  stores.workspaces.put({
+    ...existing,
+    projectOrder: mergedProjectOrder,
+    currentProjectId: existing.currentProjectId || backupWorkspace.currentProjectId || mergedProjectOrder[0] || '',
+    updatedAt: now(),
+  });
+  return { imported: 0, skipped: 1 };
+}
+
+export async function importWorkspaceBackup(payload, options = {}) {
+  const mode = options.mode || 'merge';
+  if (mode !== 'merge') {
+    return {
+      ok: false,
+      errors: ['Only merge import is supported in this version.'],
+      imported: {},
+      skipped: {},
+    };
+  }
+  const validation = validateWorkspaceBackup(payload);
+  if (!validation.ok) {
+    return {
+      ok: false,
+      errors: validation.errors,
+      imported: {},
+      skipped: {},
+    };
+  }
+
+  await ensureSeedData();
+  return withStores(STORE_NAMES, 'readwrite', async (stores) => {
+    const workspaceResult = await mergeBackupWorkspace(stores, payload.workspace);
+    const projectsResult = await importRecordsMerge(stores, 'projects', normalizeBackupArray(payload.projects), (record) => ({
+      ...record,
+      title: clean(record.title, 'Imported project'),
+      description: clean(record.description, 'Imported workspace project.'),
+      theme: clean(record.theme, 'general-learning'),
+      createdAt: record.createdAt || now(),
+      updatedAt: record.updatedAt || record.createdAt || now(),
+    }));
+    const documentsResult = await importRecordsMerge(
+      stores,
+      'documents',
+      normalizeBackupArray(payload.documents),
+      (record) => ({
+        ...record,
+        title: clean(record.title, 'Imported document'),
+        type: DOCUMENT_TYPES.includes(record.type) ? record.type : 'note',
+        description: clean(record.description, 'Imported project document.'),
+        sourceLabel: clean(record.sourceLabel, 'Imported source'),
+        urlOrPath: clean(record.urlOrPath),
+        tags: listFromTags(record.tags),
+        createdAt: record.createdAt || now(),
+        updatedAt: record.updatedAt || record.createdAt || now(),
+      }),
+    );
+    const pagesResult = await importRecordsMerge(stores, 'pages', normalizeBackupArray(payload.pages), (record) =>
+      normalizePageRecord({
+        ...record,
+        title: clean(record.title, 'Imported page'),
+        description: clean(record.description, 'Imported learning page.'),
+        createdAt: record.createdAt || now(),
+        updatedAt: record.updatedAt || record.createdAt || now(),
+      }),
+    );
+    const linksResult = await importRecordsMerge(
+      stores,
+      'pageDocumentLinks',
+      normalizeBackupArray(payload.pageDocumentLinks),
+      (record) => ({
+        ...record,
+        relationship: LINK_RELATIONSHIPS.includes(record.relationship) ? record.relationship : 'related',
+        createdAt: record.createdAt || now(),
+        updatedAt: record.updatedAt || record.createdAt || now(),
+      }),
+    );
+    const pageStatesResult = await importRecordsMerge(
+      stores,
+      'pageStates',
+      normalizeBackupArray(payload.pageStates),
+      (record) => ({
+        ...record,
+        pageType: PAGE_TYPES.includes(record.pageType) ? record.pageType : 'notes',
+        stateVersion: Number(record.stateVersion) || PAGE_STATE_VERSION,
+        data: record.data && typeof record.data === 'object' ? deepClone(record.data) : {},
+        createdAt: record.createdAt || now(),
+        updatedAt: record.updatedAt || record.createdAt || now(),
+      }),
+    );
+
+    await ensurePageRuntimeData(stores);
+
+    return {
+      ok: true,
+      errors: [],
+      imported: {
+        workspace: workspaceResult.imported,
+        projects: projectsResult.imported,
+        documents: documentsResult.imported,
+        pages: pagesResult.imported,
+        pageDocumentLinks: linksResult.imported,
+        pageStates: pageStatesResult.imported,
+      },
+      skipped: {
+        workspace: workspaceResult.skipped,
+        projects: projectsResult.skipped,
+        documents: documentsResult.skipped,
+        pages: pagesResult.skipped,
+        pageDocumentLinks: linksResult.skipped,
+        pageStates: pageStatesResult.skipped,
+      },
+    };
   });
 }
 
@@ -671,6 +920,9 @@ export async function clearWorkspaceForTests() {
 export const workspaceStore = {
   ensureSeedData,
   getWorkspaceSnapshot,
+  exportWorkspaceBackup,
+  importWorkspaceBackup,
+  validateWorkspaceBackup,
   getProjectBundle,
   getPageContext,
   getPageState,
