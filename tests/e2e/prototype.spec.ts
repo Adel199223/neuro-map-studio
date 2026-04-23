@@ -190,6 +190,33 @@ async function countDebugOccurrences(log: Locator, pattern: string) {
   );
 }
 
+async function getEdgeSnapshot(page: Page, edgeIndex = -1) {
+  return page.evaluate((index) => {
+    const edges = Array.from(document.querySelectorAll('#edgeLayer g.edge-group'));
+    const labels = Array.from(document.querySelectorAll('#edgeLabelLayer .edge-label'));
+    const resolvedIndex = index < 0 ? edges.length + index : index;
+    const edgeGroup = edges[resolvedIndex] as SVGGElement | undefined;
+    const edgePath = edgeGroup?.querySelector('.edge') as SVGPathElement | null;
+    const hitPath = edgeGroup?.querySelector('.edge-hit') as SVGPathElement | null;
+    const label = labels[resolvedIndex] as HTMLElement | undefined;
+    if (!edgeGroup || !edgePath || !hitPath || !label) return null;
+    const d = edgePath.getAttribute('d') || '';
+    const numbers = d.match(/-?\d*\.?\d+/g)?.map(Number) || [];
+    const endpoint =
+      numbers.length >= 2
+        ? { x: numbers[numbers.length - 2], y: numbers[numbers.length - 1] }
+        : null;
+    return {
+      d,
+      hitD: hitPath.getAttribute('d') || '',
+      labelLeft: Number.parseFloat(label.style.left || '0'),
+      labelTop: Number.parseFloat(label.style.top || '0'),
+      edgeId: edgeGroup.dataset.edgeId || '',
+      endpoint,
+    };
+  }, edgeIndex);
+}
+
 test.describe('current standalone prototypes', () => {
   test('root app exposes prototype entry links', async ({ page }) => {
     await page.goto('/');
@@ -240,6 +267,18 @@ test.describe('current standalone prototypes', () => {
   test('learning map recenter and zoom controls do not blank the canvas', async ({ page }) => {
     await resetMindmap(page);
 
+    const zoomDock = page.locator('#zoomDock');
+    await expect(zoomDock).toBeVisible();
+    await expect(page.locator('.toolbar #btnZoomIn')).toHaveCount(0);
+
+    const dockBox = await zoomDock.boundingBox();
+    const viewport = page.viewportSize();
+    if (!dockBox || !viewport) {
+      throw new Error('Zoom dock should have a bounding box within the viewport.');
+    }
+    expect(dockBox.x).toBeGreaterThan(viewport.width * 0.55);
+    expect(dockBox.y).toBeGreaterThan(viewport.height * 0.45);
+
     await page.getByRole('button', { name: /zoom in/i }).click();
     await page.getByRole('button', { name: /zoom out/i }).click();
     await page.getByRole('button', { name: /recenter full map/i }).click();
@@ -275,6 +314,57 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('.map-node')).toHaveCount(14);
   });
 
+  test('new linked block edges re-anchor after moving under zoom', async ({ page }) => {
+    await resetMindmap(page);
+
+    await page.locator('.map-node[data-id="core"]').click();
+    await page.getByRole('button', { name: /add linked block from selected block/i }).click();
+    await expect(page.locator('.map-node')).toHaveCount(14);
+
+    const newNode = page.locator('.map-node', { hasText: 'New linked idea' }).last();
+    const newNodeId = await newNode.getAttribute('data-id');
+    if (!newNodeId) {
+      throw new Error('Expected the new linked block to have a data-id.');
+    }
+
+    const before = await getEdgeSnapshot(page);
+    if (!before?.endpoint) {
+      throw new Error('Expected a connected edge snapshot before moving the linked block.');
+    }
+
+    await page.getByRole('button', { name: /zoom in/i }).click();
+    await dragByHandle(page, newNodeId, { pointerType: 'touch', deltaX: -260, deltaY: -220 });
+
+    const after = await getEdgeSnapshot(page);
+    if (!after?.endpoint) {
+      throw new Error('Expected a connected edge snapshot after moving the linked block.');
+    }
+
+    expect(after.d).not.toBe(before.d);
+    expect(after.hitD).toBe(after.d);
+    expect(after.labelLeft).not.toBe(before.labelLeft);
+    expect(after.labelTop).not.toBe(before.labelTop);
+
+    const attachment = await page.locator(`.map-node[data-id="${newNodeId}"]`).evaluate((node, endpoint) => {
+      if (!endpoint) return null;
+      const left = Number.parseFloat((node as HTMLElement).style.left || '0');
+      const top = Number.parseFloat((node as HTMLElement).style.top || '0');
+      const width = Number.parseFloat((node as HTMLElement).style.width || '268');
+      const height = Number.parseFloat((node as HTMLElement).style.height || '145');
+      const ports = [
+        { x: left + width / 2, y: top - 6 },
+        { x: left + width + 6, y: top + height / 2 },
+        { x: left + width / 2, y: top + height + 6 },
+        { x: left - 6, y: top + height / 2 },
+      ];
+      const distances = ports.map((port) => Math.hypot(port.x - endpoint.x, port.y - endpoint.y));
+      return Math.min(...distances);
+    }, after.endpoint);
+
+    expect(attachment).not.toBeNull();
+    expect(attachment!).toBeLessThan(28);
+  });
+
   test('selected link toolbar exposes relationship controls', async ({ page }) => {
     await resetMindmap(page);
 
@@ -285,6 +375,69 @@ test.describe('current standalone prototypes', () => {
     await expect(page.getByRole('button', { name: /change selected link route/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /change selected link source connection side/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /change selected link target connection side/i })).toBeVisible();
+  });
+
+  test('selected toolbar dismisses on canvas and Escape, stays usable inside, and returns after drag', async ({ page }) => {
+    await resetMindmap(page);
+
+    const shelf = page.locator('#selectionShelf');
+    const coreNode = page.locator('.map-node[data-id="core"]');
+    await coreNode.click();
+    await expect(shelf).toBeVisible();
+
+    await page.getByRole('button', { name: /collapse selected item toolbar/i }).click();
+    await expect(shelf).toBeVisible();
+
+    const stage = page.locator('#stage');
+    const stageBox = await stage.boundingBox();
+    if (!stageBox) {
+      throw new Error('Stage should have a bounding box for deselect testing.');
+    }
+    const blankX = stageBox.x + stageBox.width / 2;
+    const blankY = stageBox.y + stageBox.height - 140;
+    await stage.dispatchEvent('pointerdown', {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      button: 0,
+      buttons: 1,
+      pointerId: 333,
+      pointerType: 'mouse',
+      clientX: blankX,
+      clientY: blankY,
+    });
+    await stage.dispatchEvent('pointerup', {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      button: 0,
+      buttons: 0,
+      pointerId: 333,
+      pointerType: 'mouse',
+      clientX: blankX,
+      clientY: blankY,
+    });
+    await syntheticClick(stage, { x: stageBox.width / 2, y: stageBox.height - 140 });
+    await expect(shelf).toBeHidden();
+
+    await coreNode.click();
+    await expect(shelf).toBeVisible();
+    await page.locator('#stage').focus();
+    await page.keyboard.press('Escape');
+    await expect(shelf).toBeHidden();
+
+    await coreNode.click();
+    await expect(shelf).toBeVisible();
+    const drag = await beginHandleDrag(page, 'core', { pointerType: 'touch', deltaX: 72, deltaY: 52 });
+    await expect(shelf).toBeHidden();
+    await drag.moveTarget.dispatchEvent('pointerup', {
+      ...drag.payload,
+      buttons: 0,
+      pressure: 0,
+      clientX: drag.moveX,
+      clientY: drag.moveY,
+    });
+    await expect(shelf).toBeVisible();
   });
 
   test('touch long-press opens block and canvas menus', async ({ page }) => {
@@ -448,6 +601,20 @@ test.describe('current standalone prototypes', () => {
     await resetMindmap(page);
 
     await expect(page.locator('#inputDebugPanel')).toBeHidden();
+  });
+
+  test('header keeps instructions hidden by default and help drawer exposes quick tips', async ({ page }) => {
+    await resetMindmap(page);
+
+    await expect(page.locator('.topbar')).not.toContainText(
+      /use pages, block shapes, connection ports, and relationship lines to encode meaning/i,
+    );
+
+    await page.getByRole('button', { name: /toggle legend/i }).click();
+    await expect(page.locator('#legendCard')).toBeVisible();
+    await expect(page.locator('#legendCard')).toContainText(/quick map tips/i);
+    await expect(page.locator('#legendCard')).toContainText(/move blocks to test your understanding/i);
+    await expect(page.locator('#legendCard')).toContainText(/focus and recenter when the map feels overwhelming/i);
   });
 
   test('input diagnostics can be enabled, expanded, logged, and cleared', async ({ page }) => {
