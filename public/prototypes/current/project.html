@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Geopolitics & Economics · Neuro Map Studio</title>
+<style>
+:root{
+  --bg:#efe5d4;
+  --paper:#fff9ef;
+  --ink:#2e2923;
+  --muted:#675d51;
+  --border:#d9c39d;
+  --green:#e4f1dc;
+  --blue:#e4f0f5;
+  --amber:#f6ebc9;
+  --shadow:0 18px 48px rgb(90 65 32 / .1);
+  --font:"Comic Sans MS","Comic Sans","Comic Neue","OpenDyslexic","Atkinson Hyperlegible",Verdana,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  color:var(--ink);
+  font-family:var(--font);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255,255,255,.62), transparent 28rem),
+    radial-gradient(circle at 90% 20%, rgba(232,218,194,.55), transparent 24rem),
+    linear-gradient(180deg,#f6ecdd 0%,var(--bg) 100%);
+  line-height:1.65;
+}
+a{color:inherit;text-underline-offset:.16em}
+a:focus-visible{outline:3px solid rgba(79,121,138,.55);outline-offset:4px;border-radius:10px}
+.shell{width:min(1080px,calc(100% - 32px));margin:0 auto;padding:36px 0 64px}
+.hero,.card{background:rgba(255,249,239,.96);border:1px solid var(--border);border-radius:28px;box-shadow:var(--shadow)}
+.hero{padding:clamp(24px,5vw,54px)}
+.eyebrow{display:inline-flex;gap:.4rem;flex-wrap:wrap;margin:0 0 12px;padding:.28rem .7rem;border:1px solid var(--border);border-radius:999px;background:var(--green);font-weight:900}
+h1{margin:0;font-size:clamp(2.2rem,7vw,5.2rem);line-height:.98;letter-spacing:.01em}
+h2{margin:0 0 .65rem;font-size:clamp(1.35rem,3vw,2rem)}
+h3{margin:.15rem 0 .25rem;font-size:1.15rem}
+.lede{max-width:68ch;margin:1rem 0 0;font-size:clamp(1.04rem,2vw,1.28rem)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:18px}
+.card{padding:22px}
+.source-card{border-left:8px solid #9fbe8a}
+.page-card{display:grid;gap:.55rem;text-decoration:none;transition:transform .14s ease, border-color .14s ease}
+.page-card:hover,.page-card:focus{transform:translateY(-2px);border-color:#9f8054}
+.meta{color:var(--muted);font-weight:900;font-size:.9rem}
+.pill-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.pill{border:1px solid var(--border);border-radius:999px;background:#fffdf7;padding:.3rem .65rem;font-weight:800;font-size:.92rem}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.button{display:inline-flex;align-items:center;justify-content:center;min-height:2.75rem;padding:.7rem 1rem;border:1px solid #c6ac80;border-radius:999px;background:#fffdf7;text-decoration:none;font-weight:900}
+.button.primary{background:var(--green);border-color:#9fbe8a}
+.section-label{margin:28px 0 8px;color:var(--muted);font-weight:900;letter-spacing:.02em}
+@media(max-width:680px){.shell{width:min(100% - 20px,1080px);padding-top:18px}.hero,.card{border-radius:20px}.button{width:100%}}
+</style>
+</head>
+<body>
+<main class="shell">
+  <section class="hero">
+    <p class="eyebrow">Neuro Map Studio</p>
+    <h1>Geopolitics &amp; Economics</h1>
+    <p class="lede">A calm learning project for maps, lessons, and review pages about power, money, debt, institutions, and political economy.</p>
+    <div class="actions" aria-label="Project shortcuts">
+      <a class="button primary" href="lesson.html">Open linear lesson</a>
+      <a class="button" href="mindmap.html">Open editable map</a>
+    </div>
+  </section>
+
+  <h2 class="section-label">Sources / topics</h2>
+  <section class="grid" aria-label="Sources and topics">
+    <article class="card source-card">
+      <p class="meta">Interview / notes</p>
+      <h2>Simon Dixon debt-power interview/model</h2>
+      <p>This source is one topic inside the project. It explores how debt, assets, capital allocation, institutions, and exit paths connect.</p>
+      <div class="pill-row" aria-label="Pages for this source">
+        <span class="pill">Linear lesson</span>
+        <span class="pill">Editable debt-power map</span>
+      </div>
+    </article>
+  </section>
+
+  <h2 class="section-label">Pages in this project</h2>
+  <section class="grid" aria-label="Pages in this project">
+    <a class="card page-card" href="lesson.html">
+      <span class="meta">Page · Linear lesson</span>
+      <h3>Debt, assets, power, and exit</h3>
+      <span>Read the source model in chunks, with glossary hints and read-aloud support.</span>
+    </a>
+    <a class="card page-card" href="mindmap.html">
+      <span class="meta">Page · Editable learning map</span>
+      <h3>Debt-power map</h3>
+      <span>Move blocks, edit relationships, and rebuild the structure spatially.</span>
+    </a>
+  </section>
+</main>
+<script type="module" src="project-data.js"></script>
+</body>
+</html>

@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>Simon Dixon’s Debt-Power Map</title>
+<title>Debt, assets, power, and exit · Neuro Map Studio</title>
 <style>
     :root{
       --bg:#efe5d4;
@@ -57,10 +57,33 @@
     body.focus-mode .deep-extra{display:none !important;}
     body.focus-mode section, body.focus-mode .panel, body.focus-mode .hero{box-shadow:none;}
 
-    a{color:#4d3d2c; text-decoration-color:rgba(77,61,44,.35); text-underline-offset:.17em;}
-    a:hover, a:focus{color:#241a13; text-decoration-color:rgba(36,26,19,.85);}
-    button, summary{font:inherit;}
-    a:focus-visible, button:focus-visible, summary:focus-visible{outline:3px solid rgba(79,121,138,.55); outline-offset:3px; border-radius:9px;}
+	    a{color:#4d3d2c; text-decoration-color:rgba(77,61,44,.35); text-underline-offset:.17em;}
+	    a:hover, a:focus{color:#241a13; text-decoration-color:rgba(36,26,19,.85);}
+	    button, summary{font:inherit;}
+	    a:focus-visible, button:focus-visible, summary:focus-visible{outline:3px solid rgba(79,121,138,.55); outline-offset:3px; border-radius:9px;}
+	    .workspace-crumbs{
+	      display:flex;
+	      flex-wrap:wrap;
+	      gap:8px;
+	      margin:0 0 14px;
+	      color:var(--muted);
+	      font-size:.94rem;
+	      font-weight:800;
+	    }
+	    .workspace-crumbs span,
+	    .workspace-crumbs a{
+	      border:1px solid var(--border);
+	      border-radius:999px;
+	      background:rgba(255,255,255,.45);
+	      padding:.25rem .62rem;
+	      text-decoration:none;
+	    }
+	    .workspace-note{
+	      margin:.7rem 0 0;
+	      color:var(--muted);
+	      font-size:.96rem;
+	      line-height:1.45;
+	    }
 
     .skip{position:absolute; left:-999px; top:10px; z-index:100; background:#fff; color:#000; padding:.6rem .9rem; border-radius:10px;}
     .skip:focus{left:10px;}
@@ -1081,6 +1104,7 @@
 <nav>
 <ol class="nav-list">
 <li><a href="#quick-map">Core thesis</a></li>
+<li><a href="project.html">Project home</a></li>
 <li><a href="mindmap.html">Editable learning map page</a></li>
 <li><a href="#pictures">Four visual anchors</a></li>
 <li><a href="#loop">Six-stage loop</a></li>
@@ -1103,6 +1127,7 @@
 <summary>On this page</summary>
 <ol class="nav-list">
 <li><a href="#quick-map">Core thesis</a></li>
+<li><a href="project.html">Project home</a></li>
 <li><a href="mindmap.html">Editable learning map page</a></li>
 <li><a href="#pictures">Four visual anchors</a></li>
 <li><a href="#loop">Six-stage loop</a></li>
@@ -1128,9 +1153,16 @@
 <header class="hero">
 <div class="hero-grid">
 <div>
+<nav class="workspace-crumbs no-read no-gloss" aria-label="Project breadcrumb">
+<a href="project.html">Neuro Map Studio</a>
+<span>Project: Geopolitics &amp; Economics</span>
+<span>Source: Simon Dixon debt-power interview/model</span>
+<span>Page: Linear lesson</span>
+</nav>
 <span class="eyebrow">Debt, assets, power, and exit</span>
-<h1>Simon Dixon’s debt-power map</h1>
+<h1>Linear lesson: Debt, assets, power, and exit</h1>
 <p class="lede">A beginner-friendly map of the worldview in the interview: modern politics sits underneath capital allocation, and the real leverage is debt, cheap money, assets, institutions, and attention.</p>
+<p class="workspace-note">This is one source page inside the Geopolitics &amp; Economics project.</p>
 <p class="quiet-line"><a href="https://www.youtube.com/watch?v=C9PSM3hpsaU&amp;t=47s" rel="noopener" target="_blank">Peter McCormack with Simon Dixon</a> · <a href="https://www.simondixon.com/blog/who-really-runs-the-world-peter-mccormack-simon-dixon" rel="noopener" target="_blank">Simon Dixon episode notes</a></p>
 <div aria-label="Main themes" class="chip-row">
 <span class="chip">debt money</span>
@@ -1141,6 +1173,7 @@
 <span class="chip">local resilience</span>
 </div>
 <div class="hero-actions no-read no-gloss" aria-label="Main study shortcuts">
+<a class="jump-btn secondary" href="project.html">Back to project</a>
 <a class="jump-btn" href="mindmap.html">Open editable learning map</a>
 <a class="jump-btn secondary" href="#loop">Study the six-stage loop</a>
 </div>

@@ -10,22 +10,24 @@ function withBase(path: string) {
 
 const prototypeMindMap = withBase('prototypes/current/mindmap.html');
 const prototypeLesson = withBase('prototypes/current/lesson.html');
+const prototypeProject = withBase('prototypes/current/project.html');
 
 export default function App() {
   return (
     <main className="shell">
       <section className="hero-card">
-        <p className="eyebrow">Neuro Map Studio · Codex harness</p>
-        <h1>ADHD/dyslexia-friendly learning pages and editable learning maps</h1>
+        <p className="eyebrow">Neuro Map Studio · Learning workspace</p>
+        <h1>Build calm learning projects with lessons, maps, and review pages</h1>
         <p className="lede">
-          This repo contains the current single-file prototype plus the development harness Codex
-          should use to turn it into a modular, testable web app.
+          Start with the Geopolitics & Economics project. The Simon Dixon lesson and debt-power
+          diagram are example pages inside that broader workspace.
         </p>
         <div className="actions">
-          <a className="primary" href={prototypeMindMap}>
-            Open current learning map prototype
+          <a className="primary" href={prototypeProject}>
+            Open Geopolitics & Economics project
           </a>
-          <a href={prototypeLesson}>Open current lesson prototype</a>
+          <a href={prototypeMindMap}>Open editable map page</a>
+          <a href={prototypeLesson}>Open linear lesson page</a>
           <a href={docsUrl}>Read docs on GitHub</a>
           <a href="https://adel199223.github.io/neuro-map-studio/" rel="noreferrer">
             Live preview URL
@@ -37,8 +39,8 @@ export default function App() {
         <article className="card">
           <h2>Current source of truth</h2>
           <p>
-            The current working prototype is in <code>public/prototypes/current/mindmap.html</code>.
-            Keep behavior equivalent while modularizing.
+            The current project shell lives in <code>public/prototypes/current/project.html</code>,
+            with the editable map still in <code>mindmap.html</code>.
           </p>
         </article>
         <article className="card">

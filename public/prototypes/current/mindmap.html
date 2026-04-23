@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Advanced Learning Map v20 · Clean Connectors Simon Dixon Debt-Power Model</title>
+<title>Debt-power map · Neuro Map Studio</title>
 <style>
 :root{
   --bg:#f4eddf;
@@ -62,9 +62,11 @@ a{color:inherit}
   box-shadow:none;
 }
 .back-link:hover,.topbar button:hover,.toolbar button:hover,.menu button:hover,.file-label:hover,.small-btn:hover{border-color:var(--strong);background:#fffdf8;}
+.nav-links{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;}
 .title-wrap{min-width:0}
 .title-wrap h1{margin:0;font-size:clamp(1.03rem,2.1vw,1.45rem);line-height:1.12;}
 .title-wrap p{margin:.1rem 0 0;color:var(--muted);font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.project-kicker{display:block;margin:0 0 .12rem;color:var(--muted);font-size:.78rem;font-weight:900;line-height:1.2;}
 
 .pagebar{
   display:flex;
@@ -305,9 +307,13 @@ a{color:inherit}
 <body>
 <div class="app">
   <header class="topbar">
-    <a class="back-link" href="lesson.html">← Main lesson</a>
+    <nav class="nav-links" aria-label="Project navigation">
+      <a class="back-link" href="project.html">← Project</a>
+      <a class="back-link" href="lesson.html">Lesson</a>
+    </nav>
     <div class="title-wrap">
-      <h1>Advanced learning map app: Simon Dixon’s debt-power model</h1>
+      <span class="project-kicker">Neuro Map Studio · Project: Geopolitics &amp; Economics · Page: Editable map</span>
+      <h1>Debt-power map</h1>
     </div>
     <div class="pagebar" aria-label="Map pages">
       <label for="pageSelect">Page</label>

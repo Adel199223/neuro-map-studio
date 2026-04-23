@@ -15,9 +15,11 @@ const required = [
   'docs/architecture.md',
   'docs/codex/codex-setup.md',
   'docs/product/current-prototype-audit.md',
-  'docs/exec-plans/github-pages-live-preview.md',
-  'public/prototypes/current/mindmap.html',
-  'public/prototypes/current/lesson.html',
+	  'docs/exec-plans/github-pages-live-preview.md',
+	  'public/prototypes/current/project.html',
+	  'public/prototypes/current/project-data.js',
+	  'public/prototypes/current/mindmap.html',
+	  'public/prototypes/current/lesson.html',
   'docs/product/product-requirements.md',
   'docs/product/interaction-contract.md',
   'docs/product/neuroscience-learning-principles.md',
@@ -166,7 +168,8 @@ const mapPrototype = read('public/prototypes/current/mindmap.html');
 const lessonPrototype = read('public/prototypes/current/lesson.html');
 
 const mapSnippets = [
-  'Advanced Learning Map v20',
+  'Debt-power map',
+  'href="project.html"',
   'href="lesson.html"',
   'simon-dixon-debt-power-learning-workspace-v20-clean-connectors',
 ];
@@ -179,6 +182,23 @@ for (const snippet of mapSnippets) {
 if (!lessonPrototype.includes('href="mindmap.html"')) {
   errors.push('public/prototypes/current/lesson.html must link back to mindmap.html.');
 }
+if (!lessonPrototype.includes('href="project.html"')) {
+  errors.push('public/prototypes/current/lesson.html must link back to project.html.');
+}
+
+expectIncludes('public/prototypes/current/project.html', [
+  'Neuro Map Studio',
+  'Geopolitics &amp; Economics',
+  'Simon Dixon debt-power interview/model',
+  'href="lesson.html"',
+  'href="mindmap.html"',
+]);
+expectIncludes('public/prototypes/current/project-data.js', [
+  'geopolitics-economics',
+  'simon-dixon-debt-power',
+  'simon-dixon-linear-lesson',
+  'simon-dixon-debt-power-map',
+]);
 
 if (errors.length) {
   console.error('Doctor check failed:');

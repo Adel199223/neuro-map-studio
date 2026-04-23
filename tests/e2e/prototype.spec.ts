@@ -3,6 +3,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 const mindmapPath = '/prototypes/current/mindmap.html';
 const debugMindmapPath = `${mindmapPath}?debugInput=1`;
 const lessonPath = '/prototypes/current/lesson.html';
+const projectPath = '/prototypes/current/project.html';
 
 async function resetMindmap(page: Page, path = mindmapPath) {
   await page.goto(path);
@@ -220,20 +221,58 @@ async function getEdgeSnapshot(page: Page, edgeIndex = -1) {
 test.describe('current standalone prototypes', () => {
   test('root app exposes prototype entry links', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('link', { name: /open current learning map prototype/i })).toHaveAttribute(
+    await expect(page.getByRole('heading', { name: /build calm learning projects/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /open geopolitics & economics project/i })).toHaveAttribute(
+      'href',
+      '/prototypes/current/project.html',
+    );
+    await expect(page.getByRole('link', { name: /open editable map page/i })).toHaveAttribute(
       'href',
       '/prototypes/current/mindmap.html',
     );
-    await expect(page.getByRole('link', { name: /open current lesson prototype/i })).toHaveAttribute(
+    await expect(page.getByRole('link', { name: /open linear lesson page/i })).toHaveAttribute(
       'href',
       '/prototypes/current/lesson.html',
     );
   });
 
+  test('project home frames Simon Dixon as one source inside a learning project', async ({ page }) => {
+    await page.goto(projectPath);
+
+    await expect(page.getByRole('heading', { name: 'Geopolitics & Economics' })).toBeVisible();
+    await expect(page.getByText(/Neuro Map Studio/i).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Simon Dixon debt-power interview\/model/i })).toBeVisible();
+    await expect(page.getByText(/Sources \/ topics/i)).toBeVisible();
+    await expect(page.getByText(/Pages in this project/i)).toBeVisible();
+    await expect(page.getByRole('link', { name: /Debt, assets, power, and exit/i })).toHaveAttribute(
+      'href',
+      'lesson.html',
+    );
+    await expect(page.getByRole('link', { name: /Debt-power map/i })).toHaveAttribute('href', 'mindmap.html');
+
+    const metadata = await page.evaluate(
+      () => (window as typeof window & { currentProject?: unknown }).currentProject,
+    );
+    expect(metadata).toMatchObject({
+      id: 'geopolitics-economics',
+      sources: [{ id: 'simon-dixon-debt-power' }],
+      pages: [
+        { id: 'simon-dixon-linear-lesson', href: 'lesson.html' },
+        { id: 'simon-dixon-debt-power-map', href: 'mindmap.html' },
+      ],
+    });
+  });
+
   test('learning map loads article-specific blocks and keeps ports outside block bounds', async ({ page }) => {
     await resetMindmap(page);
 
-    await expect(page.getByRole('heading', { name: /debt-power model/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^debt-power map$/i })).toBeVisible();
+    await expect(page.locator('.topbar')).toContainText(/Project: Geopolitics & Economics/i);
+    await expect(page.locator('.topbar')).toContainText(/Page: Editable map/i);
+    await expect(page.locator('.topbar')).not.toContainText(/Advanced learning map app/i);
+    await expect(page.locator('.topbar')).not.toContainText(/Simon Dixon’s debt-power model/i);
+    await expect(page.getByRole('link', { name: /project/i })).toHaveAttribute('href', 'project.html');
+    await expect(page.getByRole('link', { name: /^lesson$/i })).toHaveAttribute('href', 'lesson.html');
     await expect(page.locator('.map-node')).toHaveCount(13);
     await expect(page.locator('.map-node', { hasText: 'Core claim' })).toBeVisible();
     await expect(page.locator('.map-node', { hasText: 'Money starts as debt' })).toBeVisible();
@@ -678,7 +717,12 @@ test.describe('current standalone prototypes', () => {
 
   test('lesson prototype includes glossary and read-aloud controls', async ({ page }) => {
     await page.goto(lessonPath);
-    await expect(page.getByRole('heading', { name: /debt-power map/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /linear lesson: debt, assets, power, and exit/i })).toBeVisible();
+    await expect(page.getByLabel(/project breadcrumb/i)).toContainText(/Neuro Map Studio/i);
+    await expect(page.getByLabel(/project breadcrumb/i)).toContainText(/Project: Geopolitics & Economics/i);
+    await expect(page.getByLabel(/project breadcrumb/i)).toContainText(/Source: Simon Dixon debt-power interview\/model/i);
+    await expect(page.getByLabel(/project breadcrumb/i)).toContainText(/Page: Linear lesson/i);
+    await expect(page.getByRole('link', { name: /back to project/i })).toHaveAttribute('href', 'project.html');
     await expect(page.getByRole('link', { name: /open editable learning map/i }).first()).toBeVisible();
     const readControls = page.locator('.read-toolbar, .reader-toolbar, [aria-label*="Read"], [aria-label*="read"]');
     expect(await readControls.count()).toBeGreaterThan(0);
