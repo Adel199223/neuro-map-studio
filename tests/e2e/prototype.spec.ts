@@ -4,6 +4,7 @@ const mindmapPath = '/prototypes/current/mindmap.html';
 const debugMindmapPath = `${mindmapPath}?debugInput=1`;
 const lessonPath = '/prototypes/current/lesson.html';
 const projectPath = '/prototypes/current/project.html';
+const workspaceDbName = 'neuro-map-studio-local-workspace';
 
 async function resetMindmap(page: Page, path = mindmapPath) {
   await page.goto(path);
@@ -11,7 +12,20 @@ async function resetMindmap(page: Page, path = mindmapPath) {
   await page.reload();
 }
 
+async function clearWorkspaceDatabase(page: Page) {
+  await page.goto('/');
+  await page.evaluate((dbName) => {
+    return new Promise<void>((resolve, reject) => {
+      const request = indexedDB.deleteDatabase(dbName);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+      request.onblocked = () => resolve();
+    });
+  }, workspaceDbName);
+}
+
 async function longPress(locator: Locator, options: { pointerId?: number; x?: number; y?: number } = {}) {
+  await locator.waitFor({ state: 'visible' });
   const box = await locator.boundingBox();
   if (!box) {
     throw new Error('Could not determine locator bounding box for long-press test.');
@@ -37,6 +51,7 @@ async function longPress(locator: Locator, options: { pointerId?: number; x?: nu
 }
 
 async function contextMenu(locator: Locator, options: { x?: number; y?: number } = {}) {
+  await locator.waitFor({ state: 'visible' });
   const box = await locator.boundingBox();
   if (!box) {
     throw new Error('Could not determine locator bounding box for context-menu test.');
@@ -53,6 +68,7 @@ async function contextMenu(locator: Locator, options: { x?: number; y?: number }
 }
 
 async function syntheticClick(locator: Locator, options: { x?: number; y?: number } = {}) {
+  await locator.waitFor({ state: 'visible' });
   const box = await locator.boundingBox();
   if (!box) {
     throw new Error('Could not determine locator bounding box for synthetic click test.');
@@ -220,47 +236,67 @@ async function getEdgeSnapshot(page: Page, edgeIndex = -1) {
 
 test.describe('current standalone prototypes', () => {
   test('root app exposes prototype entry links', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /build calm learning projects/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /open geopolitics & economics project/i })).toHaveAttribute(
+    await expect(page.getByRole('heading', { name: /build calm learning projects from documents/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /open current project/i })).toHaveAttribute(
       'href',
-      '/prototypes/current/project.html',
+      '/prototypes/current/project.html?projectId=geopolitics-economics',
     );
-    await expect(page.getByRole('link', { name: /open editable map page/i })).toHaveAttribute(
-      'href',
-      '/prototypes/current/mindmap.html',
-    );
-    await expect(page.getByRole('link', { name: /open linear lesson page/i })).toHaveAttribute(
-      'href',
-      '/prototypes/current/lesson.html',
-    );
+    await expect(page.getByRole('heading', { name: /Geopolitics & Economics/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /create project locally/i })).toBeVisible();
+    await expect(page.getByText(/Development links/i)).toBeVisible();
   });
 
-  test('project home frames Simon Dixon as one source inside a learning project', async ({ page }) => {
+  test('root workspace dashboard can create a project that persists after reload', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto('/');
+
+    await page.getByLabel(/Project title/i).fill('Neuroscience study');
+    await page.getByLabel(/Theme or domain/i).fill('neuroscience');
+    await page.getByLabel(/Short description/i).fill('A calm project for memory, attention, and learning.');
+    await page.getByRole('button', { name: /create project locally/i }).click();
+
+    await expect(page.getByRole('heading', { name: /Neuroscience study/i })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('heading', { name: /Neuroscience study/i })).toBeVisible();
+  });
+
+  test('project home separates documents, pages, and page-document references', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
     await page.goto(projectPath);
 
     await expect(page.getByRole('heading', { name: 'Geopolitics & Economics' })).toBeVisible();
     await expect(page.getByText(/Neuro Map Studio/i).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Documents/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Pages/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Simon Dixon debt-power interview\/model/i })).toBeVisible();
-    await expect(page.getByText(/Sources \/ topics/i)).toBeVisible();
-    await expect(page.getByText(/Pages in this project/i)).toBeVisible();
-    await expect(page.getByRole('link', { name: /Debt, assets, power, and exit/i })).toHaveAttribute(
-      'href',
-      'lesson.html',
-    );
-    await expect(page.getByRole('link', { name: /Debt-power map/i })).toHaveAttribute('href', 'mindmap.html');
+    await expect(page.getByRole('link', { name: /Open page/i }).first()).toBeVisible();
 
-    const metadata = await page.evaluate(
-      () => (window as typeof window & { currentProject?: unknown }).currentProject,
-    );
-    expect(metadata).toMatchObject({
-      id: 'geopolitics-economics',
-      sources: [{ id: 'simon-dixon-debt-power' }],
-      pages: [
-        { id: 'simon-dixon-linear-lesson', href: 'lesson.html' },
-        { id: 'simon-dixon-debt-power-map', href: 'mindmap.html' },
-      ],
-    });
+    await page.locator('#pageForm').getByLabel(/Title/i).fill('Retrieval review');
+    await page.locator('#pageForm').getByLabel(/Type/i).selectOption('review');
+    await page.locator('#pageForm').getByLabel(/Description/i).fill('Practice questions for this source.');
+    await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
+    await expect(page.getByRole('heading', { name: /Retrieval review/i })).toBeVisible();
+
+    await page.locator('#documentForm').getByLabel(/Title/i).fill('Central bank explainer');
+    await page.locator('#documentForm').getByLabel(/Type/i).selectOption('web');
+    await page.locator('#documentForm').getByLabel(/Source\/topic label/i).fill('Web source');
+    await page.locator('#documentForm').getByLabel(/Tags/i).fill('money, policy');
+    await page.locator('#documentForm').getByLabel(/Short description/i).fill('A source about central bank policy.');
+    await page.locator('#documentForm').getByRole('button', { name: /Create document/i }).click();
+    await expect(page.getByRole('heading', { name: /Central bank explainer/i })).toBeVisible();
+
+    await page.locator('#linkPageSelect').selectOption({ label: 'Retrieval review' });
+    await page.locator('#linkDocumentSelect').selectOption({ label: 'Central bank explainer' });
+    await page.locator('#linkForm').getByLabel(/Relationship/i).selectOption('evidence');
+    await page.locator('#linkForm').getByRole('button', { name: /Attach document to page/i }).click();
+    await expect(page.getByText(/Retrieval review uses Central bank explainer as evidence/i)).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByRole('heading', { name: /Retrieval review/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Central bank explainer/i })).toBeVisible();
+    await expect(page.getByText(/Retrieval review uses Central bank explainer as evidence/i)).toBeVisible();
   });
 
   test('learning map loads article-specific blocks and keeps ports outside block bounds', async ({ page }) => {
@@ -351,6 +387,39 @@ test.describe('current standalone prototypes', () => {
 
     await page.getByRole('button', { name: /add linked block from selected block/i }).click();
     await expect(page.locator('.map-node')).toHaveCount(14);
+  });
+
+  test('map can create a movable and linkable document reference block', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await resetMindmap(page);
+
+    await page.getByRole('button', { name: /add document reference block/i }).click();
+    await expect(page.locator('#documentPicker')).toBeVisible();
+    await page.locator('#documentPicker').getByRole('button', { name: /Simon Dixon debt-power/i }).click();
+
+    const documentNode = page.locator('.map-node.type-document').first();
+    await expect(documentNode).toBeVisible();
+    await expect(documentNode).toContainText(/Simon Dixon debt-power interview\/model/i);
+    await expect(documentNode).toHaveAttribute('data-document-id', 'simon-dixon-debt-power');
+
+    const documentNodeId = await documentNode.getAttribute('data-id');
+    if (!documentNodeId) {
+      throw new Error('Document reference block should have a node id.');
+    }
+
+    const before = await documentNode.boundingBox();
+    await dragByHandle(page, documentNodeId, { pointerType: 'touch', deltaX: 96, deltaY: 60 });
+    const after = await documentNode.boundingBox();
+    expect(after?.x).not.toBe(before?.x);
+
+    await page.locator('.map-node[data-id="core"]').click();
+    await page.locator('#btnConnect').click();
+    await documentNode.click();
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
+
+    await documentNode.getByRole('button', { name: /open document details/i }).click();
+    await expect(page.locator('#documentDetailCard')).toBeVisible();
+    await expect(page.locator('#documentDetailCard')).toContainText(/Simon Dixon debt-power interview\/model/i);
   });
 
   test('new linked block edges re-anchor after moving under zoom', async ({ page }) => {
@@ -716,13 +785,19 @@ test.describe('current standalone prototypes', () => {
   });
 
   test('lesson prototype includes glossary and read-aloud controls', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
     await page.goto(lessonPath);
     await expect(page.getByRole('heading', { name: /linear lesson: debt, assets, power, and exit/i })).toBeVisible();
     await expect(page.getByLabel(/project breadcrumb/i)).toContainText(/Neuro Map Studio/i);
     await expect(page.getByLabel(/project breadcrumb/i)).toContainText(/Project: Geopolitics & Economics/i);
     await expect(page.getByLabel(/project breadcrumb/i)).toContainText(/Source: Simon Dixon debt-power interview\/model/i);
     await expect(page.getByLabel(/project breadcrumb/i)).toContainText(/Page: Linear lesson/i);
-    await expect(page.getByRole('link', { name: /back to project/i })).toHaveAttribute('href', 'project.html');
+    await expect(page.getByRole('link', { name: /back to project/i })).toHaveAttribute(
+      'href',
+      'project.html?projectId=geopolitics-economics',
+    );
+    await expect(page.getByRole('heading', { name: /Related project documents/i })).toBeVisible();
+    await expect(page.locator('#relatedDocuments')).toContainText(/Simon Dixon debt-power interview\/model/i);
     await expect(page.getByRole('link', { name: /open editable learning map/i }).first()).toBeVisible();
     const readControls = page.locator('.read-toolbar, .reader-toolbar, [aria-label*="Read"], [aria-label*="read"]');
     expect(await readControls.count()).toBeGreaterThan(0);

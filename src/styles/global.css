@@ -11,6 +11,11 @@
 body { margin: 0; min-height: 100vh; }
 
 a { color: inherit; }
+button,
+input,
+textarea {
+  font: inherit;
+}
 code {
   border: 1px solid #dcc9a7;
   border-radius: 0.35rem;
@@ -45,16 +50,22 @@ code {
 
 h1 { margin: 0; font-size: clamp(2.2rem, 7vw, 5.5rem); line-height: 0.95; letter-spacing: 0.02em; }
 h2 { margin-top: 0; }
+h3 { margin: 0 0 0.45rem; }
 .lede { font-size: clamp(1.1rem, 2.1vw, 1.35rem); line-height: 1.65; max-width: 70ch; }
+.status,
+.meta { color: #6b5f50; font-weight: 700; }
 
 .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
-.actions a {
+.actions a,
+.actions button {
   border: 1px solid #ccb284;
   border-radius: 999px;
   padding: 0.85rem 1.1rem;
   text-decoration: none;
   background: #fffdf7;
+  color: inherit;
   font-weight: 700;
+  cursor: pointer;
 }
 .actions .primary { background: #e8f4df; border-color: #9cbd86; }
 
@@ -65,3 +76,31 @@ h2 { margin-top: 0; }
   margin-top: 18px;
 }
 .card { padding: 24px; line-height: 1.65; }
+.project-card { border-left: 8px solid #9cbd86; }
+.section-block { margin-top: 26px; }
+.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.create-card,
+.dev-details { margin-top: 18px; }
+.dev-details summary { cursor: pointer; font-weight: 700; }
+form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+label {
+  display: grid;
+  gap: 5px;
+  font-weight: 700;
+  color: #6b5f50;
+}
+label.full { grid-column: 1 / -1; }
+input,
+textarea {
+  width: 100%;
+  border: 1px solid #dcc9a7;
+  border-radius: 16px;
+  background: #fffdf7;
+  color: #26221d;
+  padding: 0.75rem 0.9rem;
+}
+textarea { min-height: 6rem; resize: vertical; }

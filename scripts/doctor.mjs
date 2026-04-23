@@ -18,6 +18,7 @@ const required = [
 	  'docs/exec-plans/github-pages-live-preview.md',
 	  'public/prototypes/current/project.html',
 	  'public/prototypes/current/project-data.js',
+	  'public/prototypes/current/workspace-store.js',
 	  'public/prototypes/current/mindmap.html',
 	  'public/prototypes/current/lesson.html',
   'docs/product/product-requirements.md',
@@ -28,6 +29,7 @@ const required = [
   'docs/exec-plans/harness-repair-tablet-architecture.md',
   'docs/exec-plans/pages-enable-review-package-completeness.md',
   'docs/exec-plans/review-zip-packaging-completeness.md',
+  'docs/exec-plans/workspace-local-model-and-document-blocks.md',
   '.github/workflows/pages.yml',
   'scripts/review-package-config.mjs',
   'scripts/create-review-zip.mjs',
@@ -171,6 +173,9 @@ const mapSnippets = [
   'Debt-power map',
   'href="project.html"',
   'href="lesson.html"',
+  'btnAddDocumentBlock',
+  'nodeType',
+  'documentId',
   'simon-dixon-debt-power-learning-workspace-v20-clean-connectors',
 ];
 for (const snippet of mapSnippets) {
@@ -188,10 +193,17 @@ if (!lessonPrototype.includes('href="project.html"')) {
 
 expectIncludes('public/prototypes/current/project.html', [
   'Neuro Map Studio',
-  'Geopolitics &amp; Economics',
-  'Simon Dixon debt-power interview/model',
-  'href="lesson.html"',
-  'href="mindmap.html"',
+  'Project workspace',
+  'Page document references',
+  'Create document',
+  'Create page',
+]);
+expectIncludes('public/prototypes/current/workspace-store.js', [
+  'neuro-map-studio-local-workspace',
+  'pageDocumentLinks',
+  'createProject',
+  'createDocument',
+  'linkPageDocument',
 ]);
 expectIncludes('public/prototypes/current/project-data.js', [
   'geopolitics-economics',

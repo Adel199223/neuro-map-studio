@@ -196,6 +196,54 @@ test.describe('learning-map workspace core', () => {
     expect(imported.workspace.pages[0].map.edges[0].label).toBe('kept label');
   });
 
+  test('document node metadata round-trips with map workspace payloads', () => {
+    const baseWorkspace = normalizedSeedWorkspace();
+    const workspace: LearningWorkspace = {
+      ...baseWorkspace,
+      pages: baseWorkspace.pages.map((page, index) =>
+        index === 0
+          ? {
+              ...page,
+              map: {
+                ...page.map,
+                nodes: [
+                  ...page.map.nodes,
+                  {
+                    id: 'doc-node',
+                    title: 'Source document',
+                    body: 'Why this source matters.',
+                    group: 'violet',
+                    shape: 'note',
+                    importance: 2,
+                    x: 100,
+                    y: 100,
+                    w: 300,
+                    h: 170,
+                    tag: 'note',
+                    nodeType: 'document',
+                    documentId: 'simon-dixon-debt-power',
+                  },
+                ],
+              },
+            }
+          : page,
+      ),
+    };
+
+    const payload = serializeWorkspaceExport(workspace);
+    const imported = parseImportedWorkspace(payload);
+
+    expect(imported.kind).toBe('workspace');
+    if (imported.kind !== 'workspace') {
+      test.fail();
+      return;
+    }
+
+    const documentNode = imported.workspace.pages[0].map.nodes.find((node) => node.id === 'doc-node');
+    expect(documentNode?.nodeType).toBe('document');
+    expect(documentNode?.documentId).toBe('simon-dixon-debt-power');
+  });
+
   test('single-map imports become a new page titled from the file name', () => {
     const imported = parseImportedWorkspace(
       {

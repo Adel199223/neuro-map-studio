@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Geopolitics & Economics · Neuro Map Studio</title>
+<title>Project workspace · Neuro Map Studio</title>
 <style>
 :root{
   --bg:#efe5d4;
@@ -14,6 +14,7 @@
   --green:#e4f1dc;
   --blue:#e4f0f5;
   --amber:#f6ebc9;
+  --rose:#f5e1dd;
   --shadow:0 18px 48px rgb(90 65 32 / .1);
   --font:"Comic Sans MS","Comic Sans","Comic Neue","OpenDyslexic","Atkinson Hyperlegible",Verdana,Arial,sans-serif;
 }
@@ -30,69 +31,296 @@ body{
   line-height:1.65;
 }
 a{color:inherit;text-underline-offset:.16em}
-a:focus-visible{outline:3px solid rgba(79,121,138,.55);outline-offset:4px;border-radius:10px}
-.shell{width:min(1080px,calc(100% - 32px));margin:0 auto;padding:36px 0 64px}
-.hero,.card{background:rgba(255,249,239,.96);border:1px solid var(--border);border-radius:28px;box-shadow:var(--shadow)}
-.hero{padding:clamp(24px,5vw,54px)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(79,121,138,.55);outline-offset:4px;border-radius:10px}
+.shell{width:min(1120px,calc(100% - 32px));margin:0 auto;padding:32px 0 64px}
+.hero,.card,.panel{background:rgba(255,249,239,.96);border:1px solid var(--border);border-radius:28px;box-shadow:var(--shadow)}
+.hero{padding:clamp(24px,5vw,52px)}
 .eyebrow{display:inline-flex;gap:.4rem;flex-wrap:wrap;margin:0 0 12px;padding:.28rem .7rem;border:1px solid var(--border);border-radius:999px;background:var(--green);font-weight:900}
-h1{margin:0;font-size:clamp(2.2rem,7vw,5.2rem);line-height:.98;letter-spacing:.01em}
+h1{margin:0;font-size:clamp(2.2rem,7vw,5rem);line-height:.98;letter-spacing:.01em}
 h2{margin:0 0 .65rem;font-size:clamp(1.35rem,3vw,2rem)}
 h3{margin:.15rem 0 .25rem;font-size:1.15rem}
-.lede{max-width:68ch;margin:1rem 0 0;font-size:clamp(1.04rem,2vw,1.28rem)}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:18px}
-.card{padding:22px}
-.source-card{border-left:8px solid #9fbe8a}
-.page-card{display:grid;gap:.55rem;text-decoration:none;transition:transform .14s ease, border-color .14s ease}
-.page-card:hover,.page-card:focus{transform:translateY(-2px);border-color:#9f8054}
+.lede{max-width:70ch;margin:1rem 0 0;font-size:clamp(1.04rem,2vw,1.24rem)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:16px}
+.card,.panel{padding:22px}
+.document-card{border-left:8px solid #8fb4c5}
+.page-card{border-left:8px solid #9fbe8a}
 .meta{color:var(--muted);font-weight:900;font-size:.9rem}
+.section-label{margin:30px 0 8px;color:var(--muted);font-weight:900;letter-spacing:.02em}
+.actions,.form-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.button,button{display:inline-flex;align-items:center;justify-content:center;min-height:2.75rem;padding:.7rem 1rem;border:1px solid #c6ac80;border-radius:999px;background:#fffdf7;color:inherit;text-decoration:none;font:inherit;font-weight:900;cursor:pointer}
+.button.primary,button.primary{background:var(--green);border-color:#9fbe8a}
+button.danger{background:var(--rose);border-color:#d5a097}
+button:disabled{opacity:.55;cursor:not-allowed}
+input,select,textarea{width:100%;min-height:2.75rem;border:1px solid var(--border);border-radius:16px;background:#fffdf7;color:inherit;font:inherit;padding:.65rem .8rem}
+textarea{min-height:5.5rem;resize:vertical}
+label{display:grid;gap:4px;font-weight:900;color:var(--muted)}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:12px}
+.full{grid-column:1/-1}
 .pill-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .pill{border:1px solid var(--border);border-radius:999px;background:#fffdf7;padding:.3rem .65rem;font-weight:800;font-size:.92rem}
-.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
-.button{display:inline-flex;align-items:center;justify-content:center;min-height:2.75rem;padding:.7rem 1rem;border:1px solid #c6ac80;border-radius:999px;background:#fffdf7;text-decoration:none;font-weight:900}
-.button.primary{background:var(--green);border-color:#9fbe8a}
-.section-label{margin:28px 0 8px;color:var(--muted);font-weight:900;letter-spacing:.02em}
-@media(max-width:680px){.shell{width:min(100% - 20px,1080px);padding-top:18px}.hero,.card{border-radius:20px}.button{width:100%}}
+.links-list{display:grid;gap:8px;margin-top:10px}
+.soft{background:rgba(255,253,247,.7);border:1px dashed var(--border);border-radius:18px;padding:14px}
+.status{min-height:1.5rem;color:var(--muted);font-weight:900}
+.hidden{display:none!important}
+@media(max-width:680px){.shell{width:min(100% - 20px,1120px);padding-top:18px}.hero,.card,.panel{border-radius:20px}.button,button{width:100%}.form-row{display:grid}}
 </style>
 </head>
 <body>
 <main class="shell">
   <section class="hero">
-    <p class="eyebrow">Neuro Map Studio</p>
-    <h1>Geopolitics &amp; Economics</h1>
-    <p class="lede">A calm learning project for maps, lessons, and review pages about power, money, debt, institutions, and political economy.</p>
+    <p class="eyebrow">Neuro Map Studio · Project workspace</p>
+    <h1 id="projectTitle">Loading project...</h1>
+    <p class="lede" id="projectDescription">Opening your local workspace.</p>
     <div class="actions" aria-label="Project shortcuts">
-      <a class="button primary" href="lesson.html">Open linear lesson</a>
-      <a class="button" href="mindmap.html">Open editable map</a>
+      <a class="button" href="/">Workspace home</a>
+      <a class="button primary" id="primaryLessonLink" href="lesson.html">Open lesson</a>
+      <a class="button" id="primaryMapLink" href="mindmap.html">Open editable map</a>
     </div>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
   </section>
 
-  <h2 class="section-label">Sources / topics</h2>
-  <section class="grid" aria-label="Sources and topics">
-    <article class="card source-card">
-      <p class="meta">Interview / notes</p>
-      <h2>Simon Dixon debt-power interview/model</h2>
-      <p>This source is one topic inside the project. It explores how debt, assets, capital allocation, institutions, and exit paths connect.</p>
-      <div class="pill-row" aria-label="Pages for this source">
-        <span class="pill">Linear lesson</span>
-        <span class="pill">Editable debt-power map</span>
+  <h2 class="section-label">Documents</h2>
+  <section class="grid" id="documentsGrid" aria-label="Project document library"></section>
+
+  <section class="panel" aria-label="Create document metadata">
+    <h2>Add document metadata</h2>
+    <p class="meta">Add a reference first. File upload and document rendering come later.</p>
+    <form id="documentForm">
+      <div class="form-grid">
+        <label>Title <input name="title" required placeholder="Document title"/></label>
+        <label>Type
+          <select name="type">
+            <option value="note">Note</option>
+            <option value="pdf">PDF</option>
+            <option value="docx">DOCX</option>
+            <option value="html">HTML</option>
+            <option value="web">Web page</option>
+            <option value="video">Video</option>
+          </select>
+        </label>
+        <label>Source/topic label <input name="sourceLabel" placeholder="Interview / notes"/></label>
+        <label>Tags <input name="tags" placeholder="debt, power, institutions"/></label>
+        <label class="full">Short description <textarea name="description" placeholder="What does this document help you understand?"></textarea></label>
       </div>
-    </article>
+      <div class="form-row"><button class="primary" type="submit">Create document</button></div>
+    </form>
   </section>
 
-  <h2 class="section-label">Pages in this project</h2>
-  <section class="grid" aria-label="Pages in this project">
-    <a class="card page-card" href="lesson.html">
-      <span class="meta">Page · Linear lesson</span>
-      <h3>Debt, assets, power, and exit</h3>
-      <span>Read the source model in chunks, with glossary hints and read-aloud support.</span>
-    </a>
-    <a class="card page-card" href="mindmap.html">
-      <span class="meta">Page · Editable learning map</span>
-      <h3>Debt-power map</h3>
-      <span>Move blocks, edit relationships, and rebuild the structure spatially.</span>
-    </a>
+  <h2 class="section-label">Pages</h2>
+  <section class="grid" id="pagesGrid" aria-label="Project pages"></section>
+
+  <section class="panel" aria-label="Create page">
+    <h2>Create page</h2>
+    <p class="meta">This creates local metadata for now. Full page builders come later.</p>
+    <form id="pageForm">
+      <div class="form-grid">
+        <label>Title <input name="title" required placeholder="Review prompts"/></label>
+        <label>Type
+          <select name="type">
+            <option value="notes">Notes</option>
+            <option value="review">Review</option>
+            <option value="glossary">Glossary</option>
+            <option value="lesson">Lesson</option>
+            <option value="map">Map</option>
+          </select>
+        </label>
+        <label class="full">Description <textarea name="description" placeholder="What learning job does this page do?"></textarea></label>
+      </div>
+      <div class="form-row"><button class="primary" type="submit">Create page</button></div>
+    </form>
+  </section>
+
+  <section class="panel" aria-label="Attach documents to pages">
+    <h2>Page document references</h2>
+    <p class="meta">Pages reference project documents. The same document can support many pages.</p>
+    <form id="linkForm">
+      <div class="form-grid">
+        <label>Page <select name="pageId" id="linkPageSelect"></select></label>
+        <label>Document <select name="documentId" id="linkDocumentSelect"></select></label>
+        <label>Relationship
+          <select name="relationship">
+            <option value="source">Source</option>
+            <option value="attachment">Attachment</option>
+            <option value="related">Related</option>
+            <option value="evidence">Evidence</option>
+            <option value="further-reading">Further reading</option>
+          </select>
+        </label>
+      </div>
+      <div class="form-row"><button class="primary" type="submit">Attach document to page</button></div>
+    </form>
+    <div class="links-list" id="linksList"></div>
   </section>
 </main>
-<script type="module" src="project-data.js"></script>
+<script type="module">
+import {
+  SEED_PROJECT_ID,
+  createDocument,
+  createPage,
+  deletePage,
+  getProjectBundle,
+  linkPageDocument,
+  updateDocument,
+  updatePage,
+} from './workspace-store.js';
+
+const params = new URLSearchParams(location.search);
+let projectId = params.get('projectId') || SEED_PROJECT_ID;
+let bundle = null;
+const status = document.getElementById('status');
+
+function setStatus(text){
+  status.textContent = text;
+}
+
+function escapeHtml(value){
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  })[char]);
+}
+
+function pageHref(page){
+  const route = page.route || 'project.html';
+  if(route === 'project.html') return `project.html?projectId=${encodeURIComponent(page.projectId)}`;
+  return route;
+}
+
+function docsForPage(page){
+  const links = bundle.pageDocumentLinks.filter(link => link.pageId === page.id);
+  return links.map(link => ({
+    link,
+    document: bundle.documents.find(document => document.id === link.documentId)
+  })).filter(item => item.document);
+}
+
+function render(){
+  if(!bundle?.project){
+    document.getElementById('projectTitle').textContent = 'Project not found';
+    document.getElementById('projectDescription').textContent = 'The local workspace could not find this project.';
+    return;
+  }
+  document.title = `${bundle.project.title} · Neuro Map Studio`;
+  document.getElementById('projectTitle').textContent = bundle.project.title;
+  document.getElementById('projectDescription').textContent = bundle.project.description;
+
+  const lessonPage = bundle.pages.find(page => page.type === 'lesson') || bundle.pages[0];
+  const mapPage = bundle.pages.find(page => page.type === 'map') || bundle.pages[0];
+  if(lessonPage) document.getElementById('primaryLessonLink').href = pageHref(lessonPage);
+  if(mapPage) document.getElementById('primaryMapLink').href = pageHref(mapPage);
+
+  const documentsGrid = document.getElementById('documentsGrid');
+  documentsGrid.innerHTML = bundle.documents.map(document => `
+    <article class="card document-card" data-document-id="${document.id}">
+      <p class="meta">${escapeHtml(document.type.toUpperCase())} · ${escapeHtml(document.sourceLabel || 'Document')}</p>
+      <h3>${escapeHtml(document.title)}</h3>
+      <p>${escapeHtml(document.description || 'No description yet.')}</p>
+      <div class="pill-row">${(document.tags || []).map(tag => `<span class="pill">${escapeHtml(tag)}</span>`).join('')}</div>
+      <div class="actions">
+        <button type="button" data-action="edit-document" data-id="${document.id}">Edit metadata</button>
+      </div>
+    </article>
+  `).join('') || '<article class="card"><h3>No documents yet</h3><p>Add a source or reference below.</p></article>';
+
+  const pagesGrid = document.getElementById('pagesGrid');
+  pagesGrid.innerHTML = bundle.pages.map(page => {
+    const docs = docsForPage(page);
+    return `
+      <article class="card page-card" data-page-id="${page.id}">
+        <p class="meta">Page · ${escapeHtml(page.type)}</p>
+        <h3>${escapeHtml(page.title)}</h3>
+        <p>${escapeHtml(page.description || 'No description yet.')}</p>
+        <div class="soft">
+          <strong>Documents:</strong>
+          ${docs.length ? docs.map(({link, document}) => `<span class="pill">${escapeHtml(link.relationship)}: ${escapeHtml(document.title)}</span>`).join(' ') : '<span class="meta">None attached yet.</span>'}
+        </div>
+        <div class="actions">
+          <a class="button primary" href="${pageHref(page)}">Open page</a>
+          <button type="button" data-action="rename-page" data-id="${page.id}">Rename</button>
+          <button type="button" class="danger" data-action="delete-page" data-id="${page.id}" ${page.protected ? 'disabled title="Seed pages stay available for the prototype routes."' : ''}>Delete</button>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  const linkPageSelect = document.getElementById('linkPageSelect');
+  linkPageSelect.innerHTML = bundle.pages.map(page => `<option value="${escapeHtml(page.id)}">${escapeHtml(page.title)}</option>`).join('');
+  const linkDocumentSelect = document.getElementById('linkDocumentSelect');
+  linkDocumentSelect.innerHTML = bundle.documents.map(document => `<option value="${escapeHtml(document.id)}">${escapeHtml(document.title)}</option>`).join('');
+  const linksList = document.getElementById('linksList');
+  linksList.innerHTML = bundle.pageDocumentLinks.map(link => {
+    const page = bundle.pages.find(item => item.id === link.pageId);
+    const document = bundle.documents.find(item => item.id === link.documentId);
+    if(!page || !document) return '';
+    return `<div class="soft"><strong>${escapeHtml(page.title)}</strong> uses <strong>${escapeHtml(document.title)}</strong> as ${escapeHtml(link.relationship)}.</div>`;
+  }).join('') || '<div class="soft">No document references yet.</div>';
+}
+
+async function refresh(message=''){
+  bundle = await getProjectBundle(projectId);
+  render();
+  if(message) setStatus(message);
+}
+
+document.getElementById('documentForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
+  await createDocument(projectId, Object.fromEntries(form.entries()));
+  formElement.reset();
+  await refresh('Document metadata created.');
+});
+
+document.getElementById('pageForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
+  await createPage(projectId, Object.fromEntries(form.entries()));
+  formElement.reset();
+  await refresh('Page created.');
+});
+
+document.getElementById('linkForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  const form = new FormData(event.currentTarget);
+  await linkPageDocument(form.get('pageId'), form.get('documentId'), form.get('relationship'));
+  await refresh('Document attached to page.');
+});
+
+document.addEventListener('click', async event => {
+  const button = event.target.closest('button[data-action]');
+  if(!button) return;
+  const action = button.dataset.action;
+  const id = button.dataset.id;
+  if(action === 'rename-page'){
+    const page = bundle.pages.find(item => item.id === id);
+    const title = prompt('Rename page:', page?.title || '');
+    if(title === null) return;
+    await updatePage(id, {title});
+    await refresh('Page renamed.');
+  }
+  if(action === 'delete-page'){
+    const page = bundle.pages.find(item => item.id === id);
+    if(!page || page.protected) return;
+    if(!confirm(`Delete "${page.title}"?`)) return;
+    const result = await deletePage(id);
+    await refresh(result.deleted ? 'Page deleted.' : 'Page was not deleted.');
+  }
+  if(action === 'edit-document'){
+    const document = bundle.documents.find(item => item.id === id);
+    const title = prompt('Document title:', document?.title || '');
+    if(title === null) return;
+    const description = prompt('Short description:', document?.description || '');
+    if(description === null) return;
+    await updateDocument(id, {title, description});
+    await refresh('Document metadata updated.');
+  }
+});
+
+refresh();
+</script>
 </body>
 </html>

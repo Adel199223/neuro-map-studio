@@ -7,6 +7,7 @@ import type {
   LearningWorkspace,
   LinkRoute,
   NodeGroup,
+  LearningNodeType,
   NodeShape,
   PortSide,
   RelationshipType,
@@ -30,6 +31,8 @@ export interface CompatibleLearningNode {
   w?: unknown;
   h?: unknown;
   tag?: unknown;
+  nodeType?: unknown;
+  documentId?: unknown;
 }
 
 export interface CompatibleLearningEdge {
@@ -117,6 +120,7 @@ const DEFAULT_BLANK_NODE = {
 const DEFAULT_VIEW: ViewState = { x: 0, y: 0, scale: 1 };
 const VALID_NODE_GROUPS = ['blue', 'amber', 'green', 'rose', 'violet'] as const satisfies readonly NodeGroup[];
 const VALID_NODE_SHAPES = ['card', 'round', 'pill', 'note', 'oval'] as const satisfies readonly NodeShape[];
+const VALID_NODE_TYPES = ['concept', 'question', 'evidence', 'document'] as const satisfies readonly LearningNodeType[];
 const VALID_EDGE_SHAPES = ['curve', 'straight', 'elbow', 'arc'] as const satisfies readonly LinkRoute[];
 const VALID_PORTS = ['auto', 'top', 'right', 'bottom', 'left'] as const satisfies readonly PortSide[];
 const VALID_RELATIONS = new Set<RelationshipType>(
@@ -231,6 +235,11 @@ export function normalizeMap(input: CompatibleImportPayload): LearningMap {
       width = Math.max(width, 340);
       height = Math.max(height, 172);
     }
+    const nodeType = VALID_NODE_TYPES.includes(rawNode.nodeType as LearningNodeType)
+      ? (rawNode.nodeType as LearningNodeType)
+      : typeof rawNode.documentId === 'string' && rawNode.documentId
+        ? 'document'
+        : 'concept';
     return {
       id: clean(rawNode.id || `node-${index}`) || `node-${index}`,
       title: String(rawNode.title || 'Untitled block'),
@@ -244,7 +253,9 @@ export function normalizeMap(input: CompatibleImportPayload): LearningMap {
       y: toFiniteNumber(rawNode.y) ?? index * 40,
       w: width,
       h: height,
-      tag: String(rawNode.tag || 'custom'),
+      tag: String(rawNode.tag || (nodeType === 'document' ? 'document' : 'custom')),
+      nodeType,
+      documentId: nodeType === 'document' ? clean(rawNode.documentId) : '',
     };
   });
   const nodeIds = new Set(normalizedNodes.map((node) => node.id));

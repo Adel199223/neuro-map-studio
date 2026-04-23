@@ -1,5 +1,6 @@
 export type NodeGroup = 'blue' | 'green' | 'amber' | 'rose' | 'violet';
 export type NodeShape = 'card' | 'round' | 'oval' | 'pill' | 'note';
+export type LearningNodeType = 'concept' | 'question' | 'evidence' | 'document';
 export type Importance = 1 | 2 | 3 | 4 | 5;
 export type PortSide = 'auto' | 'top' | 'right' | 'bottom' | 'left';
 export type LinkRoute = 'straight' | 'curve' | 'elbow' | 'arc';
@@ -27,6 +28,8 @@ export interface LearningNode {
   w: number;
   h: number;
   tag?: string;
+  nodeType?: LearningNodeType;
+  documentId?: string;
 }
 
 export interface LearningEdge {

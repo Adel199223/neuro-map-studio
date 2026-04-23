@@ -84,6 +84,22 @@
 	      font-size:.96rem;
 	      line-height:1.45;
 	    }
+	    .related-documents{
+	      border-left:7px solid var(--blue-border);
+	    }
+	    .document-list{
+	      display:grid;
+	      gap:10px;
+	      margin-top:10px;
+	    }
+	    .document-chip{
+	      border:1px solid var(--border);
+	      border-radius:15px;
+	      background:rgba(255,250,242,.75);
+	      padding:.72rem .82rem;
+	    }
+	    .document-chip strong{display:block;}
+	    .document-chip span{display:block;color:var(--muted);font-size:.94rem;line-height:1.45;}
 
     .skip{position:absolute; left:-999px; top:10px; z-index:100; background:#fff; color:#000; padding:.6rem .9rem; border-radius:10px;}
     .skip:focus{left:10px;}
@@ -1155,9 +1171,9 @@
 <div>
 <nav class="workspace-crumbs no-read no-gloss" aria-label="Project breadcrumb">
 <a href="project.html">Neuro Map Studio</a>
-<span>Project: Geopolitics &amp; Economics</span>
-<span>Source: Simon Dixon debt-power interview/model</span>
-<span>Page: Linear lesson</span>
+<span id="breadcrumbProject">Project: Geopolitics &amp; Economics</span>
+<span id="breadcrumbSource">Source: Simon Dixon debt-power interview/model</span>
+<span id="breadcrumbPage">Page: Linear lesson</span>
 </nav>
 <span class="eyebrow">Debt, assets, power, and exit</span>
 <h1>Linear lesson: Debt, assets, power, and exit</h1>
@@ -1191,6 +1207,13 @@
 </figure>
 </div>
 </header>
+<section class="related-documents no-read no-gloss" aria-label="Related project documents">
+<h2>Related project documents</h2>
+<p class="mini">This page reads from project-level source documents, so the same source can support maps, reviews, glossary pages, and notes without being duplicated.</p>
+<div id="relatedDocuments" class="document-list">
+<div class="document-chip"><strong>Simon Dixon debt-power interview/model</strong><span>Source document · local workspace seed</span></div>
+</div>
+</section>
 <section id="quick-map">
 <h2>Simon Dixon’s core claim: debt becomes power</h2>
 <div class="callout green big">
@@ -1828,6 +1851,43 @@
 </details>
 </main>
 </div>
+<script type="module">
+import { SEED_LESSON_PAGE_ID, getPageContext } from './workspace-store.js';
+
+function escapeHtml(value){
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  })[char]);
+}
+
+try{
+  const context = await getPageContext(SEED_LESSON_PAGE_ID);
+  if(context.project){
+    document.getElementById('breadcrumbProject').textContent = `Project: ${context.project.title}`;
+    document.querySelectorAll('a[href="project.html"]').forEach(link => {
+      link.href = `project.html?projectId=${encodeURIComponent(context.project.id)}`;
+    });
+  }
+  if(context.page){
+    document.getElementById('breadcrumbPage').textContent = `Page: ${context.page.type === 'lesson' ? 'Linear lesson' : context.page.title}`;
+  }
+  if(context.documents.length){
+    document.getElementById('breadcrumbSource').textContent = `Source: ${context.documents[0].title}`;
+    document.getElementById('relatedDocuments').innerHTML = context.documents.map(document => `
+      <div class="document-chip" data-document-id="${escapeHtml(document.id)}">
+        <strong>${escapeHtml(document.title)}</strong>
+        <span>${escapeHtml(document.sourceLabel || document.type)} · ${escapeHtml(document.description || 'Project document')}</span>
+      </div>
+    `).join('');
+  }
+}catch(error){
+  // The static seed content above keeps the lesson readable if IndexedDB is unavailable.
+}
+</script>
 <script>
     const progress = document.getElementById('progress');
     const updateProgress = () => {
