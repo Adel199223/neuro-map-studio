@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Page runtime · Neuro Map Studio</title>
+<style>
+:root{
+  --bg:#efe5d4;
+  --paper:#fff9ef;
+  --ink:#2e2923;
+  --muted:#675d51;
+  --border:#d9c39d;
+  --green:#e4f1dc;
+  --blue:#e4f0f5;
+  --amber:#f6ebc9;
+  --rose:#f5e1dd;
+  --shadow:0 18px 48px rgb(90 65 32 / .1);
+  --font:"Comic Sans MS","Comic Sans","Comic Neue","OpenDyslexic","Atkinson Hyperlegible",Verdana,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  color:var(--ink);
+  font-family:var(--font);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255,255,255,.62), transparent 28rem),
+    radial-gradient(circle at 90% 20%, rgba(232,218,194,.55), transparent 24rem),
+    linear-gradient(180deg,#f6ecdd 0%,var(--bg) 100%);
+  line-height:1.65;
+}
+a{color:inherit;text-underline-offset:.16em}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(79,121,138,.55);outline-offset:4px;border-radius:10px}
+.shell{width:min(1080px,calc(100% - 32px));margin:0 auto;padding:32px 0 64px}
+.hero,.card,.panel{background:rgba(255,249,239,.96);border:1px solid var(--border);border-radius:28px;box-shadow:var(--shadow)}
+.hero{padding:clamp(24px,5vw,48px)}
+.eyebrow{display:inline-flex;gap:.4rem;flex-wrap:wrap;margin:0 0 12px;padding:.28rem .7rem;border:1px solid var(--border);border-radius:999px;background:var(--green);font-weight:900}
+.breadcrumbs{display:flex;flex-wrap:wrap;gap:.55rem;margin:.9rem 0 0;color:var(--muted);font-weight:900}
+.breadcrumbs span{border:1px solid var(--border);border-radius:999px;padding:.2rem .6rem;background:#fffdf7}
+h1{margin:.4rem 0 0;font-size:clamp(2.1rem,6vw,4.4rem);line-height:1.02;letter-spacing:.01em}
+h2{margin:0 0 .65rem;font-size:clamp(1.25rem,3vw,1.85rem)}
+h3{margin:.15rem 0 .25rem;font-size:1.05rem}
+.lede{max-width:70ch;margin:1rem 0 0;font-size:clamp(1.02rem,2vw,1.2rem)}
+.actions,.form-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.button,button{display:inline-flex;align-items:center;justify-content:center;min-height:2.75rem;padding:.7rem 1rem;border:1px solid #c6ac80;border-radius:999px;background:#fffdf7;color:inherit;text-decoration:none;font:inherit;font-weight:900;cursor:pointer}
+.button.primary,button.primary{background:var(--green);border-color:#9fbe8a}
+button.danger{background:var(--rose);border-color:#d5a097}
+input,select,textarea{width:100%;min-height:2.75rem;border:1px solid var(--border);border-radius:16px;background:#fffdf7;color:inherit;font:inherit;padding:.65rem .8rem}
+textarea{min-height:6rem;resize:vertical}
+label{display:grid;gap:4px;font-weight:900;color:var(--muted)}
+.section-label{margin:30px 0 8px;color:var(--muted);font-weight:900;letter-spacing:.02em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.card,.panel{padding:22px}
+.meta{color:var(--muted);font-weight:900;font-size:.9rem}
+.status{min-height:1.5rem;color:var(--muted);font-weight:900}
+.document-chip{display:grid;gap:4px;padding:12px 14px;border:1px solid var(--border);border-radius:18px;background:#fffdf7}
+.document-chip span{color:var(--muted)}
+.editor-grid{display:grid;gap:14px}
+.editor-card{padding:18px;border:1px solid var(--border);border-radius:22px;background:#fffdf7}
+.editor-card.lesson{border-left:8px solid #9fbe8a}
+.editor-card.review{border-left:8px solid #8fb4c5}
+.editor-card.notes{border-left:8px solid #d5b77b}
+.editor-card.glossary{border-left:8px solid #cf9d91}
+.empty{padding:16px;border:1px dashed var(--border);border-radius:20px;background:rgba(255,253,247,.7)}
+.tiny{font-size:.92rem;color:var(--muted)}
+.hidden{display:none!important}
+@media(max-width:680px){.shell{width:min(100% - 20px,1080px);padding-top:18px}.hero,.card,.panel{border-radius:20px}.button,button{width:100%}}
+</style>
+</head>
+<body>
+<main class="shell">
+  <section class="hero">
+    <p class="eyebrow" id="pageEyebrow">Neuro Map Studio · Page runtime</p>
+    <div class="breadcrumbs" aria-label="Runtime hierarchy">
+      <span id="crumbWorkspace">Workspace</span>
+      <span id="crumbProject">Project</span>
+      <span id="crumbPage">Page</span>
+    </div>
+    <h1 id="pageTitle">Loading page...</h1>
+    <p class="lede" id="pageDescription">Opening this page from the local workspace.</p>
+    <div class="actions" aria-label="Page actions">
+      <a class="button" href="/">Workspace home</a>
+      <a class="button" id="backToProject" href="project.html">Back to project</a>
+      <a class="button primary hidden" id="compatibilityLink" href="project.html">Open page</a>
+    </div>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+  </section>
+
+  <h2 class="section-label">Related documents</h2>
+  <section class="grid" id="relatedDocuments" aria-label="Related project documents"></section>
+
+  <h2 class="section-label">Page content</h2>
+  <section class="panel" id="runtimePanel" aria-label="Page runtime content"></section>
+</main>
+
+<script type="module">
+import {
+  SEED_LESSON_PAGE_ID,
+  getPageContext,
+  pageRuntimeHref,
+  savePageState,
+  setCurrentProject,
+} from './workspace-store.js';
+
+const params = new URLSearchParams(location.search);
+const pageId = params.get('pageId');
+const pageTitle = document.getElementById('pageTitle');
+const pageDescription = document.getElementById('pageDescription');
+const crumbProject = document.getElementById('crumbProject');
+const crumbPage = document.getElementById('crumbPage');
+const runtimePanel = document.getElementById('runtimePanel');
+const relatedDocuments = document.getElementById('relatedDocuments');
+const status = document.getElementById('status');
+const backToProject = document.getElementById('backToProject');
+const compatibilityLink = document.getElementById('compatibilityLink');
+
+let context = null;
+let saveTimer = null;
+
+function setStatus(text){
+  status.textContent = text;
+}
+
+function escapeHtml(value){
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  })[char]);
+}
+
+function itemId(prefix){
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function normalizeLessonState(data){
+  if(data?.kind === 'lesson-editor'){
+    return {
+      kind:'lesson-editor',
+      summary:String(data.summary || ''),
+      sections:Array.isArray(data.sections) && data.sections.length
+        ? data.sections.map(section => ({
+            id:String(section.id || itemId('section')),
+            heading:String(section.heading || 'Section'),
+            body:String(section.body || '')
+          }))
+        : [{id:itemId('section'), heading:'What this page is for', body:''}],
+      reflectionQuestion:String(data.reflectionQuestion || 'Why does this page belong in the project?'),
+      reflectionAnswer:String(data.reflectionAnswer || '')
+    };
+  }
+  return {
+    kind:'lesson-editor',
+    summary:'',
+    sections:[
+      {id:itemId('section'), heading:'What this page is for', body:''},
+      {id:itemId('section'), heading:'Key moves', body:''}
+    ],
+    reflectionQuestion:'Why does this page belong in the project?',
+    reflectionAnswer:''
+  };
+}
+
+function normalizeNotesState(data){
+  return {
+    kind:'notes-editor',
+    prompt:String(data?.prompt || 'What belongs on this page?'),
+    body:String(data?.body || ''),
+    nextStep:String(data?.nextStep || '')
+  };
+}
+
+function normalizeReviewState(data){
+  return {
+    kind:'review-editor',
+    intro:String(data?.intro || 'Turn the source into calm retrieval prompts.'),
+    prompts:Array.isArray(data?.prompts) && data.prompts.length
+      ? data.prompts.map(prompt => ({
+          id:String(prompt.id || itemId('prompt')),
+          question:String(prompt.question || ''),
+          answer:String(prompt.answer || '')
+        }))
+      : [{id:itemId('prompt'), question:'What is the main idea to retrieve?', answer:''}]
+  };
+}
+
+function normalizeGlossaryState(data){
+  return {
+    kind:'glossary-editor',
+    intro:String(data?.intro || 'Collect plain-language definitions here.'),
+    terms:Array.isArray(data?.terms) && data.terms.length
+      ? data.terms.map(term => ({
+          id:String(term.id || itemId('term')),
+          term:String(term.term || ''),
+          definition:String(term.definition || '')
+        }))
+      : [{id:itemId('term'), term:'', definition:''}]
+  };
+}
+
+function persistState(nextData){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try{
+      await savePageState(context.page.id, context.page.type, nextData);
+      setStatus('Saved locally');
+    }catch(error){
+      setStatus('Could not save this page right now.');
+    }
+  }, 180);
+}
+
+function renderRelatedDocuments(){
+  if(!context.documents.length){
+    relatedDocuments.innerHTML = '<article class="empty">This page has no related project documents yet. Add them from the project page when you want grounded references here.</article>';
+    return;
+  }
+  relatedDocuments.innerHTML = context.documents.map(document => {
+    const link = context.pageDocumentLinks.find(item => item.documentId === document.id);
+    return `
+      <article class="document-chip" data-document-id="${escapeHtml(document.id)}">
+        <strong>${escapeHtml(document.title)}</strong>
+        <span>${escapeHtml(link?.relationship || 'related')} · ${escapeHtml(document.sourceLabel || document.type)} · ${escapeHtml(document.description || 'Project document')}</span>
+      </article>
+    `;
+  }).join('');
+}
+
+function projectBackHref(){
+  return context?.project?.id
+    ? `project.html?projectId=${encodeURIComponent(context.project.id)}`
+    : 'project.html';
+}
+
+function hideCompatibilityLink(){
+  compatibilityLink.classList.add('hidden');
+  compatibilityLink.removeAttribute('href');
+}
+
+function renderPageUnavailable({title, description, detail}){
+  pageTitle.textContent = title;
+  pageDescription.textContent = description;
+  crumbProject.textContent = context?.project ? `Project: ${context.project.title}` : 'Project';
+  crumbPage.textContent = 'Page unavailable';
+  backToProject.href = projectBackHref();
+  hideCompatibilityLink();
+  relatedDocuments.innerHTML = '<article class="empty">No page context available.</article>';
+  runtimePanel.innerHTML = `
+    <div class="empty">
+      <p>${escapeHtml(detail)}</p>
+      <p><a class="button primary" href="${backToProject.getAttribute('href')}">Back to project</a></p>
+    </div>
+  `;
+}
+
+function renderMapDispatch(){
+  const mapUrl = new URL('mindmap.html', location.href);
+  mapUrl.searchParams.set('pageId', context.page.id);
+  if(params.get('debugInput') === '1'){
+    mapUrl.searchParams.set('debugInput', '1');
+  }
+  compatibilityLink.classList.remove('hidden');
+  compatibilityLink.textContent = 'Open editable map';
+  compatibilityLink.href = mapUrl.toString();
+  runtimePanel.innerHTML = `
+    <div class="editor-grid">
+      <article class="editor-card">
+        <p class="meta">Map page</p>
+        <h2>Opening your editable map...</h2>
+        <p>This project page stores its graph state by page ID, so each map page can keep its own local map, document blocks, and view state.</p>
+        <p class="tiny">If the redirect does not start, use the button above.</p>
+      </article>
+    </div>
+  `;
+  setStatus('Opening map page...');
+  window.setTimeout(() => location.replace(mapUrl.toString()), 40);
+}
+
+function renderSeededLessonDispatch(){
+  const lessonUrl = new URL('lesson.html', location.href);
+  lessonUrl.searchParams.set('pageId', context.page.id);
+  compatibilityLink.classList.remove('hidden');
+  compatibilityLink.textContent = 'Open seeded lesson';
+  compatibilityLink.href = lessonUrl.toString();
+  runtimePanel.innerHTML = `
+    <div class="editor-grid">
+      <article class="editor-card lesson">
+        <p class="meta">Seeded lesson page</p>
+        <h2>Opening the rich lesson view...</h2>
+        <p>This example lesson keeps the fuller Simon Dixon reading experience while still living inside the project as a normal seeded page record.</p>
+      </article>
+    </div>
+  `;
+  setStatus('Opening lesson page...');
+  window.setTimeout(() => location.replace(lessonUrl.toString()), 40);
+}
+
+function renderLessonEditor(){
+  const state = normalizeLessonState(context.pageState?.data);
+  hideCompatibilityLink();
+  runtimePanel.innerHTML = `
+    <div class="editor-grid" id="lessonRuntime">
+      <article class="editor-card lesson">
+        <p class="meta">Lesson page</p>
+        <label>Short summary
+          <textarea id="lessonSummary" placeholder="Explain the big idea in plain language.">${escapeHtml(state.summary)}</textarea>
+        </label>
+      </article>
+      <article class="editor-card lesson">
+        <div class="actions" style="margin-top:0">
+          <h2 style="margin:0;flex:1 1 auto">Sections</h2>
+          <button type="button" id="addLessonSection">Add section</button>
+        </div>
+        <div class="editor-grid" id="lessonSections"></div>
+      </article>
+      <article class="editor-card lesson">
+        <p class="meta">Reflection</p>
+        <label>Prompt
+          <input id="lessonReflectionQuestion" value="${escapeHtml(state.reflectionQuestion)}" />
+        </label>
+        <label>Answer
+          <textarea id="lessonReflectionAnswer" placeholder="Why does this page belong here?">${escapeHtml(state.reflectionAnswer)}</textarea>
+        </label>
+      </article>
+    </div>
+  `;
+
+  const summaryInput = document.getElementById('lessonSummary');
+  const reflectionQuestion = document.getElementById('lessonReflectionQuestion');
+  const reflectionAnswer = document.getElementById('lessonReflectionAnswer');
+  const sectionsHost = document.getElementById('lessonSections');
+  const addSection = document.getElementById('addLessonSection');
+
+  function paintSections(){
+    sectionsHost.innerHTML = state.sections.map(section => `
+      <div class="editor-card lesson" data-section-id="${escapeHtml(section.id)}">
+        <div class="actions" style="margin-top:0">
+          <strong style="flex:1 1 auto">Section</strong>
+          <button type="button" class="danger" data-action="remove-section" data-id="${escapeHtml(section.id)}">Remove</button>
+        </div>
+        <label>Heading
+          <input data-field="heading" data-id="${escapeHtml(section.id)}" value="${escapeHtml(section.heading)}" />
+        </label>
+        <label>Body
+          <textarea data-field="body" data-id="${escapeHtml(section.id)}" placeholder="Write this in your own words.">${escapeHtml(section.body)}</textarea>
+        </label>
+      </div>
+    `).join('');
+  }
+
+  function pushState(){
+    persistState(state);
+  }
+
+  paintSections();
+
+  summaryInput.addEventListener('input', () => {
+    state.summary = summaryInput.value;
+    pushState();
+  });
+  reflectionQuestion.addEventListener('input', () => {
+    state.reflectionQuestion = reflectionQuestion.value;
+    pushState();
+  });
+  reflectionAnswer.addEventListener('input', () => {
+    state.reflectionAnswer = reflectionAnswer.value;
+    pushState();
+  });
+  addSection.addEventListener('click', () => {
+    state.sections.push({id:itemId('section'), heading:'New section', body:''});
+    paintSections();
+    pushState();
+  });
+  sectionsHost.addEventListener('input', event => {
+    const field = event.target.dataset.field;
+    const id = event.target.dataset.id;
+    const section = state.sections.find(item => item.id === id);
+    if(!field || !section) return;
+    section[field] = event.target.value;
+    pushState();
+  });
+  sectionsHost.addEventListener('click', event => {
+    const button = event.target.closest('button[data-action="remove-section"]');
+    if(!button) return;
+    state.sections = state.sections.filter(section => section.id !== button.dataset.id);
+    if(!state.sections.length){
+      state.sections.push({id:itemId('section'), heading:'New section', body:''});
+    }
+    paintSections();
+    pushState();
+  });
+}
+
+function renderNotesEditor(){
+  const state = normalizeNotesState(context.pageState?.data);
+  hideCompatibilityLink();
+  runtimePanel.innerHTML = `
+    <div class="editor-grid">
+      <article class="editor-card notes">
+        <p class="meta">${escapeHtml(context.page.type === 'glossary' ? 'Glossary page' : 'Notes page')}</p>
+        <label>Prompt
+          <input id="notesPrompt" value="${escapeHtml(state.prompt)}" />
+        </label>
+        <label>Main notes
+          <textarea id="notesBody" placeholder="Capture the important ideas in plain language.">${escapeHtml(state.body)}</textarea>
+        </label>
+        <label>Next step
+          <textarea id="notesNextStep" placeholder="What should you test, revise, or connect next?">${escapeHtml(state.nextStep)}</textarea>
+        </label>
+      </article>
+    </div>
+  `;
+  const promptInput = document.getElementById('notesPrompt');
+  const bodyInput = document.getElementById('notesBody');
+  const nextStepInput = document.getElementById('notesNextStep');
+  const pushState = () => {
+    state.prompt = promptInput.value;
+    state.body = bodyInput.value;
+    state.nextStep = nextStepInput.value;
+    persistState(state);
+  };
+  promptInput.addEventListener('input', pushState);
+  bodyInput.addEventListener('input', pushState);
+  nextStepInput.addEventListener('input', pushState);
+}
+
+function renderReviewEditor(){
+  const state = normalizeReviewState(context.pageState?.data);
+  hideCompatibilityLink();
+  runtimePanel.innerHTML = `
+    <div class="editor-grid">
+      <article class="editor-card review">
+        <p class="meta">Review page</p>
+        <label>Intro
+          <textarea id="reviewIntro" placeholder="How should this review page be used?">${escapeHtml(state.intro)}</textarea>
+        </label>
+        <div class="actions">
+          <button type="button" id="addReviewPrompt">Add prompt</button>
+        </div>
+        <div class="editor-grid" id="reviewPrompts"></div>
+      </article>
+    </div>
+  `;
+  const introInput = document.getElementById('reviewIntro');
+  const promptsHost = document.getElementById('reviewPrompts');
+  const addPrompt = document.getElementById('addReviewPrompt');
+
+  function paintPrompts(){
+    promptsHost.innerHTML = state.prompts.map(prompt => `
+      <div class="editor-card review" data-prompt-id="${escapeHtml(prompt.id)}">
+        <div class="actions" style="margin-top:0">
+          <strong style="flex:1 1 auto">Prompt</strong>
+          <button type="button" class="danger" data-action="remove-prompt" data-id="${escapeHtml(prompt.id)}">Remove</button>
+        </div>
+        <label>Question
+          <textarea data-field="question" data-id="${escapeHtml(prompt.id)}" placeholder="What should you retrieve?">${escapeHtml(prompt.question)}</textarea>
+        </label>
+        <label>Answer cue
+          <textarea data-field="answer" data-id="${escapeHtml(prompt.id)}" placeholder="Keep the cue short.">${escapeHtml(prompt.answer)}</textarea>
+        </label>
+      </div>
+    `).join('');
+  }
+
+  function pushState(){
+    persistState(state);
+  }
+
+  paintPrompts();
+  introInput.addEventListener('input', () => {
+    state.intro = introInput.value;
+    pushState();
+  });
+  addPrompt.addEventListener('click', () => {
+    state.prompts.push({id:itemId('prompt'), question:'', answer:''});
+    paintPrompts();
+    pushState();
+  });
+  promptsHost.addEventListener('input', event => {
+    const field = event.target.dataset.field;
+    const id = event.target.dataset.id;
+    const prompt = state.prompts.find(item => item.id === id);
+    if(!field || !prompt) return;
+    prompt[field] = event.target.value;
+    pushState();
+  });
+  promptsHost.addEventListener('click', event => {
+    const button = event.target.closest('button[data-action="remove-prompt"]');
+    if(!button) return;
+    state.prompts = state.prompts.filter(prompt => prompt.id !== button.dataset.id);
+    if(!state.prompts.length){
+      state.prompts.push({id:itemId('prompt'), question:'', answer:''});
+    }
+    paintPrompts();
+    pushState();
+  });
+}
+
+function renderGlossaryEditor(){
+  const state = normalizeGlossaryState(context.pageState?.data);
+  hideCompatibilityLink();
+  runtimePanel.innerHTML = `
+    <div class="editor-grid">
+      <article class="editor-card glossary">
+        <p class="meta">Glossary page</p>
+        <label>Intro
+          <textarea id="glossaryIntro" placeholder="What is this glossary helping with?">${escapeHtml(state.intro)}</textarea>
+        </label>
+        <div class="actions">
+          <button type="button" id="addGlossaryTerm">Add term</button>
+        </div>
+        <div class="editor-grid" id="glossaryTerms"></div>
+      </article>
+    </div>
+  `;
+  const introInput = document.getElementById('glossaryIntro');
+  const termsHost = document.getElementById('glossaryTerms');
+  const addTerm = document.getElementById('addGlossaryTerm');
+
+  function paintTerms(){
+    termsHost.innerHTML = state.terms.map(term => `
+      <div class="editor-card glossary" data-term-id="${escapeHtml(term.id)}">
+        <div class="actions" style="margin-top:0">
+          <strong style="flex:1 1 auto">Term</strong>
+          <button type="button" class="danger" data-action="remove-term" data-id="${escapeHtml(term.id)}">Remove</button>
+        </div>
+        <label>Word or phrase
+          <input data-field="term" data-id="${escapeHtml(term.id)}" value="${escapeHtml(term.term)}" />
+        </label>
+        <label>Plain-language definition
+          <textarea data-field="definition" data-id="${escapeHtml(term.id)}" placeholder="Explain it simply.">${escapeHtml(term.definition)}</textarea>
+        </label>
+      </div>
+    `).join('');
+  }
+
+  function pushState(){
+    persistState(state);
+  }
+
+  paintTerms();
+  introInput.addEventListener('input', () => {
+    state.intro = introInput.value;
+    pushState();
+  });
+  addTerm.addEventListener('click', () => {
+    state.terms.push({id:itemId('term'), term:'', definition:''});
+    paintTerms();
+    pushState();
+  });
+  termsHost.addEventListener('input', event => {
+    const field = event.target.dataset.field;
+    const id = event.target.dataset.id;
+    const term = state.terms.find(item => item.id === id);
+    if(!field || !term) return;
+    term[field] = event.target.value;
+    pushState();
+  });
+  termsHost.addEventListener('click', event => {
+    const button = event.target.closest('button[data-action="remove-term"]');
+    if(!button) return;
+    state.terms = state.terms.filter(term => term.id !== button.dataset.id);
+    if(!state.terms.length){
+      state.terms.push({id:itemId('term'), term:'', definition:''});
+    }
+    paintTerms();
+    pushState();
+  });
+}
+
+function renderRuntime(){
+  if(!context?.page){
+    renderPageUnavailable({
+      title:'Page not found',
+      description:'This page ID does not match anything in the local workspace.',
+      detail:'Go back to the project and create or reopen a valid page.'
+    });
+    return;
+  }
+
+  document.title = `${context.page.title} · ${context.project?.title || 'Project'} · Neuro Map Studio`;
+  pageTitle.textContent = context.page.title;
+  pageDescription.textContent = context.page.description || 'A calm project page inside the local workspace.';
+  crumbProject.textContent = context.project ? `Project: ${context.project.title}` : 'Project';
+  crumbPage.textContent = `Page: ${context.page.type}`;
+  backToProject.href = projectBackHref();
+  renderRelatedDocuments();
+
+  if(context.page.type === 'map'){
+    renderMapDispatch();
+    return;
+  }
+  if(context.page.id === SEED_LESSON_PAGE_ID){
+    renderSeededLessonDispatch();
+    return;
+  }
+  if(context.page.type === 'lesson'){
+    renderLessonEditor();
+    return;
+  }
+  if(context.page.type === 'review'){
+    renderReviewEditor();
+    return;
+  }
+  if(context.page.type === 'glossary'){
+    renderGlossaryEditor();
+    return;
+  }
+  renderNotesEditor();
+}
+
+if(!pageId){
+  renderPageUnavailable({
+    title:'Choose a page',
+    description:'Open a project page from the workspace or project library.',
+    detail:'This runtime needs a pageId query parameter. Open a page from the project page library.'
+  });
+}else{
+  try{
+    context = await getPageContext(pageId);
+    if(context.project?.id){
+      setCurrentProject(context.project.id).catch(() => {});
+    }
+    renderRuntime();
+  }catch(error){
+    renderPageUnavailable({
+      title:'Local page runtime unavailable',
+      description:'IndexedDB or local runtime access is unavailable in this browser.',
+      detail:'The page metadata could not be loaded right now.'
+    });
+    setStatus('Could not load the local page runtime.');
+  }
+}
+</script>
+</body>
+</html>

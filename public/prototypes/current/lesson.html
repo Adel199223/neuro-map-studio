@@ -1852,7 +1852,7 @@
 </main>
 </div>
 <script type="module">
-import { SEED_LESSON_PAGE_ID, getPageContext } from './workspace-store.js';
+import { SEED_LESSON_PAGE_ID, getPageContext, pageRuntimeHref } from './workspace-store.js';
 
 function escapeHtml(value){
   return String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -1864,28 +1864,42 @@ function escapeHtml(value){
   })[char]);
 }
 
-try{
-  const context = await getPageContext(SEED_LESSON_PAGE_ID);
-  if(context.project){
-    document.getElementById('breadcrumbProject').textContent = `Project: ${context.project.title}`;
-    document.querySelectorAll('a[href="project.html"]').forEach(link => {
-      link.href = `project.html?projectId=${encodeURIComponent(context.project.id)}`;
-    });
+const params = new URLSearchParams(window.location.search);
+const runtimePageId = params.get('pageId') || SEED_LESSON_PAGE_ID;
+
+if(runtimePageId !== SEED_LESSON_PAGE_ID){
+  location.replace(pageRuntimeHref(runtimePageId));
+}else{
+  try{
+    const context = await getPageContext(runtimePageId);
+    if(context.project){
+      document.title = `${context.page?.title || 'Lesson'} · ${context.project.title} · Neuro Map Studio`;
+      document.getElementById('breadcrumbProject').textContent = `Project: ${context.project.title}`;
+      document.querySelectorAll('a[href="project.html"]').forEach(link => {
+        link.href = `project.html?projectId=${encodeURIComponent(context.project.id)}`;
+      });
+    }
+    if(context.page){
+      document.getElementById('breadcrumbPage').textContent = `Page: ${context.page.type === 'lesson' ? 'Linear lesson' : context.page.title}`;
+    }
+    if(context.documents.length){
+      document.getElementById('breadcrumbSource').textContent = `Source: ${context.documents[0].title}`;
+      document.getElementById('relatedDocuments').innerHTML = context.documents.map(document => `
+        <div class="document-chip" data-document-id="${escapeHtml(document.id)}">
+          <strong>${escapeHtml(document.title)}</strong>
+          <span>${escapeHtml(document.sourceLabel || document.type)} · ${escapeHtml(document.description || 'Project document')}</span>
+        </div>
+      `).join('');
+    }
+    const mapPage = context.projectPages?.find(page => page.type === 'map');
+    if(mapPage){
+      document.querySelectorAll('a[href="mindmap.html"]').forEach(link => {
+        link.href = pageRuntimeHref(mapPage.id);
+      });
+    }
+  }catch(error){
+    // The static seed content above keeps the lesson readable if IndexedDB is unavailable.
   }
-  if(context.page){
-    document.getElementById('breadcrumbPage').textContent = `Page: ${context.page.type === 'lesson' ? 'Linear lesson' : context.page.title}`;
-  }
-  if(context.documents.length){
-    document.getElementById('breadcrumbSource').textContent = `Source: ${context.documents[0].title}`;
-    document.getElementById('relatedDocuments').innerHTML = context.documents.map(document => `
-      <div class="document-chip" data-document-id="${escapeHtml(document.id)}">
-        <strong>${escapeHtml(document.title)}</strong>
-        <span>${escapeHtml(document.sourceLabel || document.type)} · ${escapeHtml(document.description || 'Project document')}</span>
-      </div>
-    `).join('');
-  }
-}catch(error){
-  // The static seed content above keeps the lesson readable if IndexedDB is unavailable.
 }
 </script>
 <script>

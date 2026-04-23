@@ -19,6 +19,7 @@ const required = [
 	  'public/prototypes/current/project.html',
 	  'public/prototypes/current/project-data.js',
 	  'public/prototypes/current/workspace-store.js',
+	  'public/prototypes/current/page.html',
 	  'public/prototypes/current/mindmap.html',
 	  'public/prototypes/current/lesson.html',
   'docs/product/product-requirements.md',
@@ -30,6 +31,7 @@ const required = [
   'docs/exec-plans/pages-enable-review-package-completeness.md',
   'docs/exec-plans/review-zip-packaging-completeness.md',
   'docs/exec-plans/workspace-local-model-and-document-blocks.md',
+  'docs/exec-plans/dynamic-page-runtime-and-unified-page-state.md',
   '.github/workflows/pages.yml',
   'scripts/review-package-config.mjs',
   'scripts/create-review-zip.mjs',
@@ -171,12 +173,13 @@ const lessonPrototype = read('public/prototypes/current/lesson.html');
 
 const mapSnippets = [
   'Debt-power map',
-  'href="project.html"',
-  'href="lesson.html"',
+  'projectBackLink',
+  'lessonBackLink',
   'btnAddDocumentBlock',
   'nodeType',
   'documentId',
-  'simon-dixon-debt-power-learning-workspace-v20-clean-connectors',
+  'savePageState',
+  'runtimePageId',
 ];
 for (const snippet of mapSnippets) {
   if (!mapPrototype.includes(snippet)) {
@@ -201,15 +204,26 @@ expectIncludes('public/prototypes/current/project.html', [
 expectIncludes('public/prototypes/current/workspace-store.js', [
   'neuro-map-studio-local-workspace',
   'pageDocumentLinks',
+  'pageStates',
   'createProject',
   'createDocument',
+  'savePageState',
   'linkPageDocument',
+]);
+expectIncludes('public/prototypes/current/page.html', [
+  'Page runtime',
+  'Related documents',
+  'Page content',
+  'savePageState',
+  'mindmap.html',
+  'lesson.html',
 ]);
 expectIncludes('public/prototypes/current/project-data.js', [
   'geopolitics-economics',
   'simon-dixon-debt-power',
   'simon-dixon-linear-lesson',
   'simon-dixon-debt-power-map',
+  'page.html?pageId=',
 ]);
 
 if (errors.length) {

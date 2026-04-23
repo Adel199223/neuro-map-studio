@@ -51,6 +51,7 @@ h3{margin:.15rem 0 .25rem;font-size:1.15rem}
 .button.primary,button.primary{background:var(--green);border-color:#9fbe8a}
 button.danger{background:var(--rose);border-color:#d5a097}
 button:disabled{opacity:.55;cursor:not-allowed}
+.button.disabled{opacity:.55;cursor:not-allowed;pointer-events:none;background:#f7efe2}
 input,select,textarea{width:100%;min-height:2.75rem;border:1px solid var(--border);border-radius:16px;background:#fffdf7;color:inherit;font:inherit;padding:.65rem .8rem}
 textarea{min-height:5.5rem;resize:vertical}
 label{display:grid;gap:4px;font-weight:900;color:var(--muted)}
@@ -61,6 +62,13 @@ label{display:grid;gap:4px;font-weight:900;color:var(--muted)}
 .links-list{display:grid;gap:8px;margin-top:10px}
 .soft{background:rgba(255,253,247,.7);border:1px dashed var(--border);border-radius:18px;padding:14px}
 .status{min-height:1.5rem;color:var(--muted);font-weight:900}
+.shortcut-prompts{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.page-title-link{font-weight:900;text-decoration-thickness:.11em}
+.collapsible-panel>summary{cursor:pointer;font-weight:900;font-size:clamp(1.1rem,2.5vw,1.45rem);list-style:none}
+.collapsible-panel>summary::-webkit-details-marker{display:none}
+.collapsible-panel>summary span{display:block}
+.collapsible-panel>summary small{display:block;margin-top:.25rem;color:var(--muted);font-size:.92rem}
+.collapsible-panel[open]>summary{margin-bottom:12px}
 .hidden{display:none!important}
 @media(max-width:680px){.shell{width:min(100% - 20px,1120px);padding-top:18px}.hero,.card,.panel{border-radius:20px}.button,button{width:100%}.form-row{display:grid}}
 </style>
@@ -73,18 +81,21 @@ label{display:grid;gap:4px;font-weight:900;color:var(--muted)}
     <p class="lede" id="projectDescription">Opening your local workspace.</p>
     <div class="actions" aria-label="Project shortcuts">
       <a class="button" href="/">Workspace home</a>
-      <a class="button primary" id="primaryLessonLink" href="lesson.html">Open lesson</a>
-      <a class="button" id="primaryMapLink" href="mindmap.html">Open editable map</a>
+      <a class="button primary" id="primaryLessonLink" href="page.html">Open lesson</a>
+      <a class="button" id="primaryMapLink" href="page.html">Open editable map</a>
     </div>
+    <div class="shortcut-prompts" id="shortcutPrompts" aria-label="Create missing page shortcuts"></div>
     <p class="status" id="status" role="status" aria-live="polite"></p>
   </section>
 
   <h2 class="section-label">Documents</h2>
   <section class="grid" id="documentsGrid" aria-label="Project document library"></section>
 
-  <section class="panel" aria-label="Create document metadata">
-    <h2>Add document metadata</h2>
-    <p class="meta">Add a reference first. File upload and document rendering come later.</p>
+  <details class="panel collapsible-panel" id="documentCreatePanel">
+    <summary>
+      <span>Add document metadata</span>
+      <small>Add a reusable project reference. File upload and document rendering come later.</small>
+    </summary>
     <form id="documentForm">
       <div class="form-grid">
         <label>Title <input name="title" required placeholder="Document title"/></label>
@@ -104,19 +115,21 @@ label{display:grid;gap:4px;font-weight:900;color:var(--muted)}
       </div>
       <div class="form-row"><button class="primary" type="submit">Create document</button></div>
     </form>
-  </section>
+  </details>
 
   <h2 class="section-label">Pages</h2>
   <section class="grid" id="pagesGrid" aria-label="Project pages"></section>
 
-  <section class="panel" aria-label="Create page">
-    <h2>Create page</h2>
-    <p class="meta">This creates local metadata for now. Full page builders come later.</p>
+  <details class="panel collapsible-panel" id="pageCreatePanel">
+    <summary>
+      <span>Create page</span>
+      <small>Create a real local page with its own runtime state.</small>
+    </summary>
     <form id="pageForm">
       <div class="form-grid">
         <label>Title <input name="title" required placeholder="Review prompts"/></label>
         <label>Type
-          <select name="type">
+          <select name="type" id="pageTypeSelect">
             <option value="notes">Notes</option>
             <option value="review">Review</option>
             <option value="glossary">Glossary</option>
@@ -128,11 +141,12 @@ label{display:grid;gap:4px;font-weight:900;color:var(--muted)}
       </div>
       <div class="form-row"><button class="primary" type="submit">Create page</button></div>
     </form>
-  </section>
+  </details>
 
   <section class="panel" aria-label="Attach documents to pages">
     <h2>Page document references</h2>
     <p class="meta">Pages reference project documents. The same document can support many pages.</p>
+    <div class="soft hidden" id="linkEmptyState"></div>
     <form id="linkForm">
       <div class="form-grid">
         <label>Page <select name="pageId" id="linkPageSelect"></select></label>
@@ -160,6 +174,8 @@ import {
   deletePage,
   getProjectBundle,
   linkPageDocument,
+  pageRuntimeHref,
+  setCurrentProject,
   updateDocument,
   updatePage,
 } from './workspace-store.js';
@@ -184,9 +200,24 @@ function escapeHtml(value){
 }
 
 function pageHref(page){
-  const route = page.route || 'project.html';
-  if(route === 'project.html') return `project.html?projectId=${encodeURIComponent(page.projectId)}`;
-  return route;
+  if(!page || typeof page.id !== 'string' || !page.id.trim()) return '';
+  return pageRuntimeHref(page.id);
+}
+
+function pageTypeLabel(type){
+  return {
+    lesson:'Lesson',
+    map:'Map',
+    notes:'Notes',
+    review:'Review',
+    glossary:'Glossary'
+  }[type] || 'Page';
+}
+
+function pageOpenLabel(page){
+  if(page?.type === 'lesson') return 'Open lesson';
+  if(page?.type === 'map') return 'Open map';
+  return 'Open page';
 }
 
 function docsForPage(page){
@@ -207,10 +238,29 @@ function render(){
   document.getElementById('projectTitle').textContent = bundle.project.title;
   document.getElementById('projectDescription').textContent = bundle.project.description;
 
-  const lessonPage = bundle.pages.find(page => page.type === 'lesson') || bundle.pages[0];
-  const mapPage = bundle.pages.find(page => page.type === 'map') || bundle.pages[0];
-  if(lessonPage) document.getElementById('primaryLessonLink').href = pageHref(lessonPage);
-  if(mapPage) document.getElementById('primaryMapLink').href = pageHref(mapPage);
+  const lessonLink = document.getElementById('primaryLessonLink');
+  const mapLink = document.getElementById('primaryMapLink');
+  const shortcutPrompts = document.getElementById('shortcutPrompts');
+  const lessonPage = bundle.pages.find(page => page.type === 'lesson');
+  const mapPage = bundle.pages.find(page => page.type === 'map');
+  const prompts = [];
+  if(lessonPage && pageHref(lessonPage)){
+    lessonLink.href = pageHref(lessonPage);
+    lessonLink.classList.remove('hidden');
+  }else{
+    lessonLink.removeAttribute('href');
+    lessonLink.classList.add('hidden');
+    prompts.push('<button type="button" data-action="prepare-page" data-page-type="lesson">Create a lesson page</button>');
+  }
+  if(mapPage && pageHref(mapPage)){
+    mapLink.href = pageHref(mapPage);
+    mapLink.classList.remove('hidden');
+  }else{
+    mapLink.removeAttribute('href');
+    mapLink.classList.add('hidden');
+    prompts.push('<button type="button" data-action="prepare-page" data-page-type="map">Create a map page</button>');
+  }
+  shortcutPrompts.innerHTML = prompts.join('');
 
   const documentsGrid = document.getElementById('documentsGrid');
   documentsGrid.innerHTML = bundle.documents.map(document => `
@@ -228,17 +278,25 @@ function render(){
   const pagesGrid = document.getElementById('pagesGrid');
   pagesGrid.innerHTML = bundle.pages.map(page => {
     const docs = docsForPage(page);
+    const href = pageHref(page);
+    const openLabel = pageOpenLabel(page);
+    const pageTitle = href
+      ? `<a class="page-title-link" href="${href}" data-role="page-open-link">${escapeHtml(page.title)}</a>`
+      : escapeHtml(page.title || 'Untitled page');
+    const openAction = href
+      ? `<a class="button primary" data-role="page-open-link" href="${href}">${openLabel}</a>`
+      : '<span class="button disabled" aria-disabled="true">Page link unavailable</span>';
     return `
       <article class="card page-card" data-page-id="${page.id}">
-        <p class="meta">Page · ${escapeHtml(page.type)}</p>
-        <h3>${escapeHtml(page.title)}</h3>
+        <p class="meta">${escapeHtml(pageTypeLabel(page.type))} page · ${docs.length} related ${docs.length === 1 ? 'document' : 'documents'}</p>
+        <h3>${pageTitle}</h3>
         <p>${escapeHtml(page.description || 'No description yet.')}</p>
         <div class="soft">
           <strong>Documents:</strong>
           ${docs.length ? docs.map(({link, document}) => `<span class="pill">${escapeHtml(link.relationship)}: ${escapeHtml(document.title)}</span>`).join(' ') : '<span class="meta">None attached yet.</span>'}
         </div>
         <div class="actions">
-          <a class="button primary" href="${pageHref(page)}">Open page</a>
+          ${openAction}
           <button type="button" data-action="rename-page" data-id="${page.id}">Rename</button>
           <button type="button" class="danger" data-action="delete-page" data-id="${page.id}" ${page.protected ? 'disabled title="Seed pages stay available for the prototype routes."' : ''}>Delete</button>
         </div>
@@ -250,6 +308,19 @@ function render(){
   linkPageSelect.innerHTML = bundle.pages.map(page => `<option value="${escapeHtml(page.id)}">${escapeHtml(page.title)}</option>`).join('');
   const linkDocumentSelect = document.getElementById('linkDocumentSelect');
   linkDocumentSelect.innerHTML = bundle.documents.map(document => `<option value="${escapeHtml(document.id)}">${escapeHtml(document.title)}</option>`).join('');
+  const linkForm = document.getElementById('linkForm');
+  const linkEmptyState = document.getElementById('linkEmptyState');
+  if(!bundle.pages.length || !bundle.documents.length){
+    linkForm.classList.add('hidden');
+    linkEmptyState.classList.remove('hidden');
+    linkEmptyState.textContent = !bundle.pages.length
+      ? 'Create a page before attaching documents.'
+      : 'Add a project document before attaching it to pages.';
+  }else{
+    linkForm.classList.remove('hidden');
+    linkEmptyState.classList.add('hidden');
+    linkEmptyState.textContent = '';
+  }
   const linksList = document.getElementById('linksList');
   linksList.innerHTML = bundle.pageDocumentLinks.map(link => {
     const page = bundle.pages.find(item => item.id === link.pageId);
@@ -261,6 +332,7 @@ function render(){
 
 async function refresh(message=''){
   bundle = await getProjectBundle(projectId);
+  await setCurrentProject(projectId).catch(() => {});
   render();
   if(message) setStatus(message);
 }
@@ -278,9 +350,14 @@ document.getElementById('pageForm').addEventListener('submit', async event => {
   event.preventDefault();
   const formElement = event.currentTarget;
   const form = new FormData(formElement);
-  await createPage(projectId, Object.fromEntries(form.entries()));
+  const page = await createPage(projectId, Object.fromEntries(form.entries()));
   formElement.reset();
-  await refresh('Page created.');
+  const href = pageHref(page);
+  if(href){
+    window.location.assign(href);
+    return;
+  }
+  await refresh(`Page created, but its runtime link could not be built. Try reopening it from the page library.`);
 });
 
 document.getElementById('linkForm').addEventListener('submit', async event => {
@@ -317,6 +394,20 @@ document.addEventListener('click', async event => {
     if(description === null) return;
     await updateDocument(id, {title, description});
     await refresh('Document metadata updated.');
+  }
+  if(action === 'prepare-page'){
+    const requestedType = button.dataset.pageType || 'notes';
+    const panel = document.getElementById('pageCreatePanel');
+    const form = document.getElementById('pageForm');
+    const typeSelect = document.getElementById('pageTypeSelect');
+    panel.open = true;
+    typeSelect.value = requestedType;
+    const titleInput = form.elements.title;
+    if(!titleInput.value){
+      titleInput.placeholder = requestedType === 'lesson' ? 'New lesson page' : 'New map page';
+    }
+    titleInput.focus();
+    setStatus(`Ready to create a ${requestedType} page.`);
   }
 });
 

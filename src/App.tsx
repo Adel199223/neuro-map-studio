@@ -39,6 +39,7 @@ function withBase(path: string) {
 
 const prototypeMindMap = withBase('prototypes/current/mindmap.html');
 const prototypeLesson = withBase('prototypes/current/lesson.html');
+const prototypePageRuntime = withBase('prototypes/current/page.html');
 const prototypeProject = withBase('prototypes/current/project.html');
 const workspaceStoreUrl = withBase('prototypes/current/workspace-store.js');
 
@@ -127,7 +128,7 @@ export default function App() {
               Open current project
             </a>
           ) : null}
-          <a href={prototypeProject}>Open seeded project shell</a>
+          <a href={prototypeProject}>Open project workspace</a>
         </div>
         <p className="status" role="status" aria-live="polite">
           {status}
@@ -194,6 +195,7 @@ export default function App() {
       <details className="card dev-details">
         <summary>Development links</summary>
         <div className="actions">
+          <a href={prototypePageRuntime}>Open runtime page entry</a>
           <a href={prototypeMindMap}>Open editable map page</a>
           <a href={prototypeLesson}>Open linear lesson page</a>
           <a href={docsUrl}>Read docs on GitHub</a>

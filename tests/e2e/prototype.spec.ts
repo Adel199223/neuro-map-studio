@@ -3,10 +3,12 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 const mindmapPath = '/prototypes/current/mindmap.html';
 const debugMindmapPath = `${mindmapPath}?debugInput=1`;
 const lessonPath = '/prototypes/current/lesson.html';
+const pageRuntimePath = '/prototypes/current/page.html';
 const projectPath = '/prototypes/current/project.html';
 const workspaceDbName = 'neuro-map-studio-local-workspace';
 
 async function resetMindmap(page: Page, path = mindmapPath) {
+  await clearWorkspaceDatabase(page);
   await page.goto(path);
   await page.evaluate(() => localStorage.clear());
   await page.reload();
@@ -22,6 +24,14 @@ async function clearWorkspaceDatabase(page: Page) {
       request.onblocked = () => resolve();
     });
   }, workspaceDbName);
+}
+
+async function openDetails(page: Page, selector: string) {
+  await page.locator(selector).evaluate((element) => {
+    if (element instanceof HTMLDetailsElement) {
+      element.open = true;
+    }
+  });
 }
 
 async function visibleBoundingBox(locator: Locator, description: string) {
@@ -260,6 +270,29 @@ test.describe('current standalone prototypes', () => {
     await expect(page.getByRole('heading', { name: /Neuroscience study/i })).toBeVisible();
   });
 
+  test('empty projects show create prompts instead of dead lesson or map shortcuts', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto('/');
+
+    await page.getByLabel(/Project title/i).fill('Empty runtime project');
+    await page.getByLabel(/Theme or domain/i).fill('learning lab');
+    await page.getByLabel(/Short description/i).fill('A fresh project with no pages yet.');
+    await page.getByRole('button', { name: /create project locally/i }).click();
+
+    const projectCard = page.locator('.project-card').filter({ hasText: 'Empty runtime project' });
+    await projectCard.getByRole('link', { name: /open project/i }).click();
+
+    await expect(page.getByRole('heading', { name: /Empty runtime project/i })).toBeVisible();
+    await expect(page.locator('#primaryLessonLink')).toBeHidden();
+    await expect(page.locator('#primaryMapLink')).toBeHidden();
+    await expect(page.getByRole('button', { name: /Create a lesson page/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Create a map page/i })).toBeVisible();
+
+    await page.getByRole('button', { name: /Create a lesson page/i }).click();
+    await expect(page.locator('#pageCreatePanel')).toHaveJSProperty('open', true);
+    await expect(page.locator('#pageTypeSelect')).toHaveValue('lesson');
+  });
+
   test('project home separates documents, pages, and page-document references', async ({ page }) => {
     await clearWorkspaceDatabase(page);
     await page.goto(projectPath);
@@ -269,14 +302,22 @@ test.describe('current standalone prototypes', () => {
     await expect(page.getByRole('heading', { name: /Documents/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Pages/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Simon Dixon debt-power interview\/model/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Open page/i }).first()).toBeVisible();
+    await expect(page.locator('#primaryLessonLink')).toHaveAttribute(
+      'href',
+      'page.html?pageId=simon-dixon-linear-lesson',
+    );
+    await expect(page.locator('#primaryMapLink')).toHaveAttribute(
+      'href',
+      'page.html?pageId=simon-dixon-debt-power-map',
+    );
 
-    await page.locator('#pageForm').getByLabel(/Title/i).fill('Retrieval review');
-    await page.locator('#pageForm').getByLabel(/Type/i).selectOption('review');
-    await page.locator('#pageForm').getByLabel(/Description/i).fill('Practice questions for this source.');
-    await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
-    await expect(page.getByRole('heading', { name: /Retrieval review/i })).toBeVisible();
+    const openLinks = await page.locator('.page-card a[data-role="page-open-link"]').evaluateAll((links) =>
+      links.map((link) => link.getAttribute('href') || ''),
+    );
+    expect(openLinks.length).toBeGreaterThan(0);
+    expect(openLinks.every((href) => href.length > 0 && href !== '#')).toBe(true);
 
+    await openDetails(page, '#documentCreatePanel');
     await page.locator('#documentForm').getByLabel(/Title/i).fill('Central bank explainer');
     await page.locator('#documentForm').getByLabel(/Type/i).selectOption('web');
     await page.locator('#documentForm').getByLabel(/Source\/topic label/i).fill('Web source');
@@ -285,16 +326,220 @@ test.describe('current standalone prototypes', () => {
     await page.locator('#documentForm').getByRole('button', { name: /Create document/i }).click();
     await expect(page.getByRole('heading', { name: /Central bank explainer/i })).toBeVisible();
 
-    await page.locator('#linkPageSelect').selectOption({ label: 'Retrieval review' });
+    await page.locator('#linkPageSelect').selectOption({ label: 'Debt-power map' });
     await page.locator('#linkDocumentSelect').selectOption({ label: 'Central bank explainer' });
     await page.locator('#linkForm').getByLabel(/Relationship/i).selectOption('evidence');
     await page.locator('#linkForm').getByRole('button', { name: /Attach document to page/i }).click();
-    await expect(page.getByText(/Retrieval review uses Central bank explainer as evidence/i)).toBeVisible();
+    await expect(page.getByText(/Debt-power map uses Central bank explainer as evidence/i)).toBeVisible();
 
     await page.reload();
-    await expect(page.getByRole('heading', { name: /Retrieval review/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Central bank explainer/i })).toBeVisible();
-    await expect(page.getByText(/Retrieval review uses Central bank explainer as evidence/i)).toBeVisible();
+    await expect(page.getByText(/Debt-power map uses Central bank explainer as evidence/i)).toBeVisible();
+  });
+
+  test('creating a lesson page opens a real runtime lesson and persists after reload', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto(projectPath);
+
+    await openDetails(page, '#pageCreatePanel');
+    await page.locator('#pageForm').getByLabel(/Title/i).fill('Power notes lesson');
+    await page.locator('#pageForm').getByLabel(/Type/i).selectOption('lesson');
+    await page.locator('#pageForm').getByLabel(/Description/i).fill('A calm lesson page for encoding the project in plain language.');
+    await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
+
+    await expect(page).toHaveURL(/\/prototypes\/current\/page\.html\?pageId=/);
+    await expect(page.getByRole('heading', { name: /Power notes lesson/i })).toBeVisible();
+    await expect(page.locator('#lessonRuntime .meta').first()).toHaveText(/Lesson page/i);
+
+    await page.locator('#lessonSummary').fill('Debt changes behavior by changing dependence.');
+    await page.locator('#lessonReflectionAnswer').fill('It helps me restate the source in plain language.');
+    await expect(page.locator('#status')).toContainText(/Saved locally/i);
+    await page.reload();
+
+    await expect(page.locator('#lessonSummary')).toHaveValue(/Debt changes behavior/i);
+    await expect(page.locator('#lessonReflectionAnswer')).toHaveValue(/plain language/i);
+  });
+
+  test('creating a review page opens a real runtime review page and persists after reload', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto(projectPath);
+
+    await openDetails(page, '#pageCreatePanel');
+    await page.locator('#pageForm').getByLabel(/Title/i).fill('Retrieval review');
+    await page.locator('#pageForm').getByLabel(/Type/i).selectOption('review');
+    await page.locator('#pageForm').getByLabel(/Description/i).fill('Practice questions for this source.');
+    await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
+
+    await expect(page).toHaveURL(/\/prototypes\/current\/page\.html\?pageId=/);
+    await expect(page.getByRole('heading', { name: /Retrieval review/i })).toBeVisible();
+    await expect(page.getByText(/Review page/i)).toBeVisible();
+
+    await page.locator('#reviewIntro').fill('Use these prompts for quick recall.');
+    await page.locator('#reviewPrompts textarea[data-field="question"]').first().fill('What creates dependence in the model?');
+    await page.locator('#reviewPrompts textarea[data-field="answer"]').first().fill('Debt and refinancing pressure.');
+    await expect(page.locator('#status')).toContainText(/Saved locally/i);
+    await page.reload();
+
+    await expect(page.locator('#reviewIntro')).toHaveValue(/quick recall/i);
+    await expect(page.locator('#reviewPrompts textarea[data-field="question"]').first()).toHaveValue(/creates dependence/i);
+    await expect(page.locator('#reviewPrompts textarea[data-field="answer"]').first()).toHaveValue(/refinancing pressure/i);
+  });
+
+  test('creating a notes page opens a real runtime notes page and persists after reload', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto(projectPath);
+
+    await openDetails(page, '#pageCreatePanel');
+    await page.locator('#pageForm').getByLabel(/Title/i).fill('Working notes');
+    await page.locator('#pageForm').getByLabel(/Type/i).selectOption('notes');
+    await page.locator('#pageForm').getByLabel(/Description/i).fill('Loose project notes and reframing.');
+    await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
+
+    await expect(page).toHaveURL(/\/prototypes\/current\/page\.html\?pageId=/);
+    const createdNotesUrl = page.url();
+    await expect(page.getByRole('heading', { name: /Working notes/i })).toBeVisible();
+    await expect(page.getByText(/Notes page/i)).toBeVisible();
+
+    await page.locator('#notesBody').fill('Capture what feels unstable or worth revisiting.');
+    await page.locator('#notesNextStep').fill('Return after the next source pass.');
+    await expect(page.locator('#status')).toContainText(/Saved locally/i);
+    await page.reload();
+
+    await expect(page.locator('#notesBody')).toHaveValue(/worth revisiting/i);
+    await expect(page.locator('#notesNextStep')).toHaveValue(/next source pass/i);
+
+    await page.goto(projectPath);
+    const notesCard = page.locator('.page-card').filter({ hasText: 'Working notes' });
+    await expect(notesCard.getByRole('link', { name: /Open page/i })).toHaveAttribute(
+      'href',
+      /page\.html\?pageId=/,
+    );
+    await notesCard.getByRole('link', { name: /Open page/i }).click();
+    await expect(page).toHaveURL(createdNotesUrl);
+    await expect(page.getByRole('heading', { name: /Working notes/i })).toBeVisible();
+  });
+
+  test('page runtime dispatches seeded lesson and map pages through their compatibility entrypoints', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto(`${pageRuntimePath}?pageId=simon-dixon-linear-lesson`);
+    await expect(page).toHaveURL(/\/prototypes\/current\/lesson\.html\?pageId=simon-dixon-linear-lesson/);
+    await expect(page.getByRole('heading', { name: /linear lesson: debt, assets, power, and exit/i })).toBeVisible();
+
+    await page.goto(`${pageRuntimePath}?pageId=simon-dixon-debt-power-map`);
+    await expect(page).toHaveURL(/\/prototypes\/current\/mindmap\.html\?pageId=simon-dixon-debt-power-map/);
+    await expect(page.getByRole('heading', { name: /^debt-power map$/i })).toBeVisible();
+  });
+
+  test('page runtime shows a safe not-found state for missing or invalid page ids', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+
+    await page.goto(pageRuntimePath);
+    await expect(page.getByRole('heading', { name: /Choose a page/i })).toBeVisible();
+    await expect(page.locator('#backToProject')).toHaveAttribute('href', 'project.html');
+    await expect(page.locator('#compatibilityLink')).toBeHidden();
+    await expect(page.locator('#compatibilityLink')).not.toHaveAttribute('href', '#');
+
+    await page.goto(`${pageRuntimePath}?pageId=missing-page`);
+    await expect(page.getByRole('heading', { name: /Page not found/i })).toBeVisible();
+    await expect(page.locator('#backToProject')).toHaveAttribute(
+      'href',
+      'project.html?projectId=geopolitics-economics',
+    );
+    await expect(page.getByRole('link', { name: /Back to project/i }).first()).toHaveAttribute(
+      'href',
+      'project.html?projectId=geopolitics-economics',
+    );
+  });
+
+  test('creating a map page opens a functioning map page and keeps map state isolated by pageId', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto(projectPath);
+
+    await openDetails(page, '#pageCreatePanel');
+    await page.locator('#pageForm').getByLabel(/Title/i).fill('Blank systems map');
+    await page.locator('#pageForm').getByLabel(/Type/i).selectOption('map');
+    await page.locator('#pageForm').getByLabel(/Description/i).fill('A fresh map page for my own restructuring.');
+    await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
+
+    await expect(page).toHaveURL(/\/prototypes\/current\/mindmap\.html\?pageId=/);
+    const createdMapUrl = page.url();
+    await expect(page.getByRole('heading', { name: /Blank systems map/i })).toBeVisible();
+    await expect(page.locator('.map-node')).toHaveCount(1);
+    await expect(page.locator('.map-node', { hasText: 'Main idea' })).toBeVisible();
+
+    await page.getByRole('button', { name: /add free block/i }).click();
+    await expect(page.locator('.map-node')).toHaveCount(2);
+    await expect(page.locator('#saveStatus')).toContainText(/Added block/i);
+
+    await page.goto(`${pageRuntimePath}?pageId=simon-dixon-debt-power-map`);
+    await expect(page.locator('.map-node')).toHaveCount(13);
+    await expect(page.locator('.map-node', { hasText: 'Core claim' })).toBeVisible();
+
+    await page.goto(createdMapUrl);
+    await expect(page.getByRole('heading', { name: /Blank systems map/i })).toBeVisible();
+    await expect(page.locator('.map-node')).toHaveCount(2);
+  });
+
+  test('seeded map migrates legacy localStorage into page-owned state without deleting the legacy save', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto(mindmapPath);
+
+    const legacyKey = 'simon-dixon-debt-power-learning-workspace-v17';
+    await page.evaluate(({ key }) => {
+      localStorage.clear();
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          version: 18,
+          activePageId: 'page-main',
+          pages: [
+            {
+              id: 'page-main',
+              title: 'Migrated debt-power map',
+              map: {
+                version: 19,
+                view: { x: 0, y: 0, scale: 1 },
+                nodes: [
+                  {
+                    id: 'legacy-core',
+                    title: 'Migrated idea',
+                    body: 'Legacy localStorage content.',
+                    group: 'blue',
+                    shape: 'card',
+                    importance: 3,
+                    x: -40,
+                    y: -20,
+                    w: 300,
+                    h: 160,
+                    tag: 'legacy',
+                  },
+                ],
+                edges: [],
+              },
+            },
+          ],
+        }),
+      );
+    }, { key: legacyKey });
+
+    await page.goto(`${mindmapPath}?pageId=simon-dixon-debt-power-map`);
+    await expect(page.locator('.map-node', { hasText: 'Migrated idea' })).toBeVisible();
+
+    const storedKind = await page.evaluate(async () => {
+      const runtime = window as Window & {
+        neuroMapWorkspaceStore?: {
+          getPageState: (
+            pageId: string,
+          ) => Promise<{ data?: { kind?: string } } | null>;
+        };
+      };
+      const state = await runtime.neuroMapWorkspaceStore?.getPageState('simon-dixon-debt-power-map');
+      return state?.data?.kind || '';
+    });
+    expect(storedKind).toBe('map-workspace');
+
+    const legacyStillExists = await page.evaluate((key) => localStorage.getItem(key), legacyKey);
+    expect(legacyStillExists).not.toBeNull();
   });
 
   test('learning map loads article-specific blocks and keeps ports outside block bounds', async ({ page }) => {
@@ -305,8 +550,14 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('.topbar')).toContainText(/Page: Editable map/i);
     await expect(page.locator('.topbar')).not.toContainText(/Advanced learning map app/i);
     await expect(page.locator('.topbar')).not.toContainText(/Simon Dixon’s debt-power model/i);
-    await expect(page.getByRole('link', { name: /project/i })).toHaveAttribute('href', 'project.html');
-    await expect(page.getByRole('link', { name: /^lesson$/i })).toHaveAttribute('href', 'lesson.html');
+    await expect(page.getByRole('link', { name: /project/i })).toHaveAttribute(
+      'href',
+      /project\.html\?projectId=geopolitics-economics/,
+    );
+    await expect(page.getByRole('link', { name: /^lesson$/i })).toHaveAttribute(
+      'href',
+      /page\.html\?pageId=simon-dixon-linear-lesson/,
+    );
     await expect(page.locator('.map-node')).toHaveCount(13);
     await expect(page.locator('.map-node', { hasText: 'Core claim' })).toBeVisible();
     await expect(page.locator('.map-node', { hasText: 'Money starts as debt' })).toBeVisible();
@@ -796,7 +1047,10 @@ test.describe('current standalone prototypes', () => {
     );
     await expect(page.getByRole('heading', { name: /Related project documents/i })).toBeVisible();
     await expect(page.locator('#relatedDocuments')).toContainText(/Simon Dixon debt-power interview\/model/i);
-    await expect(page.getByRole('link', { name: /open editable learning map/i }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /open editable learning map/i }).first()).toHaveAttribute(
+      'href',
+      /page\.html\?pageId=simon-dixon-debt-power-map/,
+    );
     const readControls = page.locator('.read-toolbar, .reader-toolbar, [aria-label*="Read"], [aria-label*="read"]');
     expect(await readControls.count()).toBeGreaterThan(0);
   });

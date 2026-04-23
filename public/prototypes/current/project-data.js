@@ -16,14 +16,14 @@ export const currentProject = {
       sourceId: 'simon-dixon-debt-power',
       type: 'lesson',
       title: 'Debt, assets, power, and exit',
-      href: 'lesson.html',
+      href: 'page.html?pageId=simon-dixon-linear-lesson',
     },
     {
       id: 'simon-dixon-debt-power-map',
       sourceId: 'simon-dixon-debt-power',
-      type: 'learning-map',
+      type: 'map',
       title: 'Debt-power map',
-      href: 'mindmap.html',
+      href: 'page.html?pageId=simon-dixon-debt-power-map',
     },
   ],
 };
