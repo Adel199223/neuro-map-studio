@@ -24,12 +24,18 @@ async function clearWorkspaceDatabase(page: Page) {
   }, workspaceDbName);
 }
 
-async function longPress(locator: Locator, options: { pointerId?: number; x?: number; y?: number } = {}) {
+async function visibleBoundingBox(locator: Locator, description: string) {
   await locator.waitFor({ state: 'visible' });
-  const box = await locator.boundingBox();
-  if (!box) {
-    throw new Error('Could not determine locator bounding box for long-press test.');
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const box = await locator.boundingBox();
+    if (box) return box;
+    await locator.page().waitForTimeout(50);
   }
+  throw new Error(`Could not determine locator bounding box for ${description}.`);
+}
+
+async function longPress(locator: Locator, options: { pointerId?: number; x?: number; y?: number } = {}) {
+  const box = await visibleBoundingBox(locator, 'long-press test');
   const clientX = box.x + (options.x ?? box.width / 2);
   const clientY = box.y + (options.y ?? box.height / 2);
   const payload = {
@@ -51,11 +57,7 @@ async function longPress(locator: Locator, options: { pointerId?: number; x?: nu
 }
 
 async function contextMenu(locator: Locator, options: { x?: number; y?: number } = {}) {
-  await locator.waitFor({ state: 'visible' });
-  const box = await locator.boundingBox();
-  if (!box) {
-    throw new Error('Could not determine locator bounding box for context-menu test.');
-  }
+  const box = await visibleBoundingBox(locator, 'context-menu test');
   await locator.dispatchEvent('contextmenu', {
     bubbles: true,
     cancelable: true,
@@ -68,11 +70,7 @@ async function contextMenu(locator: Locator, options: { x?: number; y?: number }
 }
 
 async function syntheticClick(locator: Locator, options: { x?: number; y?: number } = {}) {
-  await locator.waitFor({ state: 'visible' });
-  const box = await locator.boundingBox();
-  if (!box) {
-    throw new Error('Could not determine locator bounding box for synthetic click test.');
-  }
+  const box = await visibleBoundingBox(locator, 'synthetic click test');
   await locator.dispatchEvent('click', {
     bubbles: true,
     cancelable: true,
