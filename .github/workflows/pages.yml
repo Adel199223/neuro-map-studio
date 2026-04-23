@@ -32,6 +32,7 @@ jobs:
         run: |
           test -f dist/prototypes/current/mindmap.html
           test -f dist/prototypes/current/lesson.html
+          test -f dist/prototypes/current/page.html
           grep -q '/neuro-map-studio/assets/' dist/index.html
           node - <<'NODE'
           const { readdirSync, readFileSync } = require('node:fs');
@@ -49,6 +50,7 @@ jobs:
 
           for (const snippet of [
             '/neuro-map-studio/',
+            'prototypes/current/page.html',
             'prototypes/current/mindmap.html',
             'prototypes/current/lesson.html',
           ]) {

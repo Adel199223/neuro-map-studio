@@ -451,6 +451,71 @@ test.describe('current standalone prototypes', () => {
     );
   });
 
+  test('legacy metadata-only map pages open through runtime and recover page state', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto(projectPath);
+
+    const legacyPageId = 'legacy-live-map-page';
+    await page.evaluate(
+      ({ dbName, pageId }) =>
+        new Promise<void>((resolve, reject) => {
+          const request = indexedDB.open(dbName);
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => {
+            const db = request.result;
+            const tx = db.transaction(['pages'], 'readwrite');
+            const timestamp = new Date().toISOString();
+            tx.objectStore('pages').put({
+              id: pageId,
+              projectId: 'geopolitics-economics',
+              title: 'Legacy live map page',
+              type: 'map',
+              description: 'Old live metadata record without a runtime page state.',
+              route: 'project.html?projectId=geopolitics-economics',
+              slug: 'legacy-live-map-page',
+              protected: false,
+              createdAt: timestamp,
+              updatedAt: timestamp,
+            });
+            tx.oncomplete = () => {
+              db.close();
+              resolve();
+            };
+            tx.onerror = () => {
+              db.close();
+              reject(tx.error);
+            };
+          };
+        }),
+      { dbName: workspaceDbName, pageId: legacyPageId },
+    );
+
+    await page.reload();
+    const legacyCard = page.locator('.page-card').filter({ hasText: 'Legacy live map page' });
+    const openMap = legacyCard.getByRole('link', { name: /Open map/i });
+    await expect(openMap).toHaveAttribute('href', `page.html?pageId=${legacyPageId}`);
+    await openMap.click();
+
+    await expect(page).toHaveURL(new RegExp(`/prototypes/current/mindmap\\.html\\?pageId=${legacyPageId}`));
+    await expect(page.getByRole('heading', { name: /Legacy live map page/i })).toBeVisible();
+    await expect(page.locator('.map-node', { hasText: 'Main idea' })).toBeVisible();
+
+    const recoveredKind = await page.evaluate(async (pageId) => {
+      const runtime = window as Window & {
+        neuroMapWorkspaceStore?: {
+          getPageState: (pageId: string) => Promise<{ data?: { kind?: string } } | null>;
+        };
+      };
+      const state = await runtime.neuroMapWorkspaceStore?.getPageState(pageId);
+      return state?.data?.kind || '';
+    }, legacyPageId);
+    expect(recoveredKind).toBe('map-workspace');
+
+    await page.reload();
+    await expect(page.getByRole('heading', { name: /Legacy live map page/i })).toBeVisible();
+    await expect(page.locator('.map-node', { hasText: 'Main idea' })).toBeVisible();
+  });
+
   test('creating a map page opens a functioning map page and keeps map state isolated by pageId', async ({ page }) => {
     await clearWorkspaceDatabase(page);
     await page.goto(projectPath);
