@@ -370,16 +370,16 @@ a{color:inherit}
 .document-panel-actions{display:flex;justify-content:flex-end;gap:.5rem;margin-top:.8rem;}
 .document-panel-actions button{min-height:2.4rem;border:1px solid var(--border);border-radius:999px;background:#fffdf7;font:inherit;font-weight:900;cursor:pointer;padding:.4rem .75rem;}
 .import-input{display:none}.toast{position:absolute;left:calc(max(.85rem, env(safe-area-inset-left)) + var(--toast-left-offset, 0px));bottom:calc(max(.85rem, env(safe-area-inset-bottom)) + var(--toast-bottom-offset, 0px));z-index:94;max-width:min(340px,calc(100vw - 2rem));border:1px solid var(--border);border-radius:999px;background:rgba(255,250,242,.97);color:var(--muted);padding:.5rem .82rem;box-shadow:0 12px 24px rgba(72,54,31,.16);opacity:0;transform:translateY(8px);transition:opacity .18s ease, transform .18s ease, bottom .16s ease, left .16s ease;pointer-events:none;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.toast.show{opacity:1;transform:translateY(0)}
-.placement-overlay{position:absolute;left:calc(max(.85rem, env(safe-area-inset-left)) + var(--placement-left-offset, 0px));bottom:calc(max(.85rem, env(safe-area-inset-bottom)) + var(--placement-bottom-offset, 0px));z-index:23;display:flex;align-items:center;gap:.55rem;max-width:min(520px,calc(100vw - 2rem));border:1px solid var(--blue-border);border-radius:999px;background:rgba(230,242,247,.97);box-shadow:0 14px 28px rgba(72,54,31,.14);padding:.44rem .52rem .44rem .78rem;color:#344f58;font-weight:900;pointer-events:auto;}
+.placement-overlay{position:absolute;left:calc(max(.85rem, env(safe-area-inset-left)) + var(--placement-left-offset, 0px));bottom:calc(max(.85rem, env(safe-area-inset-bottom)) + var(--placement-bottom-offset, 0px));z-index:23;display:flex;align-items:center;gap:.55rem;max-width:min(520px,calc(100vw - 2rem));border:1px solid var(--blue-border);border-radius:999px;background:rgba(230,242,247,.97);box-shadow:0 14px 28px rgba(72,54,31,.14);padding:.44rem .52rem .44rem .78rem;color:#344f58;font-weight:900;pointer-events:none;}
 .placement-overlay[hidden]{display:none!important;}
 .placement-overlay span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.placement-overlay button{border:1px solid var(--blue-border);border-radius:999px;background:#fffdf8;font:inherit;font-weight:900;cursor:pointer;min-height:2rem;padding:.25rem .62rem;white-space:nowrap;}
+.placement-overlay button{border:1px solid var(--blue-border);border-radius:999px;background:#fffdf8;font:inherit;font-weight:900;cursor:pointer;min-height:2rem;padding:.25rem .62rem;white-space:nowrap;pointer-events:auto;}
 .placement-ghost{position:absolute;z-index:7;border:2px dashed rgba(85,123,136,.68);border-radius:18px;background:rgba(230,242,247,.34);box-shadow:0 10px 24px rgba(72,54,31,.1);pointer-events:none;display:grid;place-items:center;color:#4d6770;font-weight:900;text-align:center;padding:.55rem;opacity:.82;}
 .placement-ghost[hidden]{display:none!important;}
 .stage.placement-mode{cursor:crosshair;}
 @media(max-width:1120px){.topbar{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"title status" "nav pagebar";align-items:start;gap:.4rem .55rem;padding:.5rem .65rem}.nav-links{align-self:center;flex-wrap:wrap}.pagebar{align-self:center;justify-self:end;flex-wrap:wrap}.pagebar select{width:min(230px,38vw)}.title-wrap h1{max-width:min(100%,64vw)}.project-kicker{max-width:min(100%,64vw)}.status-pill{font-size:.8rem}.back-link,.pagebar button{min-height:2rem;padding:.28rem .62rem}}
 @media(max-width:720px){.topbar{grid-template-columns:minmax(0,1fr);grid-template-areas:"title" "nav" "pagebar" "status";gap:.32rem;padding:.45rem .55rem}.title-wrap h1{max-width:100%}.project-kicker{max-width:100%}.nav-links,.pagebar{justify-content:flex-start}.pagebar{display:grid;grid-template-columns:auto minmax(0,1fr) repeat(4,auto);width:100%;gap:.28rem}.pagebar select{width:100%;max-width:100%;min-width:0}.side-panel{right:.45rem;top:.45rem}.side-tab{min-width:2.25rem;min-height:2.25rem;padding:.2rem}.panel-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem)}.map-workbench{right:.45rem;top:.45rem;max-width:calc(100vw - 5.4rem)}.workbench-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem);padding:.68rem}.workbench-actions{grid-template-columns:1fr}.toolbar{left:.45rem;top:.45rem}.toolbar button,.file-label{width:2.2rem;height:2.2rem;min-height:2.2rem}.zoom-dock{right:calc(max(.5rem, env(safe-area-inset-right)) + var(--zoom-dock-right-offset, 0px));bottom:calc(max(.5rem, env(safe-area-inset-bottom)) + var(--zoom-dock-lift, 0px))}.zoom-dock button{width:2.85rem;height:2.85rem;min-height:2.85rem}.zoom-dock button.zoom-readout{width:3.85rem}.map-node{width:235px;min-height:120px}.map-node .node-content{padding:.78rem .75rem 1.2rem}.node-title{font-size:.96rem}.node-body{font-size:.84rem}.selection-shelf{top:auto;bottom:.85rem;max-width:calc(100vw - 1rem)}.selection-shelf.docked{top:auto;bottom:.85rem}.selection-meta strong{max-width:36vw}.selection-toggle,.selection-action{width:2.75rem;height:2.75rem;min-height:2.75rem}.connect-banner{bottom:4.2rem;max-width:calc(100vw - 1rem);border-radius:16px}.input-debug{left:.5rem;bottom:.5rem;width:calc(100vw - 1rem);max-width:calc(100vw - 1rem)}}
-@media(max-width:520px){.project-kicker{display:none}.pagebar{grid-template-columns:1fr repeat(4,auto)}.pagebar label{grid-column:1/-1}.back-link{max-width:100%}.pagebar button{padding:.24rem .52rem}.map-workbench{left:.5rem;right:.5rem;top:auto;bottom:5rem;max-width:none;justify-items:stretch}.map-workbench.open{bottom:.75rem}.workbench-toggle{justify-self:end}.map-workbench.open .workbench-toggle{display:none}.workbench-drawer{width:100%;max-height:min(18dvh,170px)}.toast{left:.6rem;right:auto;bottom:calc(5.1rem + var(--toast-bottom-offset, 0px));max-width:calc(100vw - 1.2rem);text-align:center}.placement-overlay{left:.6rem;right:.6rem;bottom:calc(4.75rem + var(--placement-bottom-offset, 0px));max-width:none;border-radius:18px}.placement-overlay span{white-space:normal;line-height:1.2}}
+@media(max-width:520px){.project-kicker{display:none}.pagebar{grid-template-columns:1fr repeat(4,auto)}.pagebar label{grid-column:1/-1}.back-link{max-width:100%}.pagebar button{padding:.24rem .52rem}.map-workbench{left:.5rem;right:.5rem;top:auto;bottom:5rem;max-width:none;justify-items:stretch}.map-workbench.open{bottom:.75rem}.workbench-toggle{justify-self:start;max-width:calc(100vw - 7rem)}.map-workbench.open .workbench-toggle{display:none}.workbench-drawer{width:100%;max-height:min(18dvh,170px)}.toast{left:.6rem;right:auto;bottom:calc(5.1rem + var(--toast-bottom-offset, 0px));max-width:calc(100vw - 1.2rem);text-align:center}.placement-overlay{left:.6rem;right:5.8rem;bottom:calc(4.75rem + var(--placement-bottom-offset, 0px));max-width:calc(100vw - 6.4rem);border-radius:18px}.placement-overlay span{white-space:normal;line-height:1.2}}
 @media (pointer:coarse){.menu button{min-height:2.75rem;padding:.46rem .62rem}.menu-row button{min-width:2.75rem;height:2.75rem;min-height:2.75rem}.selection-toggle,.selection-action{width:2.95rem;height:2.95rem;min-height:2.95rem}.input-debug button{min-height:2.75rem}.drag-handle{width:3rem;height:3rem;min-height:3rem}.drag-handle-icon{width:2.1rem;height:2.1rem;min-height:2.1rem}.map-node.shape-oval .drag-handle{width:2.65rem;height:2.65rem;min-height:2.65rem}.map-node.shape-oval .drag-handle-icon{width:1.85rem;height:1.85rem;min-height:1.85rem}.zoom-dock button{width:3rem;height:3rem;min-height:3rem}.zoom-dock button.zoom-readout{width:4rem}}
 @media print{.topbar,.pagebar,.toolbar,.zoom-dock,.side-panel,.menu,.toast,.placement-overlay,.placement-ghost,.connect-banner,.selection-shelf,.input-debug,.document-picker,.document-detail-card,.map-workbench{display:none!important}body{overflow:visible;background:white}.stage{overflow:visible}.map-node{break-inside:avoid}}
 </style>
@@ -1747,6 +1747,16 @@ import {
     if(!workbenchRect) return false;
     return rectsOverlap(nodeScreenRectFromWorld(node.x, node.y, w, h), rectToStage(workbenchRect, stage.getBoundingClientRect()), margin);
   }
+  function nodeOverlapsOverlayLanes(node, w, h, margin=12){
+    const rect = nodeScreenRectFromWorld(node.x, node.y, w, h);
+    const avoidRects = getPlacementAvoidRects({
+      includeShelf:false,
+      includeToast:false,
+      includeNodes:false,
+      excludeNodeId:node.id
+    });
+    return avoidRects.some(avoidRect => rectsOverlap(rect, avoidRect, margin));
+  }
   function renderedNodeDims(node){
     const fallback = nodeDims(node);
     const element = nodeLayer.querySelector(`[data-id="${CSS.escape(node.id)}"]`);
@@ -1774,14 +1784,15 @@ import {
     const shouldAdjust = node.nodeType === 'document'
       || nodeOverlapsExisting(node, dims.w, dims.h, 20)
       || nodeDomOverlapsExisting(node, 12)
-      || nodeOverlapsVisibleWorkbench(node, dims.w, dims.h, 12);
+      || nodeOverlapsVisibleWorkbench(node, dims.w, dims.h, 12)
+      || nodeOverlapsOverlayLanes(node, dims.w, dims.h, 12);
     if(!shouldAdjust) return false;
     const candidates = [];
     const addCandidate = candidate => {
       if(candidate && Number.isFinite(candidate.x) && Number.isFinite(candidate.y)) candidates.push(candidate);
     };
     [byId('core'), data.nodes.find(candidate => candidate.id !== node.id)].filter(Boolean).forEach(anchor => {
-      [120, 260, 420].forEach(gap => candidatesAroundNode(anchor, dims.w, dims.h, gap).forEach(addCandidate));
+      [28, 72, 120, 260, 420].forEach(gap => candidatesAroundNode(anchor, dims.w, dims.h, gap).forEach(addCandidate));
     });
     const broadSafe = getBroadCanvasSafeArea({includeShelf:false, includeToast:false, margin:18});
     const avoidRects = getPlacementAvoidRects({includeShelf:false, includeToast:false, excludeNodeId:node.id});
@@ -1840,8 +1851,15 @@ import {
     const rightDrawerOpen = drawerRect && window.innerWidth > 520 && drawerRect.left > stageRect.left + stageRect.width * .45;
     const bottomSheetOpen = drawerRect && window.innerWidth <= 520;
     const zoomRightOffset = rightDrawerOpen ? Math.round(drawerRect.width + 18) : 0;
+    const zoomDockRect = rectFromElement(zoomDock);
+    const constrainedDrawerOpen = drawerRect && !bottomSheetOpen && window.innerWidth <= 1120;
+    const placementVisible = placementOverlay && !placementOverlay.hidden;
+    const narrowPlacementOpen = placementVisible && window.innerWidth <= 640;
+    const zoomDockLift = (constrainedDrawerOpen || narrowPlacementOpen) && zoomDockRect
+      ? Math.round(zoomDockRect.height + 16)
+      : 0;
     const zoomLift = Math.max(debugLift, bottomSheetOpen ? Math.round(drawerRect.height + 118) : 0);
-    const placementLift = Math.max(zoomLift, bottomSheetOpen ? Math.round(drawerRect.height + 20) : 0);
+    const placementLift = Math.max(zoomLift, zoomDockLift, bottomSheetOpen ? Math.round(drawerRect.height + 20) : 0);
     const placementRect = placementOverlay && !placementOverlay.hidden ? placementOverlay.getBoundingClientRect() : null;
     const toastLift = Math.max(
       zoomLift,
@@ -2787,15 +2805,19 @@ import {
   function visibleWorkbenchPosition(w=268, h=145){
     return chooseSafeNodePosition(w, h, {near:false});
   }
+  function documentBlockSize(){
+    return window.innerWidth <= 520 ? {w:245, h:176} : {w:300, h:170};
+  }
   function chooseWorkbenchBlockPosition(w=268, h=145){
     return chooseSafeNodePosition(w, h, {preferredNearNodeId:selectedId || 'core'});
   }
   function workbenchBlockConfig(type, options={}){
     const starter = Boolean(options.starter);
+    const compact = window.innerWidth <= 520;
     const configs = {
-      concept:{title:'New concept', body:'What idea belongs here?', group:'blue', shape:'card', tag:'concept', nodeType:'concept', w:268, h:145, toast:'Concept block placed', placementLabel:'concept block'},
-      question:{title:starter ? 'Central question' : 'Question to answer', body:starter ? 'What question should this map help you answer?' : 'What needs explaining?', group:'amber', shape:'pill', tag:'question', nodeType:'question', w:300, h:132, toast:'Question block placed', placementLabel:'question block'},
-      evidence:{title:starter ? 'Evidence to check' : 'Evidence block', body:starter ? 'What source, example, or observation supports this idea?' : 'What source, example, or observation supports this?', group:'green', shape:'note', tag:'evidence', nodeType:'evidence', w:300, h:150, toast:'Evidence block placed', placementLabel:'evidence block'}
+      concept:{title:'New concept', body:'What idea belongs here?', group:'blue', shape:'card', tag:'concept', nodeType:'concept', w:compact ? 245 : 268, h:145, toast:'Concept block placed', placementLabel:'concept block'},
+      question:{title:starter ? 'Central question' : 'Question to answer', body:starter ? 'What question should this map help you answer?' : 'What needs explaining?', group:'amber', shape:'pill', tag:'question', nodeType:'question', w:compact ? 245 : 300, h:132, toast:'Question block placed', placementLabel:'question block'},
+      evidence:{title:starter ? 'Evidence to check' : 'Evidence block', body:starter ? 'What source, example, or observation supports this idea?' : 'What source, example, or observation supports this?', group:'green', shape:'note', tag:'evidence', nodeType:'evidence', w:compact ? 245 : 300, h:150, toast:'Evidence block placed', placementLabel:'evidence block'}
     };
     return configs[type] || configs.concept;
   }
@@ -2875,6 +2897,7 @@ import {
     const preferredCandidates = occupiedNode ? [] : [preferredTopLeft];
     const occupiedCandidates = occupiedNode
       ? [
+          ...candidatesAroundNode(occupiedNode, w, h, 28),
           ...candidatesAroundNode(occupiedNode, w, h, 104),
           ...candidatesAroundNode(occupiedNode, w, h, 220),
           ...candidatesAroundNode(occupiedNode, w, h, 340)
@@ -2924,9 +2947,9 @@ import {
     let node = null;
     if(pending.kind === 'document'){
       const documentPoint = window.innerWidth <= 640
-        ? chooseSafeNodePosition(300, 170, {preferredNearNodeId:'core', gap:180})
+        ? chooseSafeNodePosition(w, h, {preferredNearNodeId:'core', gap:180})
         : p;
-      node = addDocumentBlock(pending.documentId, documentPoint, {topLeft:true});
+      node = addDocumentBlock(pending.documentId, documentPoint, {topLeft:true, w, h});
     }else{
       node = addNodeAt(p.x, p.y, pending.config);
       showToast(pending.toast || pending.config?.toast || 'Block placed');
@@ -2970,12 +2993,13 @@ import {
       showToast('Document not found');
       return null;
     }
+    const size = documentBlockSize();
     startPlacementMode({
       kind:'document',
       label:'document block',
       previewTitle:documentRecord.title || 'Document block',
-      w:300,
-      h:170,
+      w:size.w,
+      h:size.h,
       documentId:docId,
       toast:'Document block added'
     }, {sourceButton});
@@ -3001,8 +3025,9 @@ import {
     const docId = documentId || projectDocuments[0]?.id;
     if(!docId) return null;
     markStarterMeaningfulAction();
-    const p = chooseWorkbenchBlockPosition(300, 170);
-    const node = addDocumentBlock(docId, {x:p.x + 150, y:p.y + 85});
+    const size = documentBlockSize();
+    const p = chooseWorkbenchBlockPosition(size.w, size.h);
+    const node = addDocumentBlock(docId, {x:p.x + size.w / 2, y:p.y + size.h / 2}, {w:size.w, h:size.h});
     if(window.innerWidth <= 640) setWorkbenchOpen(false);
     renderMapStarter();
     return node;
@@ -3033,8 +3058,9 @@ import {
       renderMapStarter();
       return;
     }
-    const p = chooseSafeNodePosition(300, 170, {preferredNearNodeId:selectedId || 'core'});
-    openDocumentPicker({x:p.x + 150, y:p.y + 85});
+    const size = documentBlockSize();
+    const p = chooseSafeNodePosition(size.w, size.h, {preferredNearNodeId:selectedId || 'core'});
+    openDocumentPicker({x:p.x + size.w / 2, y:p.y + size.h / 2});
   }
   function handleMapStarterClick(event){
     const button = event.target.closest('button');
@@ -3055,17 +3081,18 @@ import {
     const documentRecord = documentById(documentId);
     if(!documentRecord){ showToast('Document not found'); return null; }
     markStarterMeaningfulAction();
+    const size = {w:Number(options.w) || 300, h:Number(options.h) || 170};
     const position = options.topLeft && worldPoint
       ? worldPoint
-      : chooseDocumentBlockPosition(worldPoint, 300, 170);
+      : chooseDocumentBlockPosition(worldPoint, size.w, size.h);
     const node = addNodeAt(position.x, position.y, {
       title:documentRecord.title,
       body:documentRecord.description || 'Add a note about why this document matters here.',
       group:'violet',
       shape:'note',
       tag:documentRecord.type,
-      w:300,
-      h:170,
+      w:size.w,
+      h:size.h,
       nodeType:'document',
       documentId:documentRecord.id
     });
@@ -3354,6 +3381,7 @@ import {
   stage.addEventListener('click', e => {
     if(!suppressNextPlacementClick) return;
     suppressNextPlacementClick = false;
+    if(e.target instanceof Element && isPlacementControlTarget(e.target)) return;
     e.preventDefault();
     e.stopPropagation();
   }, true);

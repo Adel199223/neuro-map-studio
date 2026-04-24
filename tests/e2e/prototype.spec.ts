@@ -989,7 +989,7 @@ test.describe('current standalone prototypes', () => {
   test('map status feedback uses a transient toast without stretching the header', async ({ page }) => {
     await page.setViewportSize({ width: 1000, height: 760 });
     await resetMindmap(page);
-    await page.locator('#btnWorkbenchToggle').click();
+    await page.locator('#btnWorkbenchToggle').click({ force: true });
     await expect(page.locator('#workbenchDrawer')).toBeVisible();
 
     await page.getByRole('button', { name: /Reset to 100 percent/i }).click();
@@ -1028,11 +1028,11 @@ test.describe('current standalone prototypes', () => {
     await page.locator('#btnWorkbenchClose').click();
     await expect(page.locator('#workbenchDrawer')).toBeHidden();
     await expectUsableCanvasHeight(page);
-    await page.getByRole('button', { name: /Sources & blocks/i }).click();
+    await page.locator('#btnWorkbenchToggle').click();
     await expect(page.locator('#workbenchDrawer')).toBeVisible();
     const reopenWorkbench = async () => {
       if (await page.locator('#workbenchDrawer').isHidden()) {
-        await page.getByRole('button', { name: /Sources & blocks/i }).click();
+        await page.locator('#btnWorkbenchToggle').click({ force: true });
         await expect(page.locator('#workbenchDrawer')).toBeVisible();
       }
     };
@@ -1197,6 +1197,50 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#zoomDock')).toBeVisible();
     await expectNoHorizontalOverflow(page);
     await expectUsableCanvasHeight(page, 360);
+  });
+
+  test('map placement overlay stays clear of zoom dock at medium width', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.setViewportSize({ width: 1000, height: 760 });
+    await page.goto(projectPath);
+
+    await openDetails(page, '#pageCreatePanel');
+    await page.locator('#pageForm').getByLabel(/Title/i).fill('Placement overlay lane map');
+    await page.locator('#pageForm').getByLabel(/Type/i).selectOption('map');
+    await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
+
+    await expect(page.locator('#workbenchDrawer')).toBeVisible();
+    await page.locator('#workbenchAddConcept').click();
+    await expect(page.locator('#placementOverlay')).toContainText(/Tap the canvas to place concept block/i);
+    await expectNoBoxOverlap(page.locator('#placementOverlay'), page.locator('#zoomDock .toolbar-group'), 'medium placement overlay and zoom dock', 4);
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test('map placement overlay and collapsed workbench handle stay clear at narrow width', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.setViewportSize({ width: 430, height: 900 });
+    await page.goto(projectPath);
+
+    await openDetails(page, '#pageCreatePanel');
+    await page.locator('#pageForm').getByLabel(/Title/i).fill('Narrow placement lane map');
+    await page.locator('#pageForm').getByLabel(/Type/i).selectOption('map');
+    await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
+
+    await expect(page.locator('#workbenchDrawer')).toBeVisible();
+    await page.locator('#workbenchDocumentList [data-workbench-document-id]').first().click();
+    await expect(page.locator('#placementOverlay')).toContainText(/Tap the canvas to place document block/i);
+    await expect(page.locator('#workbenchDrawer')).toBeHidden();
+    await expect(page.locator('#btnWorkbenchToggle')).toBeVisible();
+    await expectNoBoxOverlap(page.locator('#placementOverlay'), page.locator('#zoomDock .toolbar-group'), 'narrow placement overlay and zoom dock', 4);
+    await expectNoBoxOverlap(page.locator('#btnWorkbenchToggle'), page.locator('#zoomDock .toolbar-group'), 'narrow workbench handle and zoom dock', 4);
+
+    await clickCanvasAt(page, { xRatio: 0.36, yRatio: 0.3 });
+    const documentNode = page.locator('.map-node.type-document').first();
+    await expect(documentNode).toContainText(/Simon Dixon debt-power interview\/model/i);
+    await expectNoBoxOverlap(documentNode, page.locator('#zoomDock .toolbar-group'), 'narrow document block and zoom dock', 4);
+    await expectNoBoxOverlap(documentNode, page.locator('#selectionShelf'), 'narrow document block and selected shelf', 4);
+    await expectNoBoxOverlap(page.locator('#btnWorkbenchToggle'), page.locator('#zoomDock .toolbar-group'), 'narrow workbench handle and zoom dock after placement', 4);
+    await expectNoHorizontalOverflow(page);
   });
 
   test('new map starter can add document blocks or explain when no documents exist', async ({ page }) => {
