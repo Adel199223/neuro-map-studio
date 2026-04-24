@@ -32,6 +32,9 @@ async function openDetails(page: Page, selector: string) {
     if (element instanceof HTMLDetailsElement) {
       element.open = true;
     }
+    if (element instanceof HTMLDialogElement && !element.open) {
+      element.showModal();
+    }
   });
 }
 
@@ -247,18 +250,20 @@ test.describe('current standalone prototypes', () => {
   test('root dashboard prioritizes projects and app actions over explainer copy', async ({ page }) => {
     await clearWorkspaceDatabase(page);
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /^Neuro Map Studio$/i })).toBeVisible();
+    await expect(page.getByLabel(/Workspace rail/i)).toBeVisible();
+    await expect(page.getByLabel(/Workspace topbar/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Workspace board/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: /build calm learning projects from documents/i })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: /open current project/i })).toHaveAttribute(
+    await expect(page.getByLabel(/Continue working/i).getByRole('link', { name: /open project/i })).toHaveAttribute(
       'href',
       '/prototypes/current/project.html?projectId=geopolitics-economics',
     );
-    await expect(page.locator('.quick-actions').getByRole('button', { name: /^New project$/i })).toBeVisible();
-    await expect(page.locator('.quick-actions').getByRole('button', { name: /Backup & restore/i })).toBeVisible();
-    await expect(page.locator('.quick-actions').getByRole('button', { name: /^Help$/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Geopolitics & Economics/i })).toBeVisible();
-    await expect(page.locator('#new-project-panel')).toHaveJSProperty('open', false);
-    await expect(page.locator('.backup-details')).toHaveJSProperty('open', false);
+    await expect(page.getByLabel(/Workspace topbar/i).getByRole('button', { name: /^New map$/i })).toBeVisible();
+    await expect(page.getByLabel(/Workspace topbar/i).getByRole('button', { name: /^New page$/i })).toBeVisible();
+    await expect(page.getByLabel(/Workspace topbar/i).getByRole('button', { name: /^New project$/i })).toBeVisible();
+    await expect(page.getByLabel(/Recent pages and diagrams/i)).toBeVisible();
+    await expect(page.getByLabel(/^Projects$/i).getByRole('heading', { name: /Project board/i })).toBeVisible();
+    await expect(page.getByLabel(/Workspace rail/i).getByRole('button', { name: /Backup/i })).toBeVisible();
     await expect(page.getByText(/Build calm learning projects from documents/i)).toBeHidden();
   });
 
@@ -266,21 +271,36 @@ test.describe('current standalone prototypes', () => {
     await clearWorkspaceDatabase(page);
     await page.goto('/');
 
-    await page.locator('.quick-actions').getByRole('button', { name: /^New project$/i }).click();
+    await page.getByLabel(/Workspace topbar/i).getByRole('button', { name: /^New project$/i }).click();
     await page.getByLabel(/Project title/i).fill('Neuroscience study');
     await page.getByLabel(/Theme or domain/i).fill('neuroscience');
     await page.getByLabel(/Short description/i).fill('A calm project for memory, attention, and learning.');
     await page.getByRole('button', { name: /create project locally/i }).click();
 
-    await expect(page.getByRole('heading', { name: /Neuroscience study/i })).toBeVisible();
+    await expect(page.getByLabel(/^Projects$/i).getByRole('heading', { name: /Neuroscience study/i })).toBeVisible();
     await page.reload();
-    await expect(page.getByRole('heading', { name: /Neuroscience study/i })).toBeVisible();
+    await expect(page.getByLabel(/^Projects$/i).getByRole('heading', { name: /Neuroscience study/i })).toBeVisible();
+  });
+
+  test('root new map action creates and opens a map runtime', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto('/');
+
+    await page.getByLabel(/Workspace topbar/i).getByRole('button', { name: /^New map$/i }).click();
+
+    await expect(page).toHaveURL(/\/prototypes\/current\/mindmap\.html\?pageId=/);
+    await expect(page.getByRole('heading', { name: /New learning map/i })).toBeVisible();
+    await expect(page.locator('#mapStarterPanel')).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByRole('heading', { name: /New learning map/i })).toBeVisible();
+    await expect(page.locator('#mapStarterPanel')).toBeVisible();
   });
 
   test('workspace backup export includes schema metadata and all local stores', async ({ page }) => {
     await clearWorkspaceDatabase(page);
     await page.goto('/');
-    await expect(page.locator('.status-chip')).toContainText(/Workspace ready/i);
+    await expect(page.getByLabel(/Workspace board/i)).toBeVisible();
 
     await page.evaluate(async () => {
       const runtime = window as unknown as Window & {
@@ -317,7 +337,7 @@ test.describe('current standalone prototypes', () => {
       });
     });
 
-    await page.locator('.quick-actions').getByRole('button', { name: /Backup & restore/i }).click();
+    await page.getByLabel(/Workspace rail/i).getByRole('button', { name: /Backup/i }).click();
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: /Export workspace backup/i }).click();
     const download = await downloadPromise;
@@ -348,7 +368,7 @@ test.describe('current standalone prototypes', () => {
   test('workspace backup import merges valid data and persists after reload', async ({ page }) => {
     await clearWorkspaceDatabase(page);
     await page.goto('/');
-    await expect(page.locator('.status-chip')).toContainText(/Workspace ready/i);
+    await expect(page.getByLabel(/Workspace board/i)).toBeVisible();
     const backup = await page.evaluate(async () => {
       const runtime = window as unknown as Window & {
         neuroMapWorkspaceStore: {
@@ -388,7 +408,7 @@ test.describe('current standalone prototypes', () => {
 
     await clearWorkspaceDatabase(page);
     await page.goto('/');
-    await page.locator('.quick-actions').getByRole('button', { name: /Backup & restore/i }).click();
+    await page.getByLabel(/Workspace rail/i).getByRole('button', { name: /Backup/i }).click();
     await page.getByLabel(/Import workspace backup/i).setInputFiles({
       name: 'backup.json',
       mimeType: 'application/json',
@@ -396,21 +416,22 @@ test.describe('current standalone prototypes', () => {
     });
 
     await expect(page.getByText(/Backup merged safely/i)).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Backup import project/i })).toBeVisible();
+    await expect(page.getByLabel(/^Projects$/i).getByRole('heading', { name: /Backup import project/i })).toBeVisible();
     await page.reload();
-    await expect(page.getByRole('heading', { name: /Backup import project/i })).toBeVisible();
+    await expect(page.getByLabel(/^Projects$/i).getByRole('heading', { name: /Backup import project/i })).toBeVisible();
 
     await page.locator('.project-card').filter({ hasText: 'Backup import project' }).getByRole('link', { name: /Open project/i }).click();
     await expect(page.getByRole('heading', { name: /Imported notes page/i })).toBeVisible();
+    await page.getByRole('tab', { name: /^Utilities$/i }).click();
     await expect(page.getByText(/Imported notes page uses Imported source as related/i)).toBeVisible();
   });
 
   test('workspace backup import rejects invalid JSON without replacing local data', async ({ page }) => {
     await clearWorkspaceDatabase(page);
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /Geopolitics & Economics/i })).toBeVisible();
+    await expect(page.getByLabel(/^Projects$/i).getByRole('heading', { name: /Geopolitics & Economics/i })).toBeVisible();
 
-    await page.locator('.quick-actions').getByRole('button', { name: /Backup & restore/i }).click();
+    await page.getByLabel(/Workspace rail/i).getByRole('button', { name: /Backup/i }).click();
     await page.getByLabel(/Import workspace backup/i).setInputFiles({
       name: 'not-a-backup.json',
       mimeType: 'application/json',
@@ -418,16 +439,16 @@ test.describe('current standalone prototypes', () => {
     });
 
     await expect(page.getByText(/Backup rejected/i)).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Geopolitics & Economics/i })).toBeVisible();
+    await expect(page.getByLabel(/^Projects$/i).getByRole('heading', { name: /Geopolitics & Economics/i })).toBeVisible();
     await page.reload();
-    await expect(page.getByRole('heading', { name: /Geopolitics & Economics/i })).toBeVisible();
+    await expect(page.getByLabel(/^Projects$/i).getByRole('heading', { name: /Geopolitics & Economics/i })).toBeVisible();
   });
 
   test('empty projects show create prompts instead of dead lesson or map shortcuts', async ({ page }) => {
     await clearWorkspaceDatabase(page);
     await page.goto('/');
 
-    await page.locator('.quick-actions').getByRole('button', { name: /^New project$/i }).click();
+    await page.getByLabel(/Workspace topbar/i).getByRole('button', { name: /^New project$/i }).click();
     await page.getByLabel(/Project title/i).fill('Empty runtime project');
     await page.getByLabel(/Theme or domain/i).fill('learning lab');
     await page.getByLabel(/Short description/i).fill('A fresh project with no pages yet.');
@@ -437,8 +458,8 @@ test.describe('current standalone prototypes', () => {
     await projectCard.getByRole('link', { name: /open project/i }).click();
 
     await expect(page.getByRole('heading', { name: /Empty runtime project/i })).toBeVisible();
-    await expect(page.locator('#primaryLessonLink')).toBeHidden();
-    await expect(page.locator('#primaryMapLink')).toBeHidden();
+    await expect(page.getByRole('link', { name: /Open lesson/i })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /Open map|Open editable map/i })).toHaveCount(0);
     await expect(page.getByRole('button', { name: /Create a lesson page/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /Create a map page/i })).toBeVisible();
 
@@ -453,19 +474,18 @@ test.describe('current standalone prototypes', () => {
 
     await expect(page.getByRole('heading', { name: 'Geopolitics & Economics' })).toBeVisible();
     await expect(page.getByText(/Neuro Map Studio/i).first()).toBeVisible();
-    await expect(page.getByRole('heading', { name: /^Pages$/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /^Documents$/i })).toBeVisible();
+    await expect(page.getByLabel(/Project rail/i)).toBeVisible();
+    await expect(page.getByLabel(/Project topbar/i)).toBeVisible();
+    await expect(page.getByRole('tab', { name: /^Pages$/i })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('heading', { name: /Pages and diagrams/i })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /^Documents$/i })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /^Utilities$/i })).toBeVisible();
     await expect(page.locator('#pageCreatePanel')).toHaveJSProperty('open', false);
     await expect(page.locator('#documentCreatePanel')).toHaveJSProperty('open', false);
+    await page.getByRole('tab', { name: /^Documents$/i }).click();
+    await expect(page.getByRole('heading', { name: /Document library/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Simon Dixon debt-power interview\/model/i })).toBeVisible();
-    await expect(page.locator('#primaryLessonLink')).toHaveAttribute(
-      'href',
-      'page.html?pageId=simon-dixon-linear-lesson',
-    );
-    await expect(page.locator('#primaryMapLink')).toHaveAttribute(
-      'href',
-      'page.html?pageId=simon-dixon-debt-power-map',
-    );
+    await page.getByRole('tab', { name: /^Pages$/i }).click();
 
     const openLinks = await page.locator('.page-card a[data-role="page-open-link"]').evaluateAll((links) =>
       links.map((link) => link.getAttribute('href') || ''),
@@ -482,6 +502,8 @@ test.describe('current standalone prototypes', () => {
     await page.locator('#documentForm').getByRole('button', { name: /Create document/i }).click();
     await expect(page.getByRole('heading', { name: /Central bank explainer/i })).toBeVisible();
 
+    await page.getByRole('tab', { name: /^Utilities$/i }).click();
+    await page.getByRole('button', { name: /Attach document/i }).click();
     await page.locator('#linkPageSelect').selectOption({ label: 'Debt-power map' });
     await page.locator('#linkDocumentSelect').selectOption({ label: 'Central bank explainer' });
     await page.locator('#linkForm').getByLabel(/Relationship/i).selectOption('evidence');
@@ -489,7 +511,9 @@ test.describe('current standalone prototypes', () => {
     await expect(page.getByText(/Debt-power map uses Central bank explainer as evidence/i)).toBeVisible();
 
     await page.reload();
+    await page.getByRole('tab', { name: /^Documents$/i }).click();
     await expect(page.getByRole('heading', { name: /Central bank explainer/i })).toBeVisible();
+    await page.getByRole('tab', { name: /^Utilities$/i }).click();
     await expect(page.getByText(/Debt-power map uses Central bank explainer as evidence/i)).toBeVisible();
   });
 
@@ -722,7 +746,7 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('.map-node.type-document')).toContainText(/Simon Dixon debt-power interview\/model/i);
 
     await page.goto('/');
-    await page.locator('.quick-actions').getByRole('button', { name: /^New project$/i }).click();
+    await page.getByLabel(/Workspace topbar/i).getByRole('button', { name: /^New project$/i }).click();
     await page.getByLabel(/Project title/i).fill('No document project');
     await page.getByLabel(/Theme or domain/i).fill('starter');
     await page.getByLabel(/Short description/i).fill('A project with no documents.');
@@ -733,9 +757,10 @@ test.describe('current standalone prototypes', () => {
     await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
 
     await expect(page.locator('#mapStarterPanel')).toBeVisible();
-    await expect(page.getByRole('button', { name: /Add a document first/i })).toBeVisible();
-    await page.getByRole('button', { name: /Add a document first/i }).click();
-    await expect(page.locator('#saveStatus')).toContainText(/Add document metadata/i);
+    const addDocumentFirst = page.getByRole('button', { name: /Add a document first/i });
+    await expect(addDocumentFirst).toBeVisible();
+    await expect(addDocumentFirst).toBeDisabled();
+    await expect(page.locator('#starterDocumentHint')).toContainText(/Add document metadata/i);
   });
 
   test('seeded map migrates legacy localStorage into page-owned state without deleting the legacy save', async ({ page }) => {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Project workspace · Neuro Map Studio</title>
+<title>Project hub · Neuro Map Studio</title>
 <style>
 :root{
   --bg:#efe5d4;
@@ -26,93 +26,171 @@ body{
   font-family:var(--font);
   background:
     radial-gradient(circle at 8% 0%, rgba(255,255,255,.62), transparent 28rem),
-    radial-gradient(circle at 90% 20%, rgba(232,218,194,.55), transparent 24rem),
+    radial-gradient(circle at 90% 20%, rgba(218,237,225,.65), transparent 24rem),
     linear-gradient(180deg,#f6ecdd 0%,var(--bg) 100%);
-  line-height:1.65;
+  line-height:1.55;
 }
 a{color:inherit;text-underline-offset:.16em}
-a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(79,121,138,.55);outline-offset:4px;border-radius:10px}
-.shell{width:min(1120px,calc(100% - 32px));margin:0 auto;padding:24px 0 56px}
-.app-header,.card,.panel{background:rgba(255,249,239,.96);border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow)}
-.app-header{padding:clamp(18px,3vw,30px)}
-.header-main{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}
-.eyebrow{display:inline-flex;gap:.4rem;flex-wrap:wrap;margin:0 0 12px;padding:.28rem .7rem;border:1px solid var(--border);border-radius:999px;background:var(--green);font-weight:900}
-h1{margin:0;font-size:clamp(1.9rem,4vw,3rem);line-height:1.05;letter-spacing:.01em}
-h2{margin:0 0 .65rem;font-size:clamp(1.35rem,3vw,2rem)}
-h3{margin:.15rem 0 .25rem;font-size:1.15rem}
-.project-stats{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-.project-stats span{border:1px solid var(--border);border-radius:999px;background:#fffdf7;padding:.35rem .7rem;font-weight:900;color:var(--muted)}
-.project-info{margin-top:12px}
-.project-info summary{cursor:pointer;font-weight:900;color:var(--muted)}
-.project-info p{margin:.5rem 0 0;max-width:72ch}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:16px}
-.card,.panel{padding:22px}
-.document-card{border-left:8px solid #8fb4c5}
-.page-card{border-left:8px solid #9fbe8a}
-.meta{color:var(--muted);font-weight:900;font-size:.9rem}
-.section-label{margin:24px 0 8px;color:var(--muted);font-weight:900;letter-spacing:.02em}
-.actions,.form-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
-.button,button{display:inline-flex;align-items:center;justify-content:center;min-height:2.75rem;padding:.7rem 1rem;border:1px solid #c6ac80;border-radius:999px;background:#fffdf7;color:inherit;text-decoration:none;font:inherit;font-weight:900;cursor:pointer}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,dialog:focus-visible{outline:3px solid rgba(79,121,138,.55);outline-offset:4px;border-radius:10px}
+.workspace-frame{min-height:100vh;display:grid;grid-template-columns:214px minmax(0,1fr)}
+.workspace-rail{position:sticky;top:0;min-height:100vh;display:grid;grid-template-rows:auto 1fr auto;gap:18px;padding:18px 14px;border-right:1px solid var(--border);background:rgba(255,249,239,.84);backdrop-filter:blur(14px)}
+.rail-brand{display:flex;align-items:center;gap:10px;color:inherit;font-weight:900;text-decoration:none}
+.brand-mark{display:grid;place-items:center;width:2.4rem;height:2.4rem;border:1px solid #9fbe8a;border-radius:16px;background:var(--green)}
+.workspace-rail nav{display:grid;align-content:start;gap:8px}
+.workspace-rail a,.workspace-rail button{display:flex;align-items:center;width:100%;min-height:2.65rem;border:1px solid transparent;border-radius:16px;padding:.65rem .8rem;background:transparent;color:inherit;text-align:left;text-decoration:none;font:inherit;font-weight:900;cursor:pointer}
+.workspace-rail a:hover,.workspace-rail button:hover{border-color:var(--border);background:var(--paper)}
+.workspace-main{min-width:0;display:grid;align-content:start;gap:18px;padding:18px}
+.topbar,.board-panel,.object-card,.document-card,.app-dialog{border:1px solid var(--border);border-radius:26px;background:rgba(255,249,239,.95);box-shadow:var(--shadow)}
+.topbar{display:grid;grid-template-columns:minmax(230px,1fr) auto;gap:14px;align-items:center;padding:16px}
+.eyebrow{display:inline-flex;margin:0 0 8px;padding:.24rem .62rem;border:1px solid var(--border);border-radius:999px;background:var(--green);color:#4e6041;font-weight:900;font-size:.88rem}
+h1{margin:0;font-size:clamp(1.8rem,4vw,2.9rem);line-height:1.05}
+h2{margin:0;font-size:clamp(1.25rem,3vw,1.75rem)}
+h3{margin:.1rem 0 .25rem;font-size:1.1rem}
+p{overflow-wrap:anywhere}
+.project-stats,.object-meta,.pill-row{display:flex;flex-wrap:wrap;gap:8px}
+.project-stats span,.object-meta span,.pill{border:1px solid var(--border);border-radius:999px;background:#fffdf7;padding:.25rem .62rem;color:var(--muted);font-weight:900}
+.topbar-actions,.actions,.form-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.topbar-actions{justify-content:flex-end;margin-top:0}
+.button,button,.file-action{display:inline-flex;align-items:center;justify-content:center;min-height:2.75rem;padding:.7rem 1rem;border:1px solid #c6ac80;border-radius:999px;background:#fffdf7;color:inherit;text-decoration:none;font:inherit;font-weight:900;cursor:pointer}
 .button.primary,button.primary{background:var(--green);border-color:#9fbe8a}
 button.danger{background:var(--rose);border-color:#d5a097}
 button:disabled{opacity:.55;cursor:not-allowed}
 .button.disabled{opacity:.55;cursor:not-allowed;pointer-events:none;background:#f7efe2}
+.tablist{display:flex;flex-wrap:wrap;gap:8px;padding:6px;border:1px solid var(--border);border-radius:999px;background:rgba(255,253,247,.72);width:max-content;max-width:100%}
+.tablist button[aria-selected="true"]{background:var(--green);border-color:#9fbe8a}
+.board-panel{padding:18px}
+.panel-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.object-grid,.document-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.object-card,.document-card{display:grid;gap:14px;padding:16px}
+.page-card.type-map{border-color:#8fb4c5;background:linear-gradient(180deg,rgba(228,240,245,.72),rgba(255,249,239,.96))}
+.page-title-link{font-weight:900;text-decoration-thickness:.11em}
+.badge{display:inline-flex;width:fit-content;margin:0 0 8px;padding:.22rem .56rem;border:1px solid var(--border);border-radius:999px;background:#fffdf7;color:var(--muted);font-size:.86rem;font-weight:900}
+.preview{position:relative;min-height:118px;overflow:hidden;border:1px solid var(--border);border-radius:22px;background:linear-gradient(90deg,rgba(217,195,157,.25) 1px,transparent 1px),linear-gradient(rgba(217,195,157,.25) 1px,transparent 1px),#fffdf7;background-size:26px 26px}
+.preview-map{background-color:var(--blue)}
+.preview-lesson{background-color:var(--green)}
+.preview-notes{background-color:var(--amber)}
+.preview-review{background-color:#e8f1f6}
+.preview-glossary{background-color:var(--rose)}
+.node,.line{position:absolute;display:block}
+.node{z-index:2;width:54px;height:34px;border:2px solid #7aa1b1;border-radius:16px;background:#fffdf7}
+.node-a{left:22px;top:22px}.node-b{right:26px;top:34px}.node-c{left:48%;bottom:18px}
+.line{height:3px;border-radius:999px;background:#9fbe8a;transform-origin:left center}
+.line-a{left:72px;top:44px;width:42%;transform:rotate(7deg)}
+.line-b{left:50%;top:72px;width:30%;transform:rotate(-24deg)}
+.preview strong{position:absolute;right:12px;bottom:10px;border-radius:999px;background:var(--paper);padding:.18rem .5rem}
+.page-mark{position:absolute;left:18px;top:18px;display:grid;place-items:center;width:2.4rem;height:2.4rem;border:1px solid #c6ac80;border-radius:16px;background:var(--paper);font-weight:900}
+.preview-line{position:absolute;left:18px;right:18px;bottom:34px;height:8px;border-radius:999px;background:rgba(103,93,81,.18)}
+.preview-line.short{right:42%;bottom:18px}
+.soft,.empty-state{background:rgba(255,253,247,.72);border:1px dashed var(--border);border-radius:18px;padding:14px}
+.empty-state{display:grid;gap:10px}
+.status{min-height:1.5rem;color:var(--muted);font-weight:900}
+.links-list{display:grid;gap:8px;margin-top:10px}
+.hidden{display:none!important}
+.app-dialog{width:min(660px,calc(100% - 28px));color:inherit;padding:20px}
+.app-dialog::backdrop{background:rgba(46,41,35,.28);backdrop-filter:blur(3px)}
+.dialog-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.dialog-heading h2{margin:0}
+form,.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+label{display:grid;gap:4px;font-weight:900;color:var(--muted)}
+.full{grid-column:1/-1}
 input,select,textarea{width:100%;min-height:2.75rem;border:1px solid var(--border);border-radius:16px;background:#fffdf7;color:inherit;font:inherit;padding:.65rem .8rem}
 textarea{min-height:5.5rem;resize:vertical}
-label{display:grid;gap:4px;font-weight:900;color:var(--muted)}
-.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:12px}
-.full{grid-column:1/-1}
-.pill-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.pill{border:1px solid var(--border);border-radius:999px;background:#fffdf7;padding:.3rem .65rem;font-weight:800;font-size:.92rem}
-.links-list{display:grid;gap:8px;margin-top:10px}
-.soft{background:rgba(255,253,247,.7);border:1px dashed var(--border);border-radius:18px;padding:14px}
-.empty-card{border-style:dashed}
-.status{min-height:1.5rem;color:var(--muted);font-weight:900}
-.shortcut-prompts{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
-.page-title-link{font-weight:900;text-decoration-thickness:.11em}
-.collapsible-panel>summary{cursor:pointer;font-weight:900;font-size:clamp(1.1rem,2.5vw,1.45rem);list-style:none}
-.collapsible-panel>summary::-webkit-details-marker{display:none}
-.collapsible-panel>summary span{display:block}
-.collapsible-panel>summary small{display:block;margin-top:.25rem;color:var(--muted);font-size:.92rem}
-.collapsible-panel[open]>summary{margin-bottom:12px}
-.hidden{display:none!important}
-@media(max-width:680px){.shell{width:min(100% - 20px,1120px);padding-top:18px}.app-header,.card,.panel{border-radius:20px}.button,button{width:100%}.form-row{display:grid}.project-stats{justify-content:flex-start}}
+@media(max-width:880px){.workspace-frame{grid-template-columns:1fr}.workspace-rail{position:static;min-height:auto;border-right:0;border-bottom:1px solid var(--border)}.workspace-rail nav{display:flex;flex-wrap:wrap}.workspace-rail a,.workspace-rail button{width:auto}.topbar{grid-template-columns:1fr}.topbar-actions{justify-content:flex-start}}
+@media(max-width:620px){.workspace-main{padding:12px}.topbar-actions,.actions,.form-row{display:grid}.button,button,.file-action{width:100%}.tablist{border-radius:22px;width:100%}.tablist button{width:auto}}
 </style>
 </head>
 <body>
-<main class="shell">
-  <section class="app-header">
-    <div class="header-main">
+<main class="workspace-frame">
+  <aside class="workspace-rail" aria-label="Project rail">
+    <a class="rail-brand" href="/">
+      <span class="brand-mark">N</span>
+      <span>Neuro Map Studio</span>
+    </a>
+    <nav aria-label="Project navigation">
+      <a href="/">Workspace home</a>
+      <button type="button" data-action="select-tab" data-tab="pages">Pages</button>
+      <button type="button" data-action="select-tab" data-tab="documents">Documents</button>
+      <button type="button" data-action="select-tab" data-tab="utilities">Utilities</button>
+    </nav>
+    <button type="button" data-action="prepare-page" data-page-type="map">New map</button>
+  </aside>
+
+  <section class="workspace-main" aria-label="Project hub">
+    <header class="topbar" aria-label="Project topbar">
       <div>
-        <p class="eyebrow">Neuro Map Studio · Project</p>
+        <p class="eyebrow">Project hub</p>
         <h1 id="projectTitle">Loading project...</h1>
+        <div class="project-stats" id="projectStats" aria-label="Project summary"></div>
       </div>
-      <div class="project-stats" id="projectStats" aria-label="Project summary"></div>
+      <div class="topbar-actions" aria-label="Project actions">
+        <button class="primary" type="button" data-action="create-map-now">New map</button>
+        <button type="button" data-action="prepare-page" data-page-type="notes">New page</button>
+        <button type="button" data-action="prepare-page" data-page-type="lesson">New lesson</button>
+        <button type="button" data-action="prepare-document">Add document</button>
+      </div>
+    </header>
+
+    <div class="tablist" role="tablist" aria-label="Project views">
+      <button type="button" role="tab" aria-selected="true" aria-controls="pagesPanel" data-action="select-tab" data-tab="pages">Pages</button>
+      <button type="button" role="tab" aria-selected="false" aria-controls="documentsPanel" data-action="select-tab" data-tab="documents">Documents</button>
+      <button type="button" role="tab" aria-selected="false" aria-controls="utilitiesPanel" data-action="select-tab" data-tab="utilities">Utilities</button>
     </div>
-    <div class="actions" aria-label="Project shortcuts">
-      <a class="button" href="/">Workspace home</a>
-      <button type="button" data-action="prepare-page" data-page-type="notes">New page</button>
-      <button type="button" data-action="prepare-document">Add document</button>
-      <a class="button primary" id="primaryLessonLink" href="page.html">Open lesson</a>
-      <a class="button" id="primaryMapLink" href="page.html">Open editable map</a>
-    </div>
+
+    <section class="board-panel" id="pagesPanel" role="tabpanel" aria-label="Pages board">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Pages</p>
+          <h2>Pages and diagrams</h2>
+        </div>
+        <div class="actions">
+          <button class="primary" type="button" data-action="create-map-now">New map</button>
+          <button type="button" data-action="prepare-page" data-page-type="notes">New page</button>
+        </div>
+      </div>
+      <div class="object-grid" id="pagesGrid" aria-label="Project pages"></div>
+    </section>
+
+    <section class="board-panel hidden" id="documentsPanel" role="tabpanel" aria-label="Documents board">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Documents</p>
+          <h2>Document library</h2>
+        </div>
+        <button class="primary" type="button" data-action="prepare-document">Add document</button>
+      </div>
+      <div class="document-grid" id="documentsGrid" aria-label="Project document library"></div>
+    </section>
+
+    <section class="board-panel hidden" id="utilitiesPanel" role="tabpanel" aria-label="Project utilities">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Utilities</p>
+          <h2>References and project tools</h2>
+        </div>
+        <button type="button" data-action="prepare-link">Attach document</button>
+      </div>
+      <article class="soft">
+        <h3>Project info</h3>
+        <p id="projectDescription">Opening your local workspace.</p>
+      </article>
+      <article class="soft">
+        <h3>Page document references</h3>
+        <p class="meta">Reusable links between pages and project documents.</p>
+        <div class="soft hidden" id="linkEmptyState"></div>
+        <div class="links-list" id="linksList"></div>
+      </article>
+    </section>
+
     <div class="shortcut-prompts" id="shortcutPrompts" aria-label="Create missing page shortcuts"></div>
-    <details class="project-info">
-      <summary>Project info</summary>
-      <p id="projectDescription">Opening your local workspace.</p>
-    </details>
     <p class="status" id="status" role="status" aria-live="polite"></p>
   </section>
 
-  <h2 class="section-label">Pages</h2>
-  <section class="grid" id="pagesGrid" aria-label="Project pages"></section>
-
-  <details class="panel collapsible-panel" id="pageCreatePanel">
-    <summary>
-      <span>New page</span>
-      <small>Create a real local page with its own runtime state.</small>
-    </summary>
+  <dialog class="app-dialog" id="pageCreatePanel" aria-label="New page">
     <form id="pageForm">
+      <div class="dialog-heading">
+        <h2>New page</h2>
+        <button type="button" data-action="close-dialog" data-dialog="pageCreatePanel">Close</button>
+      </div>
       <div class="form-grid">
         <label>Title <input name="title" required placeholder="Review prompts"/></label>
         <label>Type
@@ -128,17 +206,14 @@ label{display:grid;gap:4px;font-weight:900;color:var(--muted)}
       </div>
       <div class="form-row"><button class="primary" type="submit">Create page</button></div>
     </form>
-  </details>
+  </dialog>
 
-  <h2 class="section-label">Documents</h2>
-  <section class="grid" id="documentsGrid" aria-label="Project document library"></section>
-
-  <details class="panel collapsible-panel" id="documentCreatePanel">
-    <summary>
-      <span>Add document</span>
-      <small>Add a reusable project reference.</small>
-    </summary>
+  <dialog class="app-dialog" id="documentCreatePanel" aria-label="Add document">
     <form id="documentForm">
+      <div class="dialog-heading">
+        <h2>Add document</h2>
+        <button type="button" data-action="close-dialog" data-dialog="documentCreatePanel">Close</button>
+      </div>
       <div class="form-grid">
         <label>Title <input name="title" required placeholder="Document title"/></label>
         <label>Type
@@ -157,13 +232,14 @@ label{display:grid;gap:4px;font-weight:900;color:var(--muted)}
       </div>
       <div class="form-row"><button class="primary" type="submit">Create document</button></div>
     </form>
-  </details>
+  </dialog>
 
-  <section class="panel" aria-label="Attach documents to pages">
-    <h2>Page document references</h2>
-    <p class="meta">Reusable links between pages and project documents.</p>
-    <div class="soft hidden" id="linkEmptyState"></div>
+  <dialog class="app-dialog" id="linkDialog" aria-label="Attach document to page">
     <form id="linkForm">
+      <div class="dialog-heading">
+        <h2>Attach document</h2>
+        <button type="button" data-action="close-dialog" data-dialog="linkDialog">Close</button>
+      </div>
       <div class="form-grid">
         <label>Page <select name="pageId" id="linkPageSelect"></select></label>
         <label>Document <select name="documentId" id="linkDocumentSelect"></select></label>
@@ -179,8 +255,7 @@ label{display:grid;gap:4px;font-weight:900;color:var(--muted)}
       </div>
       <div class="form-row"><button class="primary" type="submit">Attach document to page</button></div>
     </form>
-    <div class="links-list" id="linksList"></div>
-  </section>
+  </dialog>
 </main>
 <script type="module">
 import {
@@ -199,11 +274,10 @@ import {
 const params = new URLSearchParams(location.search);
 let projectId = params.get('projectId') || SEED_PROJECT_ID;
 let bundle = null;
+let activeTab = 'pages';
 const status = document.getElementById('status');
 
-function setStatus(text){
-  status.textContent = text;
-}
+function setStatus(text){ status.textContent = text; }
 
 function escapeHtml(value){
   return String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -221,13 +295,7 @@ function pageHref(page){
 }
 
 function pageTypeLabel(type){
-  return {
-    lesson:'Lesson',
-    map:'Map',
-    notes:'Notes',
-    review:'Review',
-    glossary:'Glossary'
-  }[type] || 'Page';
+  return {lesson:'Lesson',map:'Map',notes:'Notes',review:'Review',glossary:'Glossary'}[type] || 'Page';
 }
 
 function pageOpenLabel(page){
@@ -241,10 +309,57 @@ function pageOpenLabel(page){
 
 function docsForPage(page){
   const links = bundle.pageDocumentLinks.filter(link => link.pageId === page.id);
-  return links.map(link => ({
-    link,
-    document: bundle.documents.find(document => document.id === link.documentId)
-  })).filter(item => item.document);
+  return links.map(link => ({link, document: bundle.documents.find(document => document.id === link.documentId)})).filter(item => item.document);
+}
+
+function mapStats(page){
+  const state = bundle.pageStates.find(item => item.pageId === page.id);
+  const map = state?.data?.workspace?.pages?.[0]?.map;
+  return {nodes: map?.nodes?.length || 1, edges: map?.edges?.length || 0};
+}
+
+function previewForPage(page){
+  if(page.type === 'map'){
+    const stats = mapStats(page);
+    return `
+      <div class="preview preview-map" aria-hidden="true">
+        <span class="node node-a"></span><span class="node node-b"></span><span class="node node-c"></span>
+        <span class="line line-a"></span><span class="line line-b"></span>
+        <strong>${stats.nodes}</strong>
+      </div>
+    `;
+  }
+  return `
+    <div class="preview preview-${escapeHtml(page.type)}" aria-hidden="true">
+      <span class="page-mark">${escapeHtml(pageTypeLabel(page.type).slice(0,1))}</span>
+      <span class="preview-line"></span><span class="preview-line short"></span>
+    </div>
+  `;
+}
+
+function selectTab(tab){
+  activeTab = tab;
+  ['pages','documents','utilities'].forEach(name => {
+    const panel = document.getElementById(`${name}Panel`);
+    const selected = name === tab;
+    panel.classList.toggle('hidden', !selected);
+    document.querySelectorAll(`[data-action="select-tab"][data-tab="${name}"]`).forEach(button => {
+      if(button.getAttribute('role') === 'tab') button.setAttribute('aria-selected', String(selected));
+    });
+  });
+}
+
+function openDialog(id){
+  const dialog = document.getElementById(id);
+  if(dialog instanceof HTMLDialogElement && !dialog.open){
+    dialog.showModal();
+    setTimeout(() => dialog.querySelector('input,select,textarea,button')?.focus(), 0);
+  }
+}
+
+function closeDialog(id){
+  const dialog = document.getElementById(id);
+  if(dialog instanceof HTMLDialogElement && dialog.open) dialog.close();
 }
 
 function render(){
@@ -256,53 +371,27 @@ function render(){
   document.title = `${bundle.project.title} · Neuro Map Studio`;
   document.getElementById('projectTitle').textContent = bundle.project.title;
   document.getElementById('projectDescription').textContent = bundle.project.description;
+  const mapCount = bundle.pages.filter(page => page.type === 'map').length;
   document.getElementById('projectStats').innerHTML = `
     <span>${bundle.pages.length} ${bundle.pages.length === 1 ? 'page' : 'pages'}</span>
+    <span>${mapCount} ${mapCount === 1 ? 'map' : 'maps'}</span>
     <span>${bundle.documents.length} ${bundle.documents.length === 1 ? 'document' : 'documents'}</span>
   `;
 
-  const lessonLink = document.getElementById('primaryLessonLink');
-  const mapLink = document.getElementById('primaryMapLink');
   const shortcutPrompts = document.getElementById('shortcutPrompts');
   const lessonPage = bundle.pages.find(page => page.type === 'lesson');
   const mapPage = bundle.pages.find(page => page.type === 'map');
   const prompts = [];
-  if(lessonPage && pageHref(lessonPage)){
-    lessonLink.href = pageHref(lessonPage);
-    lessonLink.classList.remove('hidden');
-  }else{
-    lessonLink.removeAttribute('href');
-    lessonLink.classList.add('hidden');
-    prompts.push('<button type="button" data-action="prepare-page" data-page-type="lesson">Create a lesson page</button>');
-  }
-  if(mapPage && pageHref(mapPage)){
-    mapLink.href = pageHref(mapPage);
-    mapLink.classList.remove('hidden');
-  }else{
-    mapLink.removeAttribute('href');
-    mapLink.classList.add('hidden');
-    prompts.push('<button type="button" data-action="prepare-page" data-page-type="map">Create a map page</button>');
-  }
+  if(!lessonPage) prompts.push('<button type="button" data-action="prepare-page" data-page-type="lesson">Create a lesson page</button>');
+  if(!mapPage) prompts.push('<button type="button" data-action="prepare-page" data-page-type="map">Create a map page</button>');
   shortcutPrompts.innerHTML = prompts.join('');
-
-  const documentsGrid = document.getElementById('documentsGrid');
-  documentsGrid.innerHTML = bundle.documents.map(document => `
-    <article class="card document-card" data-document-id="${document.id}">
-      <p class="meta">${escapeHtml(document.type.toUpperCase())} · ${escapeHtml(document.sourceLabel || 'Document')}</p>
-      <h3>${escapeHtml(document.title)}</h3>
-      <p>${escapeHtml(document.description || 'No description yet.')}</p>
-      <div class="pill-row">${(document.tags || []).map(tag => `<span class="pill">${escapeHtml(tag)}</span>`).join('')}</div>
-      <div class="actions">
-        <button type="button" data-action="edit-document" data-id="${document.id}">Edit metadata</button>
-      </div>
-    </article>
-  `).join('') || '<article class="card empty-card"><h3>No documents yet</h3><p>Add a document reference.</p></article>';
 
   const pagesGrid = document.getElementById('pagesGrid');
   pagesGrid.innerHTML = bundle.pages.map(page => {
     const docs = docsForPage(page);
     const href = pageHref(page);
     const openLabel = pageOpenLabel(page);
+    const stats = page.type === 'map' ? mapStats(page) : null;
     const pageTitle = href
       ? `<a class="page-title-link" href="${href}" data-role="page-open-link">${escapeHtml(page.title)}</a>`
       : escapeHtml(page.title || 'Untitled page');
@@ -310,22 +399,38 @@ function render(){
       ? `<a class="button primary" data-role="page-open-link" href="${href}">${openLabel}</a>`
       : '<span class="button disabled" aria-disabled="true">Page link unavailable</span>';
     return `
-      <article class="card page-card" data-page-id="${page.id}">
-        <p class="meta">${escapeHtml(pageTypeLabel(page.type))} page · ${docs.length} related ${docs.length === 1 ? 'document' : 'documents'}</p>
-        <h3>${pageTitle}</h3>
-        <p>${escapeHtml(page.description || 'No description yet.')}</p>
-        <div class="soft">
-          <strong>Documents:</strong>
-          ${docs.length ? docs.map(({link, document}) => `<span class="pill">${escapeHtml(link.relationship)}: ${escapeHtml(document.title)}</span>`).join(' ') : '<span class="meta">None attached yet.</span>'}
+      <article class="object-card page-card type-${escapeHtml(page.type)}" data-page-id="${escapeHtml(page.id)}">
+        ${previewForPage(page)}
+        <div>
+          <p class="badge">${page.type === 'map' ? 'Diagram map' : `${escapeHtml(pageTypeLabel(page.type))} page`}</p>
+          <h3>${pageTitle}</h3>
+          <p>${escapeHtml(page.description || 'No description yet.')}</p>
+          <div class="object-meta">
+            <span>${docs.length} related ${docs.length === 1 ? 'document' : 'documents'}</span>
+            ${stats ? `<span>${stats.nodes} nodes</span><span>${stats.edges} links</span>` : ''}
+          </div>
         </div>
         <div class="actions">
           ${openAction}
-          <button type="button" data-action="rename-page" data-id="${page.id}">Rename</button>
-          <button type="button" class="danger" data-action="delete-page" data-id="${page.id}" ${page.protected ? 'disabled title="Seed pages stay available for the prototype routes."' : ''}>Delete</button>
+          <button type="button" data-action="rename-page" data-id="${escapeHtml(page.id)}">Rename</button>
+          <button type="button" class="danger" data-action="delete-page" data-id="${escapeHtml(page.id)}" ${page.protected ? 'disabled title="Seed pages stay available for the prototype routes."' : ''}>Delete</button>
         </div>
       </article>
     `;
-  }).join('') || '<article class="card empty-card"><h3>No pages yet</h3><p>Create your first page.</p></article>';
+  }).join('') || '<article class="empty-state"><h3>No pages yet</h3><p>Create your first page or map.</p></article>';
+
+  const documentsGrid = document.getElementById('documentsGrid');
+  documentsGrid.innerHTML = bundle.documents.map(document => `
+    <article class="document-card" data-document-id="${escapeHtml(document.id)}">
+      <p class="badge">${escapeHtml(document.type.toUpperCase())} · ${escapeHtml(document.sourceLabel || 'Document')}</p>
+      <h3>${escapeHtml(document.title)}</h3>
+      <p>${escapeHtml(document.description || 'No description yet.')}</p>
+      <div class="pill-row">${(document.tags || []).map(tag => `<span class="pill">${escapeHtml(tag)}</span>`).join('')}</div>
+      <div class="actions">
+        <button type="button" data-action="edit-document" data-id="${escapeHtml(document.id)}">Edit metadata</button>
+      </div>
+    </article>
+  `).join('') || '<article class="empty-state"><h3>No documents yet</h3><p>Add a document reference.</p></article>';
 
   const linkPageSelect = document.getElementById('linkPageSelect');
   linkPageSelect.innerHTML = bundle.pages.map(page => `<option value="${escapeHtml(page.id)}">${escapeHtml(page.title)}</option>`).join('');
@@ -336,9 +441,7 @@ function render(){
   if(!bundle.pages.length || !bundle.documents.length){
     linkForm.classList.add('hidden');
     linkEmptyState.classList.remove('hidden');
-    linkEmptyState.textContent = !bundle.pages.length
-      ? 'Create a page first.'
-      : 'Add a document first.';
+    linkEmptyState.textContent = !bundle.pages.length ? 'Create a page first.' : 'Add a document first.';
   }else{
     linkForm.classList.remove('hidden');
     linkEmptyState.classList.add('hidden');
@@ -351,6 +454,8 @@ function render(){
     if(!page || !document) return '';
     return `<div class="soft"><strong>${escapeHtml(page.title)}</strong> uses <strong>${escapeHtml(document.title)}</strong> as ${escapeHtml(link.relationship)}.</div>`;
   }).join('') || '<div class="soft">No page-document links yet.</div>';
+
+  selectTab(activeTab);
 }
 
 async function refresh(message=''){
@@ -360,13 +465,20 @@ async function refresh(message=''){
   if(message) setStatus(message);
 }
 
+async function createMapNow(){
+  const page = await createPage(projectId, {title:'New learning map', type:'map', description:'A fresh diagram map.'});
+  window.location.assign(pageHref(page));
+}
+
 document.getElementById('documentForm').addEventListener('submit', async event => {
   event.preventDefault();
   const formElement = event.currentTarget;
   const form = new FormData(formElement);
   await createDocument(projectId, Object.fromEntries(form.entries()));
   formElement.reset();
+  closeDialog('documentCreatePanel');
   await refresh('Document metadata created.');
+  selectTab('documents');
 });
 
 document.getElementById('pageForm').addEventListener('submit', async event => {
@@ -376,18 +488,17 @@ document.getElementById('pageForm').addEventListener('submit', async event => {
   const page = await createPage(projectId, Object.fromEntries(form.entries()));
   formElement.reset();
   const href = pageHref(page);
-  if(href){
-    window.location.assign(href);
-    return;
-  }
-  await refresh(`Page created, but its runtime link could not be built. Try reopening it from the page library.`);
+  if(href) window.location.assign(href);
+  else await refresh('Page created, but its runtime link could not be built.');
 });
 
 document.getElementById('linkForm').addEventListener('submit', async event => {
   event.preventDefault();
   const form = new FormData(event.currentTarget);
   await linkPageDocument(form.get('pageId'), form.get('documentId'), form.get('relationship'));
+  closeDialog('linkDialog');
   await refresh('Document attached to page.');
+  selectTab('utilities');
 });
 
 document.addEventListener('click', async event => {
@@ -395,6 +506,9 @@ document.addEventListener('click', async event => {
   if(!button) return;
   const action = button.dataset.action;
   const id = button.dataset.id;
+  if(action === 'select-tab') selectTab(button.dataset.tab || 'pages');
+  if(action === 'create-map-now') await createMapNow();
+  if(action === 'close-dialog') closeDialog(button.dataset.dialog);
   if(action === 'rename-page'){
     const page = bundle.pages.find(item => item.id === id);
     const title = prompt('Rename page:', page?.title || '');
@@ -420,24 +534,26 @@ document.addEventListener('click', async event => {
   }
   if(action === 'prepare-page'){
     const requestedType = button.dataset.pageType || 'notes';
-    const panel = document.getElementById('pageCreatePanel');
+    const dialog = document.getElementById('pageCreateDialog');
     const form = document.getElementById('pageForm');
     const typeSelect = document.getElementById('pageTypeSelect');
-    panel.open = true;
     typeSelect.value = requestedType;
     const titleInput = form.elements.title;
-    if(!titleInput.value){
-      titleInput.placeholder = requestedType === 'lesson' ? 'New lesson page' : 'New map page';
-    }
-    titleInput.focus();
+    if(!titleInput.value) titleInput.placeholder = requestedType === 'map' ? 'New learning map' : `New ${requestedType} page`;
+    openDialog('pageCreatePanel');
     setStatus(`Ready to create a ${requestedType} page.`);
   }
   if(action === 'prepare-document'){
-    const panel = document.getElementById('documentCreatePanel');
-    const form = document.getElementById('documentForm');
-    panel.open = true;
-    form.elements.title.focus();
+    openDialog('documentCreatePanel');
     setStatus('Ready to add a reusable project document.');
+  }
+  if(action === 'prepare-link'){
+    if(!bundle.pages.length || !bundle.documents.length){
+      setStatus(!bundle.pages.length ? 'Create a page before attaching documents.' : 'Add a document before attaching it to pages.');
+      selectTab('utilities');
+      return;
+    }
+    openDialog('linkDialog');
   }
 });
 

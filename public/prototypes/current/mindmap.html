@@ -2123,6 +2123,7 @@ import {
     if(!shouldShow) return;
     const hasDocuments = projectDocuments.length > 0;
     starterAddDocument.textContent = hasDocuments ? 'Add source/document block' : 'Add a document first';
+    starterAddDocument.disabled = !hasDocuments;
     starterDocumentHint.textContent = hasDocuments
       ? `${projectDocuments.length} project ${projectDocuments.length === 1 ? 'document' : 'documents'} available.`
       : 'Add document metadata on the project page before making document blocks.';

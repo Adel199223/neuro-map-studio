@@ -196,8 +196,14 @@ if (!lessonPrototype.includes('href="project.html"')) {
 
 expectIncludes('public/prototypes/current/project.html', [
   'Neuro Map Studio',
-  'Project workspace',
+  'Project hub',
+  'Pages board',
+  'Documents board',
+  'Utilities',
   'Page document references',
+  'New map',
+  'New page',
+  'Add document',
   'Create document',
   'Create page',
 ]);
