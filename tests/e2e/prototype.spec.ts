@@ -246,6 +246,77 @@ async function getEdgeSnapshot(page: Page, edgeIndex = -1) {
   }, edgeIndex);
 }
 
+async function expectNoHorizontalOverflow(page: Page) {
+  const overflow = await page.evaluate(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    return {
+      clientWidth: root.clientWidth,
+      scrollWidth: Math.max(root.scrollWidth, body?.scrollWidth ?? 0),
+    };
+  });
+  expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth + 2);
+}
+
+async function expectReadableBox(locator: Locator, description: string, minWidth = 180) {
+  const box = await visibleBoundingBox(locator, description);
+  expect(box.width).toBeGreaterThan(minWidth);
+  expect(box.height).toBeLessThan(120);
+  return box;
+}
+
+async function expectFreshMapNodeClearOfOverlays(page: Page) {
+  const geometry = await page.evaluate(() => {
+    const rectOf = (selector: string) => {
+      const element = document.querySelector(selector);
+      if (!element) return null;
+      const rect = element.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+      };
+    };
+    const node = rectOf('.map-node[data-id="core"]');
+    const toolbar = rectOf('.toolbar');
+    const starter = rectOf('#mapStarterPanel:not([hidden])');
+    const zoomDock = rectOf('#zoomDock');
+    const selectionShelf = rectOf('#selectionShelf:not([hidden])');
+    const stage = rectOf('#stage');
+    const overlaps = (a: NonNullable<typeof node>, b: NonNullable<typeof node>) =>
+      a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+    return {
+      node,
+      toolbar,
+      starter,
+      zoomDock,
+      selectionShelf,
+      stage,
+      overlapsToolbar: node && toolbar ? overlaps(node, toolbar) : false,
+      overlapsStarter: node && starter ? overlaps(node, starter) : false,
+      overlapsZoomDock: node && zoomDock ? overlaps(node, zoomDock) : false,
+      overlapsSelectionShelf: node && selectionShelf ? overlaps(node, selectionShelf) : false,
+    };
+  });
+
+  expect(geometry.node).not.toBeNull();
+  expect(geometry.stage).not.toBeNull();
+  expect(geometry.toolbar).not.toBeNull();
+  expect(geometry.starter).not.toBeNull();
+  expect(geometry.zoomDock).not.toBeNull();
+  expect(geometry.overlapsToolbar).toBe(false);
+  expect(geometry.overlapsStarter).toBe(false);
+  expect(geometry.overlapsZoomDock).toBe(false);
+  expect(geometry.overlapsSelectionShelf).toBe(false);
+  expect(geometry.node!.left).toBeGreaterThanOrEqual(geometry.stage!.left + 12);
+  expect(geometry.node!.top).toBeGreaterThanOrEqual(geometry.stage!.top + 12);
+  expect(geometry.node!.right).toBeLessThanOrEqual(geometry.stage!.right - 12);
+  expect(geometry.node!.bottom).toBeLessThanOrEqual(geometry.stage!.bottom - 12);
+}
+
 test.describe('current standalone prototypes', () => {
   test('root dashboard prioritizes projects and app actions over explainer copy', async ({ page }) => {
     await clearWorkspaceDatabase(page);
@@ -265,6 +336,48 @@ test.describe('current standalone prototypes', () => {
     await expect(page.getByLabel(/^Projects$/i).getByRole('heading', { name: /Project board/i })).toBeVisible();
     await expect(page.getByLabel(/Workspace rail/i).getByRole('button', { name: /Backup/i })).toBeVisible();
     await expect(page.getByText(/Build calm learning projects from documents/i)).toBeHidden();
+  });
+
+  test('root dashboard stays readable at medium width', async ({ page }) => {
+    await page.setViewportSize({ width: 1000, height: 760 });
+    await clearWorkspaceDatabase(page);
+    await page.goto('/');
+
+    const continuePanel = page.getByLabel(/Continue working/i);
+    await expect(page.getByLabel(/Workspace rail/i)).toBeVisible();
+    await expect(continuePanel).toBeVisible();
+    await expect(page.getByLabel(/Quick create/i)).toBeVisible();
+    await expect(page.getByLabel(/Recent pages and diagrams/i)).toBeVisible();
+    await expectReadableBox(continuePanel.getByRole('heading', { name: /Geopolitics & Economics/i }), 'medium current project title');
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test('root dashboard stacks cleanly at narrow width', async ({ page }) => {
+    await page.setViewportSize({ width: 680, height: 820 });
+    await clearWorkspaceDatabase(page);
+    await page.goto('/');
+
+    await expect(page.getByLabel(/Workspace rail/i)).toBeVisible();
+    await expect(page.getByLabel(/Workspace topbar/i).getByRole('button', { name: /^New map$/i })).toBeVisible();
+    await expect(page.getByLabel(/Quick create/i)).toBeVisible();
+    await expectReadableBox(
+      page.getByLabel(/Continue working/i).getByRole('heading', { name: /Geopolitics & Economics/i }),
+      'narrow current project title',
+      150,
+    );
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test('root dashboard keeps object board visible at wide desktop', async ({ page }) => {
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await clearWorkspaceDatabase(page);
+    await page.goto('/');
+
+    await expect(page.getByLabel(/Continue working/i)).toBeVisible();
+    await expect(page.getByLabel(/Quick create/i)).toBeVisible();
+    await expect(page.getByLabel(/Recent pages and diagrams/i)).toBeVisible();
+    await expect(page.getByLabel(/^Projects$/i)).toBeVisible();
+    await expectNoHorizontalOverflow(page);
   });
 
   test('root workspace dashboard can create a project that persists after reload', async ({ page }) => {
@@ -295,6 +408,19 @@ test.describe('current standalone prototypes', () => {
     await page.reload();
     await expect(page.getByRole('heading', { name: /New learning map/i })).toBeVisible();
     await expect(page.locator('#mapStarterPanel')).toBeVisible();
+  });
+
+  test('fresh map runtime starts with the main idea clear of overlays', async ({ page }) => {
+    await page.setViewportSize({ width: 1000, height: 760 });
+    await clearWorkspaceDatabase(page);
+    await page.goto('/');
+
+    await page.getByLabel(/Workspace topbar/i).getByRole('button', { name: /^New map$/i }).click();
+
+    await expect(page).toHaveURL(/\/prototypes\/current\/mindmap\.html\?pageId=/);
+    await expect(page.locator('.map-node[data-id="core"]', { hasText: 'Main idea' })).toBeVisible();
+    await expect(page.locator('#mapStarterPanel')).toBeVisible();
+    await expectFreshMapNodeClearOfOverlays(page);
   });
 
   test('workspace backup export includes schema metadata and all local stores', async ({ page }) => {
@@ -515,6 +641,26 @@ test.describe('current standalone prototypes', () => {
     await expect(page.getByRole('heading', { name: /Central bank explainer/i })).toBeVisible();
     await page.getByRole('tab', { name: /^Utilities$/i }).click();
     await expect(page.getByText(/Debt-power map uses Central bank explainer as evidence/i)).toBeVisible();
+  });
+
+  test('project hub remains readable at medium width', async ({ page }) => {
+    await page.setViewportSize({ width: 1000, height: 760 });
+    await clearWorkspaceDatabase(page);
+    await page.goto(projectPath);
+
+    await expect(page.getByLabel(/Project rail/i)).toBeVisible();
+    await expect(page.getByRole('tab', { name: /^Pages$/i })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /^Documents$/i })).toBeVisible();
+
+    const mapCard = page.locator('.page-card.type-map').first();
+    await expect(mapCard.getByRole('link', { name: /Debt-power map/i })).toHaveAttribute('href', /page\.html\?pageId=/);
+    await expectReadableBox(mapCard.getByRole('link', { name: /Debt-power map/i }), 'medium map card title', 150);
+    await expectNoHorizontalOverflow(page);
+
+    await page.getByRole('tab', { name: /^Documents$/i }).click();
+    await expect(page.getByLabel(/Documents board/i)).toBeVisible();
+    await expectReadableBox(page.locator('.document-card').first().getByRole('heading'), 'medium document card title', 150);
+    await expectNoHorizontalOverflow(page);
   });
 
   test('creating a lesson page opens a real runtime lesson and persists after reload', async ({ page }) => {

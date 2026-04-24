@@ -1111,6 +1111,8 @@ import {
       selectedId = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
       selectedEdgeId = null;
       connectFrom = null;
+      const freshStartupView = positionFreshStarterView();
+      if(freshStartupView) selectedId = null;
       renderPageControls();
       render();
       applyView();
@@ -1119,6 +1121,7 @@ import {
       runtimePageInitialized = true;
       setStatus('Map ready');
       await refreshProjectDocuments();
+      if(freshStartupView) await persistWorkspaceState('View ready');
     }catch(error){
       setStatus('Using local map fallback');
       updateRuntimeChrome();
@@ -1654,6 +1657,29 @@ import {
     const r = stage.getBoundingClientRect(); const n = byId(selectedId) || byId('core') || data.nodes[0];
     if(n){ const nr = nodeRect(n); view.x = r.width/2 - nr.cx; view.y = r.height/2 - nr.cy; } else { view.x = r.width/2; view.y = r.height/2; }
     applyView(); save('View reset');
+  }
+  function isDefaultViewState(candidate){
+    return !candidate || (Number(candidate.x) === 0 && Number(candidate.y) === 0 && Number(candidate.scale || 1) === 1);
+  }
+  function positionFreshStarterView(){
+    if(!isFreshStarterMap() || !isDefaultViewState(data.view)) return false;
+    const n = byId('core') || data.nodes[0];
+    if(!n) return false;
+    const stageRect = stage.getBoundingClientRect();
+    if(stageRect.width < 120 || stageRect.height < 120) return false;
+    const toolbarRect = document.querySelector('.toolbar')?.getBoundingClientRect();
+    const toolbarRight = toolbarRect ? toolbarRect.right - stageRect.left : 88;
+    const leftGuard = clamp(toolbarRight + 24, 24, Math.max(24, stageRect.width * 0.42));
+    const rightGuard = stageRect.width >= 720 ? Math.min(390, Math.max(260, stageRect.width * 0.34)) : 24;
+    const topGuard = stageRect.width >= 720 ? 30 : 24;
+    const nr = nodeRect(n);
+    const availableRight = Math.max(leftGuard + nr.w + 24, stageRect.width - rightGuard);
+    const targetLeft = clamp(leftGuard + 8, leftGuard, Math.max(leftGuard, availableRight - nr.w));
+    const targetTop = clamp(topGuard, 20, Math.max(20, stageRect.height - nr.h - 170));
+    view = {x:targetLeft - nr.x, y:targetTop - nr.y, scale:1};
+    data.view = view;
+    syncCurrentPage();
+    return true;
   }
   function centerOnNode(nodeId){
     const n = byId(nodeId); if(!n) return;
