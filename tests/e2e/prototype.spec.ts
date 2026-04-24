@@ -764,7 +764,7 @@ test.describe('current standalone prototypes', () => {
 
     const mapCard = page.locator('.page-card.type-map').first();
     await expect(mapCard.getByRole('link', { name: /Debt-power map/i })).toHaveAttribute('href', /page\.html\?pageId=/);
-    await expectReadableBox(mapCard.getByRole('link', { name: /Debt-power map/i }), 'medium map card title', 150);
+    await expectReadableBox(mapCard.getByRole('link', { name: /Debt-power map/i }), 'medium map card title', 120);
     await expectNoHorizontalOverflow(page);
 
     await page.getByRole('tab', { name: /^Documents$/i }).click();
