@@ -941,6 +941,123 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('.map-node')).toHaveCount(2);
   });
 
+  test('map status feedback uses a transient toast without stretching the header', async ({ page }) => {
+    await page.setViewportSize({ width: 1000, height: 760 });
+    await resetMindmap(page);
+
+    await page.getByRole('button', { name: /Reset to 100 percent/i }).click();
+
+    const toast = page.locator('#toast');
+    await expect(toast).toContainText(/View reset/i);
+    await expect(toast).toHaveClass(/show/);
+    await expect(page.locator('#saveStatus')).toContainText(/View reset/i);
+    const statusBox = await page.locator('#saveStatus').boundingBox();
+    expect(statusBox?.width ?? 0).toBeLessThan(4);
+    const topbarBox = await visibleBoundingBox(page.locator('.topbar'), 'map header after status toast');
+    expect(topbarBox.height).toBeLessThan(150);
+    await expectNoHorizontalOverflow(page);
+    await expect.poll(async () => page.locator('#toast').evaluate((el) => el.classList.contains('show'))).toBe(false);
+  });
+
+  test('map workbench opens, collapses, and creates question and evidence blocks', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto(projectPath);
+
+    await openDetails(page, '#pageCreatePanel');
+    await page.locator('#pageForm').getByLabel(/Title/i).fill('Workbench starter map');
+    await page.locator('#pageForm').getByLabel(/Type/i).selectOption('map');
+    await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
+
+    await expect(page).toHaveURL(/\/prototypes\/current\/mindmap\.html\?pageId=/);
+    await expect(page.locator('#workbenchDrawer')).toBeVisible();
+    await expect(page.locator('#mapStarterPanel')).toBeVisible();
+    await expect(page.locator('#workbenchAddConcept')).toBeVisible();
+    await expect(page.locator('#workbenchAddQuestion')).toBeVisible();
+    await expect(page.locator('#workbenchAddEvidence')).toBeVisible();
+    await expect(page.locator('#workbenchAddDocument')).toBeVisible();
+
+    await page.getByRole('button', { name: /Hide workbench/i }).click();
+    await expect(page.locator('#workbenchDrawer')).toBeHidden();
+    await expectUsableCanvasHeight(page);
+    await page.getByRole('button', { name: /Sources & blocks/i }).click();
+    await expect(page.locator('#workbenchDrawer')).toBeVisible();
+
+    await page.locator('#workbenchAddQuestion').click();
+    await expect(page.locator('.map-node.type-question', { hasText: /Question to answer|Central question/i })).toBeVisible();
+    await expect(page.locator('#mapStarterPanel')).toBeHidden();
+    await page.locator('#workbenchAddEvidence').click();
+    await expect(page.locator('.map-node.type-evidence', { hasText: /Evidence block/i })).toBeVisible();
+    await expect(page.locator('#saveStatus')).toContainText(/Added block/i);
+
+    await page.reload();
+    await expect(page.locator('.map-node.type-question')).toBeVisible();
+    await expect(page.locator('.map-node.type-evidence')).toBeVisible();
+    await expect(page.locator('#mapStarterPanel')).toBeHidden();
+  });
+
+  test('map workbench creates a persistent movable and linkable document block from project sources', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto(projectPath);
+
+    await openDetails(page, '#pageCreatePanel');
+    await page.locator('#pageForm').getByLabel(/Title/i).fill('Workbench source map');
+    await page.locator('#pageForm').getByLabel(/Type/i).selectOption('map');
+    await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
+
+    await expect(page.locator('#workbenchDrawer')).toBeVisible();
+    await page.locator('#workbenchDocumentList [data-workbench-document-id]').first().click();
+
+    const documentNode = page.locator('.map-node.type-document').first();
+    await expect(documentNode).toContainText(/Simon Dixon debt-power interview\/model/i);
+    await expect(documentNode.locator('.document-type-badge')).not.toHaveText('');
+    const documentNodeId = await documentNode.getAttribute('data-id');
+    const documentId = await documentNode.getAttribute('data-document-id');
+    expect(documentNodeId).toBeTruthy();
+    expect(documentId).toBeTruthy();
+
+    const before = await documentNode.boundingBox();
+    await dragByHandle(page, documentNodeId!, { pointerType: 'touch', deltaX: 82, deltaY: 54 });
+    const after = await documentNode.boundingBox();
+    expect(after?.x).not.toBe(before?.x);
+
+    await page.locator('.map-node[data-id="core"]').click();
+    await page.locator('#btnConnect').click();
+    await documentNode.click();
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(1);
+    await expect(page.locator('#saveStatus')).toContainText(/Connected/i);
+    await page.waitForTimeout(500);
+
+    await page.reload();
+    const persistedDocumentNode = page.locator(`.map-node.type-document[data-document-id="${documentId}"]`);
+    await expect(persistedDocumentNode).toContainText(/Simon Dixon debt-power interview\/model/i);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(1);
+  });
+
+  test('map workbench stays canvas-safe at medium and narrow widths', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.setViewportSize({ width: 900, height: 760 });
+    await page.goto(projectPath);
+
+    await openDetails(page, '#pageCreatePanel');
+    await page.locator('#pageForm').getByLabel(/Title/i).fill('Responsive workbench map');
+    await page.locator('#pageForm').getByLabel(/Type/i).selectOption('map');
+    await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
+
+    await expect(page.locator('#workbenchDrawer')).toBeVisible();
+    await expectFreshMapNodeClearOfOverlays(page);
+    await expect(page.locator('#zoomDock')).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    await page.setViewportSize({ width: 520, height: 760 });
+    await expect(page.locator('#workbenchDrawer')).toBeVisible();
+    await expect(page.locator('#btnWorkbenchToggle')).toBeVisible();
+    await expect(page.locator('#zoomDock')).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await page.getByRole('button', { name: /Hide workbench/i }).click();
+    await expect(page.locator('#workbenchDrawer')).toBeHidden();
+    await expectUsableCanvasHeight(page, 360);
+  });
+
   test('new map starter can add document blocks or explain when no documents exist', async ({ page }) => {
     await clearWorkspaceDatabase(page);
     await page.goto(projectPath);

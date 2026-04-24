@@ -101,7 +101,18 @@ a{color:inherit}
   font-weight:900;
 }
 .pagebar button:hover,.pagebar select:hover{border-color:var(--strong);background:#fffdf8;}
-.status-pill{grid-area:status;display:inline-flex;align-items:center;gap:.35rem;min-width:0;justify-content:center;border:1px solid var(--border);border-radius:999px;padding:.28rem .62rem;color:var(--muted);background:#fffaf4;font-size:.86rem;white-space:nowrap;}
+.status-pill{
+  grid-area:status;
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  margin:-1px!important;
+  padding:0!important;
+  overflow:hidden!important;
+  clip:rect(0 0 0 0)!important;
+  white-space:nowrap!important;
+  border:0!important;
+}
 .stage{
   position:relative;
   overflow:hidden;
@@ -314,21 +325,50 @@ a{color:inherit}
 .document-picker-item{width:100%;min-height:3rem;border:1px solid var(--border);border-radius:15px;background:rgba(255,255,255,.58);text-align:left;padding:.62rem .72rem;font:inherit;cursor:pointer;}
 .document-picker-item strong,.document-detail-card strong{display:block;}
 .document-picker-item span,.document-detail-card span{display:block;color:var(--muted);font-size:.84rem;line-height:1.35;}
-.map-starter{position:absolute;z-index:80;right:1rem;top:5rem;width:min(340px,calc(100vw - 2rem));border:1px solid var(--border);border-radius:22px;background:rgba(255,250,242,.96);box-shadow:0 18px 40px rgba(72,54,31,.16);padding:1rem;display:grid;gap:.55rem;pointer-events:auto;}
+.map-workbench{position:absolute;right:.9rem;top:.9rem;z-index:17;display:grid;justify-items:end;gap:.5rem;pointer-events:none;max-width:calc(100vw - 6.3rem);}
+.workbench-toggle,.workbench-close,.workbench-action,.workbench-source-action{border:1px solid var(--border);border-radius:999px;background:#fffaf4;font:inherit;font-weight:900;cursor:pointer;}
+.workbench-toggle{min-height:2.45rem;padding:.38rem .72rem;box-shadow:0 12px 24px rgba(72,54,31,.12);pointer-events:auto;white-space:nowrap;}
+.workbench-toggle:hover,.workbench-toggle:focus-visible,.workbench-close:hover,.workbench-action:hover,.workbench-source-action:hover{border-color:var(--strong);background:#fffdf8;}
+.workbench-drawer{width:min(365px,calc(100vw - 7rem));max-height:calc(100dvh - 8rem);overflow:auto;border:1px solid var(--border);border-radius:22px;background:rgba(255,250,242,.97);box-shadow:0 20px 42px rgba(72,54,31,.18);padding:.82rem;display:grid;gap:.62rem;pointer-events:auto;}
+.workbench-drawer[hidden]{display:none!important;}
+.workbench-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.65rem;}
+.workbench-title{display:grid;gap:.12rem;min-width:0;}
+.workbench-title h2{margin:0;font-size:1.05rem;line-height:1.1;}
+.workbench-title p{margin:0;color:var(--muted);font-size:.82rem;line-height:1.28;}
+.workbench-close{min-width:2rem;min-height:2rem;padding:.12rem .52rem;flex:0 0 auto;}
+.workbench-section{border:1px solid rgba(217,199,170,.78);border-radius:18px;background:rgba(255,255,255,.55);padding:.72rem;display:grid;gap:.55rem;}
+.workbench-section h3{margin:0;font-size:.94rem;line-height:1.15;}
+.workbench-section p{margin:0;color:var(--muted);font-size:.84rem;line-height:1.32;}
+.workbench-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem;}
+.workbench-action{min-height:2.7rem;border-radius:16px;padding:.42rem .58rem;text-align:left;display:grid;gap:.04rem;background:rgba(255,255,255,.7);}
+.workbench-action strong{font-size:.88rem;line-height:1.12;}
+.workbench-action span{font-size:.74rem;color:var(--muted);line-height:1.2;}
+.workbench-action:disabled,.workbench-source-action:disabled{opacity:.48;cursor:not-allowed;}
+.workbench-documents{display:grid;gap:.46rem;}
+.workbench-document{display:grid;gap:.42rem;border:1px solid rgba(217,199,170,.78);border-radius:16px;background:rgba(255,255,255,.64);padding:.58rem;}
+.workbench-document strong{font-size:.88rem;line-height:1.18;}
+.workbench-document span{font-size:.76rem;line-height:1.25;color:var(--muted);}
+.workbench-document-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;min-width:0;}
+.workbench-document-type{border:1px solid var(--violet-border);border-radius:999px;background:var(--violet);color:#5b4a71;font-size:.68rem;font-weight:900;padding:.08rem .38rem;white-space:nowrap;}
+.workbench-source-action{justify-self:start;min-height:2.2rem;padding:.28rem .6rem;background:#fffdf7;}
+.workbench-empty{border:1px dashed rgba(155,128,88,.55);border-radius:16px;padding:.62rem;color:var(--muted);font-size:.84rem;line-height:1.32;background:rgba(255,255,255,.5);}
+.workbench-prompts summary{font-weight:900;cursor:pointer;}
+.workbench-prompts ul{margin:.45rem 0 0;padding-left:1.05rem;color:var(--muted);font-size:.84rem;line-height:1.35;}
+.map-starter{border:1px solid var(--green-border);border-radius:18px;background:rgba(238,246,229,.78);box-shadow:none;padding:.72rem;display:grid;gap:.5rem;pointer-events:auto;}
 .map-starter[hidden]{display:none!important;}
-.map-starter h2{margin:0;font-size:1.12rem;}
-.map-starter p{margin:0;color:var(--muted);font-size:.9rem;line-height:1.45;}
+.map-starter h2{margin:0;font-size:1rem;line-height:1.15;}
+.map-starter p{margin:0;color:var(--muted);font-size:.84rem;line-height:1.34;}
 .map-starter-actions{display:grid;gap:.45rem;}
 .map-starter-actions button{width:100%;justify-content:flex-start;border-radius:16px;background:rgba(255,255,255,.7);min-height:2.65rem;cursor:pointer;}
 .map-starter-actions button.primary{background:var(--green);border-color:var(--green-border);}
 .document-panel-actions{display:flex;justify-content:flex-end;gap:.5rem;margin-top:.8rem;}
 .document-panel-actions button{min-height:2.4rem;border:1px solid var(--border);border-radius:999px;background:#fffdf7;font:inherit;font-weight:900;cursor:pointer;padding:.4rem .75rem;}
-.import-input{display:none}.toast{position:absolute;right:1rem;bottom:1rem;z-index:22;border:1px solid var(--border);border-radius:999px;background:rgba(255,250,242,.95);color:var(--muted);padding:.45rem .75rem;box-shadow:0 12px 24px rgba(72,54,31,.12);opacity:0;transform:translateY(8px);transition:opacity .18s ease, transform .18s ease;pointer-events:none;}.toast.show{opacity:1;transform:translateY(0)}
+.import-input{display:none}.toast{position:absolute;right:1rem;bottom:1rem;z-index:94;max-width:min(340px,calc(100vw - 2rem));border:1px solid var(--border);border-radius:999px;background:rgba(255,250,242,.97);color:var(--muted);padding:.5rem .82rem;box-shadow:0 12px 24px rgba(72,54,31,.16);opacity:0;transform:translateY(8px);transition:opacity .18s ease, transform .18s ease;pointer-events:none;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.toast.show{opacity:1;transform:translateY(0)}
 @media(max-width:1120px){.topbar{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"title status" "nav pagebar";align-items:start;gap:.4rem .55rem;padding:.5rem .65rem}.nav-links{align-self:center;flex-wrap:wrap}.pagebar{align-self:center;justify-self:end;flex-wrap:wrap}.pagebar select{width:min(230px,38vw)}.title-wrap h1{max-width:min(100%,64vw)}.project-kicker{max-width:min(100%,64vw)}.status-pill{font-size:.8rem}.back-link,.pagebar button{min-height:2rem;padding:.28rem .62rem}}
-@media(max-width:720px){.topbar{grid-template-columns:minmax(0,1fr);grid-template-areas:"title" "nav" "pagebar" "status";gap:.32rem;padding:.45rem .55rem}.title-wrap h1{max-width:100%}.project-kicker{max-width:100%}.nav-links,.pagebar{justify-content:flex-start}.pagebar{display:grid;grid-template-columns:auto minmax(0,1fr) repeat(4,auto);width:100%;gap:.28rem}.pagebar select{width:100%;max-width:100%;min-width:0}.status-pill{justify-self:start;font-size:.76rem}.side-panel{right:.45rem;top:.45rem}.side-tab{min-width:2.25rem;min-height:2.25rem;padding:.2rem}.panel-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem)}.toolbar{left:.45rem;top:.45rem}.toolbar button,.file-label{width:2.2rem;height:2.2rem;min-height:2.2rem}.zoom-dock{right:max(.5rem, env(safe-area-inset-right));bottom:calc(max(.5rem, env(safe-area-inset-bottom)) + var(--zoom-dock-lift, 0px))}.zoom-dock button{width:2.85rem;height:2.85rem;min-height:2.85rem}.zoom-dock button.zoom-readout{width:3.85rem}.map-node{width:235px;min-height:120px}.map-node .node-content{padding:.78rem .75rem 1.2rem}.node-title{font-size:.96rem}.node-body{font-size:.84rem}.selection-shelf{top:auto;bottom:.85rem;max-width:calc(100vw - 1rem)}.selection-shelf.docked{top:auto;bottom:.85rem}.selection-meta strong{max-width:36vw}.selection-toggle,.selection-action{width:2.75rem;height:2.75rem;min-height:2.75rem}.connect-banner{bottom:4.2rem;max-width:calc(100vw - 1rem);border-radius:16px}.input-debug{left:.5rem;bottom:.5rem;width:calc(100vw - 1rem);max-width:calc(100vw - 1rem)}}
-@media(max-width:520px){.project-kicker{display:none}.pagebar{grid-template-columns:1fr repeat(4,auto)}.pagebar label{grid-column:1/-1}.back-link{max-width:100%}.pagebar button{padding:.24rem .52rem}.status-pill{max-width:100%;overflow:hidden;text-overflow:ellipsis}}
+@media(max-width:720px){.topbar{grid-template-columns:minmax(0,1fr);grid-template-areas:"title" "nav" "pagebar" "status";gap:.32rem;padding:.45rem .55rem}.title-wrap h1{max-width:100%}.project-kicker{max-width:100%}.nav-links,.pagebar{justify-content:flex-start}.pagebar{display:grid;grid-template-columns:auto minmax(0,1fr) repeat(4,auto);width:100%;gap:.28rem}.pagebar select{width:100%;max-width:100%;min-width:0}.side-panel{right:.45rem;top:.45rem}.side-tab{min-width:2.25rem;min-height:2.25rem;padding:.2rem}.panel-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem)}.map-workbench{right:.45rem;top:.45rem;max-width:calc(100vw - 5.4rem)}.workbench-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem);padding:.68rem}.workbench-actions{grid-template-columns:1fr}.toolbar{left:.45rem;top:.45rem}.toolbar button,.file-label{width:2.2rem;height:2.2rem;min-height:2.2rem}.zoom-dock{right:max(.5rem, env(safe-area-inset-right));bottom:calc(max(.5rem, env(safe-area-inset-bottom)) + var(--zoom-dock-lift, 0px))}.zoom-dock button{width:2.85rem;height:2.85rem;min-height:2.85rem}.zoom-dock button.zoom-readout{width:3.85rem}.map-node{width:235px;min-height:120px}.map-node .node-content{padding:.78rem .75rem 1.2rem}.node-title{font-size:.96rem}.node-body{font-size:.84rem}.selection-shelf{top:auto;bottom:.85rem;max-width:calc(100vw - 1rem)}.selection-shelf.docked{top:auto;bottom:.85rem}.selection-meta strong{max-width:36vw}.selection-toggle,.selection-action{width:2.75rem;height:2.75rem;min-height:2.75rem}.connect-banner{bottom:4.2rem;max-width:calc(100vw - 1rem);border-radius:16px}.input-debug{left:.5rem;bottom:.5rem;width:calc(100vw - 1rem);max-width:calc(100vw - 1rem)}}
+@media(max-width:520px){.project-kicker{display:none}.pagebar{grid-template-columns:1fr repeat(4,auto)}.pagebar label{grid-column:1/-1}.back-link{max-width:100%}.pagebar button{padding:.24rem .52rem}.map-workbench{left:.5rem;right:.5rem;top:auto;bottom:5rem;max-width:none;justify-items:stretch}.workbench-toggle{justify-self:end}.workbench-drawer{width:100%;max-height:45dvh}.toast{left:.6rem;right:.6rem;bottom:4.9rem;max-width:none;text-align:center}}
 @media (pointer:coarse){.menu button{min-height:2.75rem;padding:.46rem .62rem}.menu-row button{min-width:2.75rem;height:2.75rem;min-height:2.75rem}.selection-toggle,.selection-action{width:2.95rem;height:2.95rem;min-height:2.95rem}.input-debug button{min-height:2.75rem}.drag-handle{width:3rem;height:3rem;min-height:3rem}.drag-handle-icon{width:2.1rem;height:2.1rem;min-height:2.1rem}.map-node.shape-oval .drag-handle{width:2.65rem;height:2.65rem;min-height:2.65rem}.map-node.shape-oval .drag-handle-icon{width:1.85rem;height:1.85rem;min-height:1.85rem}.zoom-dock button{width:3rem;height:3rem;min-height:3rem}.zoom-dock button.zoom-readout{width:4rem}}
-@media print{.topbar,.pagebar,.toolbar,.zoom-dock,.side-panel,.menu,.toast,.connect-banner,.selection-shelf,.input-debug,.document-picker,.document-detail-card,.map-starter{display:none!important}body{overflow:visible;background:white}.stage{overflow:visible}.map-node{break-inside:avoid}}
+@media print{.topbar,.pagebar,.toolbar,.zoom-dock,.side-panel,.menu,.toast,.connect-banner,.selection-shelf,.input-debug,.document-picker,.document-detail-card,.map-workbench{display:none!important}body{overflow:visible;background:white}.stage{overflow:visible}.map-node{break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -486,16 +526,50 @@ a{color:inherit}
       <p id="documentDetailDescription"></p>
       <div class="document-panel-actions"><button id="documentDetailClose" type="button">Close</button></div>
     </aside>
-    <aside class="map-starter" id="mapStarterPanel" aria-label="Map starter" hidden>
-      <h2>Start this map gently</h2>
-      <p>Use one small move to turn the blank map into a learning path. You can ignore this panel anytime.</p>
-      <div class="map-starter-actions">
-        <button class="primary" id="starterAddQuestion" type="button">Add central question</button>
-        <button id="starterAddEvidence" type="button">Add evidence block</button>
-        <button id="starterAddDocument" type="button">Add source/document block</button>
-        <button id="starterHide" type="button">Hide starter</button>
+    <aside class="map-workbench collapsed" id="mapWorkbench" aria-label="Sources and blocks workbench">
+      <button class="workbench-toggle" id="btnWorkbenchToggle" type="button" aria-expanded="false" aria-controls="workbenchDrawer">Sources &amp; blocks</button>
+      <div class="workbench-drawer" id="workbenchDrawer" hidden>
+        <div class="workbench-head">
+          <div class="workbench-title">
+            <h2>Sources &amp; blocks</h2>
+            <p>Build from project sources and small learning moves.</p>
+          </div>
+          <button class="workbench-close" id="btnWorkbenchClose" type="button" aria-label="Close sources and blocks">×</button>
+        </div>
+        <aside class="map-starter" id="mapStarterPanel" aria-label="Map starter" hidden>
+          <h2>Start this map gently</h2>
+          <p>Choose one small move. The canvas stays yours.</p>
+          <div class="map-starter-actions">
+            <button class="primary" id="starterAddQuestion" type="button">Add central question</button>
+            <button id="starterAddEvidence" type="button">Add evidence block</button>
+            <button id="starterAddDocument" type="button">Add source/document block</button>
+            <button id="starterHide" type="button">Hide starter</button>
+          </div>
+          <p class="mini" id="starterDocumentHint">Document blocks use the project document library.</p>
+        </aside>
+        <section class="workbench-section" aria-label="Block starters">
+          <h3>Block starters</h3>
+          <div class="workbench-actions">
+            <button class="workbench-action" id="workbenchAddConcept" type="button"><strong>Concept</strong><span>Plain idea block</span></button>
+            <button class="workbench-action" id="workbenchAddQuestion" type="button"><strong>Question</strong><span>What needs explaining?</span></button>
+            <button class="workbench-action" id="workbenchAddEvidence" type="button"><strong>Evidence</strong><span>Source, example, support</span></button>
+            <button class="workbench-action" id="workbenchAddDocument" type="button"><strong>Document</strong><span>Reference a project source</span></button>
+          </div>
+        </section>
+        <section class="workbench-section" aria-label="Project sources">
+          <h3>Project sources</h3>
+          <div class="workbench-documents" id="workbenchDocumentList"></div>
+        </section>
+        <details class="workbench-section workbench-prompts">
+          <summary>Learning prompts</summary>
+          <ul>
+            <li>What causes this?</li>
+            <li>What evidence supports it?</li>
+            <li>Who benefits?</li>
+            <li>What is the exit path?</li>
+          </ul>
+        </details>
       </div>
-      <p class="mini" id="starterDocumentHint">Document blocks use the project document library.</p>
     </aside>
     <div class="toast" id="toast" aria-live="polite">Saved</div>
     <aside class="input-debug collapsed" id="inputDebugPanel" aria-label="Input diagnostics" hidden>
@@ -598,6 +672,15 @@ import {
   const starterAddDocument = document.getElementById('starterAddDocument');
   const starterHide = document.getElementById('starterHide');
   const starterDocumentHint = document.getElementById('starterDocumentHint');
+  const mapWorkbench = document.getElementById('mapWorkbench');
+  const btnWorkbenchToggle = document.getElementById('btnWorkbenchToggle');
+  const btnWorkbenchClose = document.getElementById('btnWorkbenchClose');
+  const workbenchDrawer = document.getElementById('workbenchDrawer');
+  const workbenchAddConcept = document.getElementById('workbenchAddConcept');
+  const workbenchAddQuestion = document.getElementById('workbenchAddQuestion');
+  const workbenchAddEvidence = document.getElementById('workbenchAddEvidence');
+  const workbenchAddDocument = document.getElementById('workbenchAddDocument');
+  const workbenchDocumentList = document.getElementById('workbenchDocumentList');
   const projectBackLink = document.getElementById('projectBackLink');
   const lessonBackLink = document.getElementById('lessonBackLink');
   const projectKicker = document.getElementById('projectKicker');
@@ -698,6 +781,8 @@ import {
   let runtimeProjectPages = [];
   let runtimePageInitialized = false;
   let starterHidden = false;
+  let workbenchOpen = false;
+  let workbenchUserToggled = false;
 
   const DEBUG_INPUT_KEY = 'neuro-map-studio:debug-input';
   const LONG_PRESS_DELAY = 450;
@@ -1055,7 +1140,13 @@ import {
     }, 140);
   }
   function setStatus(text){ saveStatus.textContent = text; }
-  function showToast(text){ toast.textContent = text; toast.classList.add('show'); clearTimeout(showToast.t); showToast.t = setTimeout(() => toast.classList.remove('show'), 1300); }
+  function showToast(text){
+    setStatus(text);
+    toast.textContent = text;
+    toast.classList.add('show');
+    clearTimeout(showToast.t);
+    showToast.t = setTimeout(() => toast.classList.remove('show'), 1600);
+  }
   function documentById(documentId){ return projectDocuments.find(document => document.id === documentId) || null; }
   async function refreshProjectDocuments(){
     let documents = [];
@@ -1067,6 +1158,7 @@ import {
     }
     projectDocuments = documents;
     renderDocumentPicker();
+    renderWorkbenchDocuments();
     render();
   }
   function updateRuntimeChrome(){
@@ -1666,7 +1758,7 @@ import {
     view.scale = 1;
     const r = stage.getBoundingClientRect(); const n = byId(selectedId) || byId('core') || data.nodes[0];
     if(n){ const nr = nodeRect(n); view.x = r.width/2 - nr.cx; view.y = r.height/2 - nr.cy; } else { view.x = r.width/2; view.y = r.height/2; }
-    applyView(); save('View reset');
+    applyView(); save('View reset'); showToast('View reset');
   }
   function isDefaultViewState(candidate){
     return !candidate || (Number(candidate.x) === 0 && Number(candidate.y) === 0 && Number(candidate.scale || 1) === 1);
@@ -1680,7 +1772,8 @@ import {
     const toolbarRect = document.querySelector('.toolbar')?.getBoundingClientRect();
     const toolbarRight = toolbarRect ? toolbarRect.right - stageRect.left : 88;
     const leftGuard = clamp(toolbarRight + 24, 24, Math.max(24, stageRect.width * 0.42));
-    const rightGuard = stageRect.width >= 720 ? Math.min(390, Math.max(260, stageRect.width * 0.34)) : 24;
+    const workbenchGuard = !starterHidden ? Math.min(405, Math.max(320, stageRect.width * 0.38)) : 0;
+    const rightGuard = stageRect.width >= 720 ? Math.max(Math.min(390, Math.max(260, stageRect.width * 0.34)), workbenchGuard) : 24;
     const topGuard = stageRect.width >= 720 ? 30 : 24;
     const nr = nodeRect(n);
     const availableRight = Math.max(leftGuard + nr.w + 24, stageRect.width - rightGuard);
@@ -1734,7 +1827,7 @@ import {
     }));
   }
 
-  function render(){ renderPageControls(); renderNodes(); requestAnimationFrame(() => { renderEdges(); applyFocus(); }); updateSelectionUI(); applyView(); syncGestureLockUI(); renderMapStarter(); }
+  function render(){ renderPageControls(); renderNodes(); requestAnimationFrame(() => { renderEdges(); applyFocus(); }); updateSelectionUI(); applyView(); syncGestureLockUI(); renderMapStarter(); renderWorkbench(); }
   function renderNodes(){
     nodeLayer.innerHTML = '';
     data.nodes.forEach(n => {
@@ -2152,6 +2245,130 @@ import {
     const center = screenToWorld(sr.left + sr.width/2, sr.top + sr.height/2);
     return {x:center.x - w/2, y:center.y - h/2};
   }
+  function setWorkbenchOpen(open, options={}){
+    if(!mapWorkbench || !workbenchDrawer || !btnWorkbenchToggle) return;
+    workbenchOpen = Boolean(open);
+    mapWorkbench.classList.toggle('open', workbenchOpen);
+    mapWorkbench.classList.toggle('collapsed', !workbenchOpen);
+    workbenchDrawer.hidden = !workbenchOpen;
+    btnWorkbenchToggle.setAttribute('aria-expanded', String(workbenchOpen));
+    btnWorkbenchToggle.textContent = workbenchOpen ? 'Hide workbench' : 'Sources & blocks';
+    if(options.user) workbenchUserToggled = true;
+    if(workbenchOpen && options.focus) workbenchDrawer.querySelector('button,summary')?.focus();
+    requestAnimationFrame(() => { updateOverlayOffsets(); renderEdges(); });
+  }
+  function renderWorkbenchDocuments(){
+    if(!workbenchDocumentList) return;
+    const hasDocuments = projectDocuments.length > 0;
+    if(workbenchAddDocument){
+      workbenchAddDocument.disabled = !hasDocuments;
+      const documentHint = workbenchAddDocument.querySelector('span');
+      if(documentHint) documentHint.textContent = hasDocuments ? 'Reference a project source' : 'Add a source first';
+    }
+    if(!hasDocuments){
+      workbenchDocumentList.innerHTML = '<div class="workbench-empty">Add a document in the project first.</div>';
+      return;
+    }
+    workbenchDocumentList.innerHTML = '';
+    projectDocuments.forEach(doc => {
+      const row = document.createElement('article');
+      row.className = 'workbench-document';
+      row.innerHTML = `
+        <div class="workbench-document-top">
+          <div>
+            <strong>${escapeHtml(doc.title)}</strong>
+            <span>${escapeHtml(doc.description || doc.sourceLabel || 'Project document')}</span>
+          </div>
+          <span class="workbench-document-type">${escapeHtml(String(doc.type || 'source').toUpperCase())}</span>
+        </div>
+        <button class="workbench-source-action" type="button" data-workbench-document-id="${escapeHtml(doc.id)}">Add as document block</button>
+      `;
+      workbenchDocumentList.appendChild(row);
+    });
+  }
+  function renderWorkbench(){
+    renderWorkbenchDocuments();
+    if(!mapWorkbench) return;
+    const shouldOpenFresh = runtimePageInitialized && !starterHidden && isFreshStarterMap();
+    if(shouldOpenFresh && !workbenchUserToggled && !workbenchOpen) setWorkbenchOpen(true);
+  }
+  function visibleWorkbenchPosition(w=268, h=145){
+    const stageRect = stage.getBoundingClientRect();
+    if(stageRect.width < 120 || stageRect.height < 120) return starterPosition(320, 0, w, h);
+    const toolbarRect = document.querySelector('.toolbar')?.getBoundingClientRect();
+    const drawerRect = workbenchOpen && workbenchDrawer && !workbenchDrawer.hidden ? workbenchDrawer.getBoundingClientRect() : null;
+    const zoomRect = document.querySelector('.zoom-dock')?.getBoundingClientRect();
+    const shelfRect = selectionShelf && !selectionShelf.hidden && selectionShelf.classList.contains('show') ? selectionShelf.getBoundingClientRect() : null;
+    const toolbarRight = toolbarRect && toolbarRect.right > stageRect.left ? toolbarRect.right - stageRect.left : 72;
+    const leftInset = clamp(toolbarRight + 24, 24, Math.max(24, stageRect.width * .46));
+    const rightInset = drawerRect && drawerRect.left < stageRect.right && drawerRect.right > stageRect.left
+      ? Math.max(24, stageRect.right - drawerRect.left + 24)
+      : 24;
+    const zoomInset = zoomRect && zoomRect.top < stageRect.bottom && zoomRect.right > stageRect.left
+      ? Math.max(24, stageRect.bottom - zoomRect.top + 24)
+      : 24;
+    const shelfBottomInset = shelfRect && shelfRect.top > stageRect.top + stageRect.height * .45
+      ? Math.max(zoomInset, stageRect.bottom - shelfRect.top + 24)
+      : zoomInset;
+    const topInset = shelfRect && shelfRect.top < stageRect.top + stageRect.height * .45
+      ? Math.max(28, shelfRect.bottom - stageRect.top + 18)
+      : 28;
+    const maxScreenX = Math.max(leftInset, stageRect.width - rightInset - w);
+    const maxScreenY = Math.max(topInset, stageRect.height - shelfBottomInset - h);
+    const screenX = clamp(leftInset + 8, leftInset, maxScreenX);
+    const screenY = clamp(topInset + 8, topInset, maxScreenY);
+    return screenToWorld(stageRect.left + screenX, stageRect.top + screenY);
+  }
+  function chooseWorkbenchBlockPosition(w=268, h=145){
+    const candidates = [];
+    const selected = byId(selectedId);
+    if(selected){
+      const r = nodeRect(selected);
+      candidates.push(
+        {x:r.x + r.w + 100, y:r.y + 10},
+        {x:r.x, y:r.y + r.h + 90},
+        {x:r.x - w - 100, y:r.y + 10}
+      );
+    }
+    candidates.push(visibleWorkbenchPosition(w, h));
+    return candidates.find(candidate => nodeSlotIsOpen(candidate.x, candidate.y, w, h)) || candidates[candidates.length - 1];
+  }
+  function markStarterMeaningfulAction(){
+    if(!starterHidden && isFreshStarterMap()){
+      starterHidden = true;
+      renderMapStarter();
+    }
+  }
+  function addWorkbenchBlock(type, options={}){
+    const starter = Boolean(options.starter);
+    const configs = {
+      concept:{title:'New concept', body:'What idea belongs here?', group:'blue', shape:'card', tag:'concept', nodeType:'concept', w:268, h:145, toast:'Concept block added'},
+      question:{title:starter ? 'Central question' : 'Question to answer', body:starter ? 'What question should this map help you answer?' : 'What needs explaining?', group:'amber', shape:'pill', tag:'question', nodeType:'question', w:300, h:132, toast:'Question block added'},
+      evidence:{title:starter ? 'Evidence to check' : 'Evidence block', body:starter ? 'What source, example, or observation supports this idea?' : 'What source, example, or observation supports this?', group:'green', shape:'note', tag:'evidence', nodeType:'evidence', w:300, h:150, toast:'Evidence block added'}
+    };
+    const config = configs[type] || configs.concept;
+    markStarterMeaningfulAction();
+    const p = chooseWorkbenchBlockPosition(config.w, config.h);
+    addNodeAt(p.x, p.y, config);
+    showToast(config.toast);
+    renderMapStarter();
+  }
+  async function addWorkbenchDocumentBlock(documentId=null){
+    if(!projectDocuments.length) await refreshProjectDocuments();
+    if(!projectDocuments.length){
+      showToast('Add a document first');
+      setStatus('Add document metadata on the project page before adding document blocks.');
+      renderMapStarter();
+      return null;
+    }
+    const docId = documentId || projectDocuments[0]?.id;
+    if(!docId) return null;
+    markStarterMeaningfulAction();
+    const p = chooseWorkbenchBlockPosition(300, 170);
+    const node = addDocumentBlock(docId, {x:p.x + 150, y:p.y + 85});
+    renderMapStarter();
+    return node;
+  }
   function renderMapStarter(){
     if(!mapStarterPanel) return;
     const shouldShow = runtimePageInitialized && !starterHidden && isFreshStarterMap();
@@ -2165,32 +2382,10 @@ import {
       : 'Add document metadata on the project page before making document blocks.';
   }
   function addStarterQuestion(){
-    const p = starterPosition(360, -8);
-    addNodeAt(p.x, p.y, {
-      title:'Central question',
-      body:'What question should this map help you answer?',
-      group:'amber',
-      shape:'pill',
-      tag:'question',
-      nodeType:'question',
-      w:300,
-      h:132
-    });
-    renderMapStarter();
+    addWorkbenchBlock('question', {starter:true});
   }
   function addStarterEvidence(){
-    const p = starterPosition(360, 170);
-    addNodeAt(p.x, p.y, {
-      title:'Evidence to check',
-      body:'What source, example, or observation supports this idea?',
-      group:'green',
-      shape:'note',
-      tag:'evidence',
-      nodeType:'evidence',
-      w:300,
-      h:150
-    });
-    renderMapStarter();
+    addWorkbenchBlock('evidence', {starter:true});
   }
   async function addStarterDocumentBlock(){
     if(!projectDocuments.length) await refreshProjectDocuments();
@@ -2221,6 +2416,7 @@ import {
   function addDocumentBlock(documentId, worldPoint=null){
     const documentRecord = documentById(documentId);
     if(!documentRecord){ showToast('Document not found'); return null; }
+    markStarterMeaningfulAction();
     const position = chooseDocumentBlockPosition(worldPoint, 300, 170);
     const node = addNodeAt(position.x, position.y, {
       title:documentRecord.title,
@@ -2498,7 +2694,7 @@ import {
   nodeLayer.addEventListener('contextmenu', e => { const el = e.target.closest('.map-node') || e.target.closest('#nodeLayer') || e.target.closest('.drag-handle') || e.target.closest('.resize-handle') || e.target.closest('.connection-port'); if(!el) return; if(suppressGestureContextMenu(e, 'node', e.target.closest('.drag-handle') || e.target.closest('.resize-handle') || e.target.closest('.connection-port') || el)) return; if(suppressRecentContextMenu(e, 'node', el)) return; e.preventDefault(); closeMenu(); const nodeEl = e.target.closest('.map-node'); const n = nodeEl ? byId(nodeEl.dataset.id) : null; if(!n) return; select(n.id); nodeMenu(n, e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
   edgeLabelLayer.addEventListener('contextmenu', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; const ed = edgeById(lab.dataset.edgeId); if(suppressGestureContextMenu(e, 'edge', lab, {edgeId:ed?.id, hitKind:'edge-label'})) return; if(suppressRecentContextMenu(e, 'edge', lab, {edgeId:ed?.id, hitKind:'edge-label'})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind:'edge-label'}); });
   edgeLayer.addEventListener('contextmenu', e => { const g = e.target.closest('g.edge-group'); if(!g) return; const ed = edgeById(g.dataset.edgeId); const hitKind = e.target.closest('.edge-hit') ? 'edge-hit-target' : 'edge-group'; if(suppressGestureContextMenu(e, 'edge', g, {edgeId:ed?.id, hitKind})) return; if(suppressRecentContextMenu(e, 'edge', g, {edgeId:ed?.id, hitKind})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind}); });
-  stage.addEventListener('contextmenu', e => { if(suppressGestureContextMenu(e, 'canvas', e.target.closest('#stage') || stage)) return; if(suppressRecentContextMenu(e, 'canvas', stage)) return; if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.document-picker') || e.target.closest('.document-detail-card') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
+  stage.addEventListener('contextmenu', e => { if(suppressGestureContextMenu(e, 'canvas', e.target.closest('#stage') || stage)) return; if(suppressRecentContextMenu(e, 'canvas', stage)) return; if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.map-workbench') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.document-picker') || e.target.closest('.document-detail-card') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
 
   nodeLayer.addEventListener('click', e => { const detailButton = e.target.closest('[data-action="document-detail"]'); if(detailButton){ const nodeEl = detailButton.closest('.map-node'); const node = nodeEl ? byId(nodeEl.dataset.id) : null; if(node) openDocumentDetail(node); e.stopPropagation(); return; } const el = e.target.closest('.map-node'); if(!el) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'node', target:el}); if(connectFrom && el.dataset.id !== connectFrom){ addEdge(connectFrom, el.dataset.id); cancelConnect(); return; } select(el.dataset.id); });
   edgeLabelLayer.addEventListener('click', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'edge', target:lab}); selectEdge(lab.dataset.edgeId); });
@@ -2577,7 +2773,7 @@ import {
       }
     }
     if(e.button !== 0) return;
-    if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return;
+    if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.map-workbench') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return;
     e.preventDefault();
     closeMenu();
     clearSelection('canvas-deselect', e);
@@ -2637,7 +2833,7 @@ import {
     stopCanvasPan(true, e.pointerId);
   });
   stage.addEventListener('wheel', e => {
-    if(e.target.closest('.menu')) return;
+    if(e.target.closest('.menu') || e.target.closest('.map-workbench')) return;
     e.preventDefault(); closeMenu();
     const modeScale = e.deltaMode === 1 ? 16 : (e.deltaMode === 2 ? 600 : 1);
     const dx = e.deltaX * modeScale, dy = e.deltaY * modeScale;
@@ -2684,6 +2880,7 @@ import {
         !target.closest('.toolbar') &&
         !target.closest('.zoom-dock') &&
         !target.closest('.side-panel') &&
+        !target.closest('.map-workbench') &&
         !target.closest('.selection-shelf') &&
         !target.closest('.connect-banner') &&
         !target.closest('.input-debug') &&
@@ -2734,6 +2931,32 @@ import {
   document.getElementById('btnAddLinked').addEventListener('click', () => selectedId ? addLinkedFrom(selectedId) : addFreeAtCenter());
   document.getElementById('btnAddFree').addEventListener('click', addFreeAtCenter);
   document.getElementById('btnAddDocumentBlock').addEventListener('click', () => openDocumentPicker());
+  mapWorkbench?.addEventListener('pointerdown', event => event.stopPropagation(), true);
+  mapWorkbench?.addEventListener('pointerup', event => event.stopPropagation(), true);
+  mapWorkbench?.addEventListener('click', event => event.stopPropagation());
+  btnWorkbenchToggle?.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    setWorkbenchOpen(!workbenchOpen, {user:true, focus:!workbenchOpen});
+  });
+  btnWorkbenchClose?.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    setWorkbenchOpen(false, {user:true});
+    btnWorkbenchToggle?.focus();
+  });
+  workbenchAddConcept?.addEventListener('click', () => addWorkbenchBlock('concept'));
+  workbenchAddQuestion?.addEventListener('click', () => addWorkbenchBlock('question'));
+  workbenchAddEvidence?.addEventListener('click', () => addWorkbenchBlock('evidence'));
+  workbenchAddDocument?.addEventListener('click', () => void addWorkbenchDocumentBlock());
+  workbenchDocumentList?.addEventListener('click', event => {
+    const target = event.target instanceof Element ? event.target : null;
+    const button = target?.closest('[data-workbench-document-id]');
+    if(!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    void addWorkbenchDocumentBlock(button.dataset.workbenchDocumentId);
+  });
   mapStarterPanel.addEventListener('pointerdown', event => event.stopPropagation(), true);
   mapStarterPanel.addEventListener('pointerup', event => event.stopPropagation(), true);
   mapStarterPanel.addEventListener('click', handleMapStarterClick);
@@ -2829,7 +3052,7 @@ import {
   btnRenamePage?.addEventListener('click', renameCurrentPage);
   btnDeletePage?.addEventListener('click', deleteCurrentPage);
   stage.addEventListener('click', e => {
-    if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.document-picker') || e.target.closest('.document-detail-card') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return;
+    if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.map-workbench') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.document-picker') || e.target.closest('.document-detail-card') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return;
     if(isTextEditingActive()) return;
     clearSelection('canvas-tap', e);
   });
