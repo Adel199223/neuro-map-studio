@@ -71,6 +71,13 @@ dialog:focus-visible {
   color: inherit;
   font-weight: 900;
   text-decoration: none;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.rail-brand span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .brand-mark {
@@ -106,6 +113,11 @@ dialog:focus-visible {
   text-decoration: none;
   font-weight: 800;
   cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: normal;
 }
 
 .workspace-rail a:hover,
@@ -119,8 +131,8 @@ dialog:focus-visible {
   min-width: 0;
   display: grid;
   align-content: start;
-  gap: 18px;
-  padding: 18px;
+  gap: 14px;
+  padding: 16px;
 }
 
 .workspace-topbar,
@@ -137,9 +149,15 @@ dialog:focus-visible {
 .workspace-topbar {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) auto auto;
+  grid-template-areas: "workspace-title actions status";
   align-items: center;
   gap: 14px;
   padding: 16px;
+}
+
+.workspace-topbar > div:first-child {
+  grid-area: workspace-title;
+  min-width: 0;
 }
 
 .eyebrow {
@@ -183,6 +201,7 @@ p {
 }
 
 .status-chip {
+  grid-area: status;
   margin: 0;
   justify-self: end;
   padding: 0.42rem 0.7rem;
@@ -200,6 +219,10 @@ p {
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.topbar-actions {
+  grid-area: actions;
 }
 
 .actions { margin-top: 14px; }
@@ -234,12 +257,12 @@ p {
 .board-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(270px, 0.75fr);
-  gap: 16px;
+  gap: 14px;
 }
 
 .board-panel {
   min-width: 0;
-  padding: 16px;
+  padding: 14px;
 }
 
 .panel-heading {
@@ -254,7 +277,7 @@ p {
 .continue-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 14px;
+  gap: 12px;
   align-items: center;
 }
 
@@ -305,6 +328,7 @@ p {
   gap: 4px;
   width: 100%;
   height: 100%;
+  min-height: 0;
   border-radius: 22px;
   text-align: left;
 }
@@ -348,7 +372,7 @@ p {
 
 .preview {
   position: relative;
-  min-height: 118px;
+  min-height: 108px;
   overflow: hidden;
   border: 1px solid #d9c39d;
   border-radius: 22px;
@@ -581,6 +605,23 @@ textarea {
   margin: 0.35rem 0 0;
 }
 
+.advanced-tools {
+  margin-top: 14px;
+  border: 1px dashed #d9c39d;
+  border-radius: 18px;
+  padding: 12px 14px;
+  background: rgb(255 253 247 / 0.72);
+}
+
+.advanced-tools summary {
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.advanced-tools p {
+  margin: 0.45rem 0 0.7rem;
+}
+
 @media (max-width: 1120px) {
   .workspace-frame {
     grid-template-columns: 178px minmax(0, 1fr);
@@ -591,12 +632,17 @@ textarea {
   }
 
   .workspace-topbar {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "workspace-title actions";
   }
 
   .topbar-actions,
   .status-chip {
     justify-self: start;
+  }
+
+  .status-chip {
+    display: none;
   }
 
   .board-grid,
@@ -635,6 +681,9 @@ textarea {
 
   .workspace-topbar {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "workspace-title"
+      "actions";
   }
 }
 

@@ -35,10 +35,11 @@ a{color:inherit;text-underline-offset:.16em}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,dialog:focus-visible{outline:3px solid rgba(79,121,138,.55);outline-offset:4px;border-radius:10px}
 .workspace-frame{min-height:100vh;display:grid;grid-template-columns:214px minmax(0,1fr)}
 .workspace-rail{position:sticky;top:0;min-height:100vh;display:grid;grid-template-rows:auto 1fr auto;gap:18px;padding:18px 14px;border-right:1px solid var(--border);background:rgba(255,249,239,.84);backdrop-filter:blur(14px)}
-.rail-brand{display:flex;align-items:center;gap:10px;color:inherit;font-weight:900;text-decoration:none}
+.rail-brand{display:flex;align-items:center;gap:10px;min-width:0;color:inherit;font-weight:900;text-decoration:none;white-space:nowrap}
+.rail-brand span:last-child{overflow:hidden;text-overflow:ellipsis}
 .brand-mark{display:grid;place-items:center;width:2.4rem;height:2.4rem;border:1px solid #9fbe8a;border-radius:16px;background:var(--green)}
 .workspace-rail nav{display:grid;align-content:start;gap:8px}
-.workspace-rail a,.workspace-rail button{display:flex;align-items:center;width:100%;min-height:2.65rem;border:1px solid transparent;border-radius:16px;padding:.65rem .8rem;background:transparent;color:inherit;text-align:left;text-decoration:none;font:inherit;font-weight:900;cursor:pointer}
+.workspace-rail a,.workspace-rail button{display:flex;align-items:center;width:100%;min-width:0;min-height:2.65rem;border:1px solid transparent;border-radius:16px;padding:.65rem .8rem;background:transparent;color:inherit;text-align:left;text-decoration:none;font:inherit;font-weight:900;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;word-break:normal}
 .workspace-rail a:hover,.workspace-rail button:hover{border-color:var(--border);background:var(--paper)}
 .workspace-main{min-width:0;display:grid;align-content:start;gap:18px;padding:18px}
 .topbar,.board-panel,.object-card,.document-card,.app-dialog{border:1px solid var(--border);border-radius:26px;background:rgba(255,249,239,.95);box-shadow:var(--shadow)}
@@ -109,7 +110,7 @@ textarea{min-height:5.5rem;resize:vertical}
       <span>Neuro Map Studio</span>
     </a>
     <nav aria-label="Project navigation">
-      <a href="/">Workspace home</a>
+      <a href="/">Workspace</a>
       <button type="button" data-action="select-tab" data-tab="pages">Pages</button>
       <button type="button" data-action="select-tab" data-tab="documents">Documents</button>
       <button type="button" data-action="select-tab" data-tab="utilities">Utilities</button>

@@ -300,6 +300,12 @@ export default function App() {
   const recentPages = newestFirst(snapshot?.pages ?? []).slice(0, 5);
   const recentMap = recentPages.find((page) => page.type === 'map');
   const continuePage = recentPages[0];
+  const showDeveloperToolsShortcut =
+    typeof window !== 'undefined' &&
+    (() => {
+      const params = new URLSearchParams(window.location.search);
+      return params.has('dev') || params.has('debug');
+    })();
 
   async function handleCreateProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -408,9 +414,11 @@ export default function App() {
             Backup
           </button>
         </nav>
-        <button className="rail-utility" type="button" onClick={() => openDialog(devDialogRef)}>
-          Developer tools
-        </button>
+        {showDeveloperToolsShortcut ? (
+          <button className="rail-utility" type="button" onClick={() => openDialog(devDialogRef)}>
+            Developer tools
+          </button>
+        ) : null}
       </aside>
 
       <section className="workspace-main" aria-label="Workspace board">
@@ -679,6 +687,19 @@ export default function App() {
             <p>Export a JSON backup before serious sessions or larger tests.</p>
           </article>
         </div>
+        <details className="advanced-tools">
+          <summary>Advanced tools</summary>
+          <p>Developer links stay here so the workspace rail stays focused on learning work.</p>
+          <button
+            type="button"
+            onClick={() => {
+              closeDialog(helpDialogRef);
+              window.setTimeout(() => openDialog(devDialogRef), 0);
+            }}
+          >
+            Open developer tools
+          </button>
+        </details>
       </dialog>
 
       <dialog className="app-dialog utility-dialog" ref={devDialogRef} aria-label="Developer tools">

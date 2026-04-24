@@ -265,6 +265,18 @@ async function expectReadableBox(locator: Locator, description: string, minWidth
   return box;
 }
 
+async function expectElementTopBefore(locator: Locator, description: string, maxTop: number) {
+  const box = await visibleBoundingBox(locator, description);
+  expect(box.y).toBeLessThan(maxTop);
+  return box;
+}
+
+async function expectUsableCanvasHeight(page: Page, minHeight = 420) {
+  const stageBox = await visibleBoundingBox(page.locator('#stage'), 'map canvas stage');
+  expect(stageBox.height).toBeGreaterThan(minHeight);
+  return stageBox;
+}
+
 async function expectFreshMapNodeClearOfOverlays(page: Page) {
   const geometry = await page.evaluate(() => {
     const rectOf = (selector: string) => {
@@ -335,7 +347,19 @@ test.describe('current standalone prototypes', () => {
     await expect(page.getByLabel(/Recent pages and diagrams/i)).toBeVisible();
     await expect(page.getByLabel(/^Projects$/i).getByRole('heading', { name: /Project board/i })).toBeVisible();
     await expect(page.getByLabel(/Workspace rail/i).getByRole('button', { name: /Backup/i })).toBeVisible();
+    await expect(page.getByLabel(/Workspace rail/i).getByRole('button', { name: /Developer tools/i })).toHaveCount(0);
     await expect(page.getByText(/Build calm learning projects from documents/i)).toBeHidden();
+  });
+
+  test('developer tools are secondary, not primary navigation', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto('/');
+
+    await expect(page.getByLabel(/Workspace rail/i).getByRole('button', { name: /Developer tools/i })).toHaveCount(0);
+    await page.getByLabel(/Workspace rail/i).getByRole('button', { name: /^Help$/i }).click();
+    await expect(page.getByRole('heading', { name: /Help \/ About/i })).toBeVisible();
+    await openDetails(page, '.advanced-tools');
+    await expect(page.getByRole('button', { name: /Open developer tools/i })).toBeVisible();
   });
 
   test('root dashboard stays readable at medium width', async ({ page }) => {
@@ -349,6 +373,7 @@ test.describe('current standalone prototypes', () => {
     await expect(page.getByLabel(/Quick create/i)).toBeVisible();
     await expect(page.getByLabel(/Recent pages and diagrams/i)).toBeVisible();
     await expectReadableBox(continuePanel.getByRole('heading', { name: /Geopolitics & Economics/i }), 'medium current project title');
+    await expectElementTopBefore(page.getByLabel(/Recent pages and diagrams/i), 'medium recent pages panel', 760);
     await expectNoHorizontalOverflow(page);
   });
 
@@ -421,6 +446,39 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('.map-node[data-id="core"]', { hasText: 'Main idea' })).toBeVisible();
     await expect(page.locator('#mapStarterPanel')).toBeVisible();
     await expectFreshMapNodeClearOfOverlays(page);
+  });
+
+  test('map header stays readable at medium width', async ({ page }) => {
+    await page.setViewportSize({ width: 900, height: 760 });
+    await resetMindmap(page);
+
+    await expect(page.locator('.topbar')).toBeVisible();
+    await expectReadableBox(page.locator('#mapPageTitle'), 'medium map title', 180);
+    await expectReadableBox(page.locator('#projectKicker'), 'medium map context', 180);
+    await expect(page.locator('#projectKicker')).toHaveAttribute('title', /Project: Geopolitics & Economics/);
+    await expect(page.getByLabel(/Switch map view inside this page/i)).toBeVisible();
+    await expect(page.locator('#btnNewPage')).toBeVisible();
+    await expect(page.locator('#saveStatus')).toBeVisible();
+    await expectUsableCanvasHeight(page, 420);
+    await expectNoHorizontalOverflow(page);
+
+    const topbarBox = await visibleBoundingBox(page.locator('.topbar'), 'medium map topbar');
+    expect(topbarBox.height).toBeLessThan(150);
+  });
+
+  test('map header keeps canvas usable at narrow width', async ({ page }) => {
+    await page.setViewportSize({ width: 680, height: 820 });
+    await resetMindmap(page);
+
+    await expectReadableBox(page.locator('#mapPageTitle'), 'narrow map title', 150);
+    await expectReadableBox(page.locator('#projectKicker'), 'narrow map context', 150);
+    await expect(page.getByLabel(/Switch map view inside this page/i)).toBeVisible();
+    await expect(page.locator('#btnNewPage')).toBeVisible();
+    await expectUsableCanvasHeight(page, 380);
+    await expectNoHorizontalOverflow(page);
+
+    const topbarBox = await visibleBoundingBox(page.locator('.topbar'), 'narrow map topbar');
+    expect(topbarBox.height).toBeLessThan(190);
   });
 
   test('workspace backup export includes schema metadata and all local stores', async ({ page }) => {
@@ -649,6 +707,13 @@ test.describe('current standalone prototypes', () => {
     await page.goto(projectPath);
 
     await expect(page.getByLabel(/Project rail/i)).toBeVisible();
+    await expect(page.getByLabel(/Project rail/i).getByRole('link', { name: /^Workspace$/i })).toBeVisible();
+    await expect(page.getByLabel(/Project rail/i).getByRole('link', { name: /Workspace home/i })).toHaveCount(0);
+    await expectReadableBox(
+      page.getByLabel(/Project rail/i).getByRole('link', { name: /^Workspace$/i }),
+      'medium project rail workspace link',
+      70,
+    );
     await expect(page.getByRole('tab', { name: /^Pages$/i })).toBeVisible();
     await expect(page.getByRole('tab', { name: /^Documents$/i })).toBeVisible();
 
@@ -975,8 +1040,10 @@ test.describe('current standalone prototypes', () => {
     await resetMindmap(page);
 
     await expect(page.getByRole('heading', { name: /^debt-power map$/i })).toBeVisible();
-    await expect(page.locator('.topbar')).toContainText(/Project: Geopolitics & Economics/i);
-    await expect(page.locator('.topbar')).toContainText(/Page: Editable map/i);
+    await expect(page.locator('#projectKicker')).toContainText(/Geopolitics & Economics/i);
+    await expect(page.locator('#projectKicker')).toContainText(/Editable map/i);
+    await expect(page.locator('#projectKicker')).toHaveAttribute('title', /Project: Geopolitics & Economics/);
+    await expect(page.locator('#projectKicker')).toHaveAttribute('title', /Page: Editable map/);
     await expect(page.locator('.topbar')).not.toContainText(/Advanced learning map app/i);
     await expect(page.locator('.topbar')).not.toContainText(/Simon Dixon’s debt-power model/i);
     await expect(page.getByRole('link', { name: /project/i })).toHaveAttribute(
