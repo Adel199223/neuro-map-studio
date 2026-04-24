@@ -1471,8 +1471,8 @@ import {
     return {
       stage:rectFromElement(stage),
       toolbar:rectFromElement(document.querySelector('.toolbar')),
-      workbench:workbenchOpen && workbenchDrawer && !workbenchDrawer.hidden ? rectFromElement(workbenchDrawer) : null,
-      workbenchToggle:!workbenchOpen ? rectFromElement(btnWorkbenchToggle) : null,
+      workbench:overlayVisible(workbenchDrawer) ? rectFromElement(workbenchDrawer) : null,
+      workbenchToggle:overlayVisible(btnWorkbenchToggle) ? rectFromElement(btnWorkbenchToggle) : null,
       zoomDock:rectFromElement(zoomDock),
       shelf:includeShelf && overlayVisible(selectionShelf, 'show') ? rectFromElement(selectionShelf) : null,
       toast:includeToast && toast.classList.contains('show') ? rectFromElement(toast) : null,
@@ -1551,6 +1551,24 @@ import {
     safe.height = Math.max(1, safe.bottom - safe.top);
     return safe;
   }
+  function getBroadCanvasSafeArea(options={}){
+    const overlays = getOverlayLanes(options);
+    const stageRect = overlays.stage || stage.getBoundingClientRect();
+    const margin = Number(options.margin) || 18;
+    const safe = {
+      left:margin,
+      top:margin,
+      right:stageRect.width - margin,
+      bottom:stageRect.height - margin,
+      stageRect
+    };
+    if(overlays.toolbar && rectsOverlap(overlays.toolbar, stageRect)){
+      safe.left = Math.max(safe.left, overlays.toolbar.right - stageRect.left + margin);
+    }
+    safe.width = Math.max(1, safe.right - safe.left);
+    safe.height = Math.max(1, safe.bottom - safe.top);
+    return safe;
+  }
   function nodeScreenRectFromWorld(x, y, w, h){
     const left = view.x + x * view.scale;
     const top = view.y + y * view.scale;
@@ -1614,9 +1632,9 @@ import {
     if(options.includeNodes !== false) rects.push(...getNodeAvoidRects(options));
     return rects;
   }
-  function candidateIsClear(candidate, w, h, safe, avoidRects, margin=16){
+  function candidateIsClear(candidate, w, h, safe, avoidRects, margin=16, excludeNodeId=''){
     if(!nodeFitsSafeArea(candidate, w, h, safe)) return false;
-    if(!nodeSlotIsOpen(candidate.x, candidate.y, w, h, margin)) return false;
+    if(!nodeSlotIsOpen(candidate.x, candidate.y, w, h, margin, excludeNodeId)) return false;
     const candidateRect = nodeScreenRectFromWorld(candidate.x, candidate.y, w, h);
     return !avoidRects.some(rect => rectsOverlap(candidateRect, rect, margin));
   }
@@ -1627,7 +1645,7 @@ import {
     const localY = clamp(safe.top + Math.min(28, safe.height * .12), safe.top, Math.max(safe.top, safe.bottom - screenHeight));
     return {x:(localX - view.x) / view.scale, y:(localY - view.y) / view.scale};
   }
-  function scanSafeNodePosition(w, h, safe, avoidRects=[]){
+  function scanSafeNodePosition(w, h, safe, avoidRects=[], excludeNodeId=''){
     const screenWidth = w * view.scale;
     const screenHeight = h * view.scale;
     const stepX = Math.max(70, Math.min(145, screenWidth * .5));
@@ -1635,12 +1653,12 @@ import {
     for(let localY = safe.top; localY <= Math.max(safe.top, safe.bottom - screenHeight); localY += stepY){
       for(let localX = safe.left; localX <= Math.max(safe.left, safe.right - screenWidth); localX += stepX){
         const candidate = {x:(localX - view.x) / view.scale, y:(localY - view.y) / view.scale};
-        if(candidateIsClear(candidate, w, h, safe, avoidRects, 16)) return candidate;
+        if(candidateIsClear(candidate, w, h, safe, avoidRects, 16, excludeNodeId)) return candidate;
       }
     }
     return null;
   }
-  function radialSafeNodePosition(w, h, safe, avoidRects=[], origin=null){
+  function radialSafeNodePosition(w, h, safe, avoidRects=[], origin=null, excludeNodeId=''){
     const start = origin || safeAreaFallbackPosition(w, h, safe);
     const angles = [0, Math.PI / 2, -Math.PI / 2, Math.PI, Math.PI / 4, -Math.PI / 4, Math.PI * 3 / 4, -Math.PI * 3 / 4];
     for(let radius = 130; radius <= 980; radius += 90){
@@ -1649,14 +1667,56 @@ import {
           x:start.x + Math.cos(angle) * radius,
           y:start.y + Math.sin(angle) * radius
         };
-        if(candidateIsClear(candidate, w, h, safe, avoidRects, 16)) return candidate;
+        if(candidateIsClear(candidate, w, h, safe, avoidRects, 16, excludeNodeId)) return candidate;
       }
     }
     return null;
   }
+  function findNodeClearPosition(w, h, safe, origin=null){
+    const start = origin || safeAreaFallbackPosition(w, h, safe);
+    const angles = [0, Math.PI / 2, -Math.PI / 2, Math.PI, Math.PI / 4, -Math.PI / 4, Math.PI * 3 / 4, -Math.PI * 3 / 4];
+    const candidates = [start];
+    for(let radius = 120; radius <= 1400; radius += 80){
+      angles.forEach(angle => candidates.push({
+        x:start.x + Math.cos(angle) * radius,
+        y:start.y + Math.sin(angle) * radius
+      }));
+    }
+    return candidates.find(candidate => nodeFitsSafeArea(candidate, w, h, safe) && nodeSlotIsOpen(candidate.x, candidate.y, w, h, 20)) || null;
+  }
+  function avoidVisibleWorkbenchOverlap(position, w, h){
+    const workbenchRect = overlayVisible(workbenchDrawer) ? rectFromElement(workbenchDrawer) : null;
+    if(!workbenchRect) return position;
+    const stageRect = stage.getBoundingClientRect();
+    const workbenchStageRect = rectToStage(workbenchRect, stageRect);
+    if(!rectsOverlap(nodeScreenRectFromWorld(position.x, position.y, w, h), workbenchStageRect, 12)) return position;
+    const screenWidth = w * view.scale;
+    const screenHeight = h * view.scale;
+    const broadSafe = getBroadCanvasSafeArea({includeShelf:false, includeToast:false, margin:18});
+    const preferredRect = nodeScreenRectFromWorld(position.x, position.y, w, h);
+    const preferredLocalX = clamp(workbenchStageRect.left - screenWidth - 26, broadSafe.left, Math.max(broadSafe.left, broadSafe.right - screenWidth));
+    const offsets = [0, -180, 180, -340, 340, -520, 520];
+    for(let localX = preferredLocalX; localX >= broadSafe.left; localX -= Math.max(72, screenWidth * .28)){
+      for(const offset of offsets){
+        const localY = clamp(preferredRect.top + offset, broadSafe.top, Math.max(broadSafe.top, broadSafe.bottom - screenHeight));
+        const candidate = {x:(localX - view.x) / view.scale, y:(localY - view.y) / view.scale};
+        const candidateRect = nodeScreenRectFromWorld(candidate.x, candidate.y, w, h);
+        if(nodeFitsSafeArea(candidate, w, h, broadSafe) && nodeSlotIsOpen(candidate.x, candidate.y, w, h, 20) && !rectsOverlap(candidateRect, workbenchStageRect, 12)){
+          return candidate;
+        }
+      }
+    }
+    if(workbenchOpen){
+      setWorkbenchOpen(false, {user:false});
+      showToast('Workbench hidden for placement');
+    }
+    return position;
+  }
   function findFreeNodePosition({preferredTopLeft=null, w=268, h=145, candidates=[], options={}}={}){
     const safe = getCanvasSafeArea({nodeWidth:w, nodeHeight:h, includeShelf:options.includeShelf, includeToast:options.includeToast, margin:options.margin});
     const avoidRects = getPlacementAvoidRects({includeShelf:options.includeShelf, includeToast:options.includeToast, excludeNodeId:options.excludeNodeId});
+    const broadSafe = getBroadCanvasSafeArea({includeShelf:false, includeToast:false, margin:options.margin});
+    const broadAvoidRects = getPlacementAvoidRects({includeShelf:false, includeToast:false, excludeNodeId:options.excludeNodeId});
     const allCandidates = [];
     const addCandidate = candidate => {
       if(candidate && Number.isFinite(candidate.x) && Number.isFinite(candidate.y)) allCandidates.push(candidate);
@@ -1664,11 +1724,88 @@ import {
     addCandidate(preferredTopLeft);
     candidates.forEach(addCandidate);
     addCandidate(safeAreaFallbackPosition(w, h, safe));
-    return allCandidates.find(candidate => candidateIsClear(candidate, w, h, safe, avoidRects, 16))
-      || scanSafeNodePosition(w, h, safe, avoidRects)
-      || radialSafeNodePosition(w, h, safe, avoidRects, preferredTopLeft || allCandidates[0])
-      || allCandidates.find(candidate => nodeFitsSafeArea(candidate, w, h, safe) && nodeSlotIsOpen(candidate.x, candidate.y, w, h, 8))
+    const position = allCandidates.find(candidate => candidateIsClear(candidate, w, h, safe, avoidRects, 16, options.excludeNodeId))
+      || scanSafeNodePosition(w, h, safe, avoidRects, options.excludeNodeId)
+      || radialSafeNodePosition(w, h, safe, avoidRects, preferredTopLeft || allCandidates[0], options.excludeNodeId)
+      || allCandidates.find(candidate => nodeFitsSafeArea(candidate, w, h, safe) && nodeSlotIsOpen(candidate.x, candidate.y, w, h, 8, options.excludeNodeId))
+      || scanSafeNodePosition(w, h, broadSafe, broadAvoidRects, options.excludeNodeId)
+      || radialSafeNodePosition(w, h, broadSafe, broadAvoidRects, preferredTopLeft || allCandidates[0], options.excludeNodeId)
+      || findNodeClearPosition(w, h, broadSafe, preferredTopLeft || allCandidates[0])
       || safeAreaFallbackPosition(w, h, safe);
+    return avoidVisibleWorkbenchOverlap(position, w, h);
+  }
+  function nodeOverlapsExisting(node, w, h, margin=20){
+    const candidate = {x:node.x, y:node.y};
+    return data.nodes.some(other => {
+      if(other.id === node.id) return false;
+      const r = nodeRect(other);
+      return candidate.x < r.x + r.w + margin && candidate.x + w + margin > r.x && candidate.y < r.y + r.h + margin && candidate.y + h + margin > r.y;
+    });
+  }
+  function nodeOverlapsVisibleWorkbench(node, w, h, margin=12){
+    const workbenchRect = overlayVisible(workbenchDrawer) ? rectFromElement(workbenchDrawer) : null;
+    if(!workbenchRect) return false;
+    return rectsOverlap(nodeScreenRectFromWorld(node.x, node.y, w, h), rectToStage(workbenchRect, stage.getBoundingClientRect()), margin);
+  }
+  function renderedNodeDims(node){
+    const fallback = nodeDims(node);
+    const element = nodeLayer.querySelector(`[data-id="${CSS.escape(node.id)}"]`);
+    const rect = rectFromElement(element);
+    if(!rect || !view.scale) return fallback;
+    return {
+      w:Math.max(fallback.w, rect.width / view.scale),
+      h:Math.max(fallback.h, rect.height / view.scale)
+    };
+  }
+  function nodeDomOverlapsExisting(node, margin=12){
+    const element = nodeLayer.querySelector(`[data-id="${CSS.escape(node.id)}"]`);
+    const rect = rectFromElement(element);
+    if(!rect) return false;
+    const stageRect = stage.getBoundingClientRect();
+    const candidateRect = rectToStage(rect, stageRect);
+    return Array.from(nodeLayer.querySelectorAll('.map-node')).some(other => {
+      if(other === element) return false;
+      return rectsOverlap(candidateRect, rectToStage(rectFromElement(other), stageRect), margin);
+    });
+  }
+  function clearInsertedNodePlacement(node){
+    if(!node) return false;
+    const dims = renderedNodeDims(node);
+    const shouldAdjust = node.nodeType === 'document'
+      || nodeOverlapsExisting(node, dims.w, dims.h, 20)
+      || nodeDomOverlapsExisting(node, 12)
+      || nodeOverlapsVisibleWorkbench(node, dims.w, dims.h, 12);
+    if(!shouldAdjust) return false;
+    const candidates = [];
+    const addCandidate = candidate => {
+      if(candidate && Number.isFinite(candidate.x) && Number.isFinite(candidate.y)) candidates.push(candidate);
+    };
+    [byId('core'), data.nodes.find(candidate => candidate.id !== node.id)].filter(Boolean).forEach(anchor => {
+      [120, 260, 420].forEach(gap => candidatesAroundNode(anchor, dims.w, dims.h, gap).forEach(addCandidate));
+    });
+    const broadSafe = getBroadCanvasSafeArea({includeShelf:false, includeToast:false, margin:18});
+    const avoidRects = getPlacementAvoidRects({includeShelf:false, includeToast:false, excludeNodeId:node.id});
+    let next = candidates.find(candidate => candidateIsClear(candidate, dims.w, dims.h, broadSafe, avoidRects, 14, node.id))
+      || scanSafeNodePosition(dims.w, dims.h, broadSafe, avoidRects, node.id)
+      || radialSafeNodePosition(dims.w, dims.h, broadSafe, avoidRects, {x:node.x, y:node.y}, node.id);
+    if(!next && node.nodeType === 'document'){
+      const anchor = byId('core') || data.nodes.find(candidate => candidate.id !== node.id);
+      if(anchor){
+        const r = nodeRect(anchor);
+        const fallbackCandidates = [
+          {x:r.x, y:r.y + r.h + 160},
+          {x:r.x + r.w + 140, y:r.y + 20},
+          {x:r.x, y:r.y + r.h + 340}
+        ];
+        next = fallbackCandidates.find(candidate => nodeSlotIsOpen(candidate.x, candidate.y, dims.w, dims.h, 20, node.id)) || null;
+      }
+    }
+    if(!next) return false;
+    node.x = Math.round(next.x);
+    node.y = Math.round(next.y);
+    render();
+    save('Placement adjusted');
+    return true;
   }
   function chooseSafeNodePosition(w=268, h=145, options={}){
     const candidates = [];
@@ -2530,8 +2667,9 @@ import {
     });
   }
   function addFreeAtCenter(){ const r = stage.getBoundingClientRect(); const p = screenToWorld(r.left + r.width/2, r.top + r.height/2); addNodeAt(p.x - 130, p.y - 70); }
-  function nodeSlotIsOpen(x, y, w, h, margin=36){
+  function nodeSlotIsOpen(x, y, w, h, margin=36, excludeNodeId=''){
     return !data.nodes.some(node => {
+      if(excludeNodeId && node.id === excludeNodeId) return false;
       const r = nodeRect(node);
       return x < r.x + r.w + margin && x + w + margin > r.x && y < r.y + r.h + margin && y + h + margin > r.y;
     });
@@ -2734,11 +2872,19 @@ import {
   function choosePlacementPositionFromClient(clientX, clientY, w, h, options={}){
     const preferredTopLeft = placementTopLeftFromClient(clientX, clientY, w, h);
     const occupiedNode = options.occupiedNode || nodeAtClientPoint(clientX, clientY) || firstNodeOverlappingCandidate(preferredTopLeft, w, h);
+    const preferredCandidates = occupiedNode ? [] : [preferredTopLeft];
+    const occupiedCandidates = occupiedNode
+      ? [
+          ...candidatesAroundNode(occupiedNode, w, h, 104),
+          ...candidatesAroundNode(occupiedNode, w, h, 220),
+          ...candidatesAroundNode(occupiedNode, w, h, 340)
+        ]
+      : [];
     return findFreeNodePosition({
-      preferredTopLeft,
+      preferredTopLeft:occupiedNode ? null : preferredTopLeft,
       w,
       h,
-      candidates:candidatesAroundNode(occupiedNode, w, h),
+      candidates:[...occupiedCandidates, ...preferredCandidates],
       options:{includeShelf:false, includeToast:true, margin:18}
     });
   }
@@ -2777,7 +2923,10 @@ import {
     suppressNextPlacementClick = true;
     let node = null;
     if(pending.kind === 'document'){
-      node = addDocumentBlock(pending.documentId, p, {topLeft:true});
+      const documentPoint = window.innerWidth <= 640
+        ? chooseSafeNodePosition(300, 170, {preferredNearNodeId:'core', gap:180})
+        : p;
+      node = addDocumentBlock(pending.documentId, documentPoint, {topLeft:true});
     }else{
       node = addNodeAt(p.x, p.y, pending.config);
       showToast(pending.toast || pending.config?.toast || 'Block placed');
@@ -2786,6 +2935,7 @@ import {
       temporarilyPassThroughZoomDock();
       renderMapStarter();
       requestAnimationFrame(() => {
+        clearInsertedNodePlacement(node);
         positionSelectionShelf();
         updateOverlayOffsets();
         renderEdges();
