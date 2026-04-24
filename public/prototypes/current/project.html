@@ -32,20 +32,25 @@ body{
 }
 a{color:inherit;text-underline-offset:.16em}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(79,121,138,.55);outline-offset:4px;border-radius:10px}
-.shell{width:min(1120px,calc(100% - 32px));margin:0 auto;padding:32px 0 64px}
-.hero,.card,.panel{background:rgba(255,249,239,.96);border:1px solid var(--border);border-radius:28px;box-shadow:var(--shadow)}
-.hero{padding:clamp(24px,5vw,52px)}
+.shell{width:min(1120px,calc(100% - 32px));margin:0 auto;padding:24px 0 56px}
+.app-header,.card,.panel{background:rgba(255,249,239,.96);border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow)}
+.app-header{padding:clamp(18px,3vw,30px)}
+.header-main{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}
 .eyebrow{display:inline-flex;gap:.4rem;flex-wrap:wrap;margin:0 0 12px;padding:.28rem .7rem;border:1px solid var(--border);border-radius:999px;background:var(--green);font-weight:900}
-h1{margin:0;font-size:clamp(2.2rem,7vw,5rem);line-height:.98;letter-spacing:.01em}
+h1{margin:0;font-size:clamp(1.9rem,4vw,3rem);line-height:1.05;letter-spacing:.01em}
 h2{margin:0 0 .65rem;font-size:clamp(1.35rem,3vw,2rem)}
 h3{margin:.15rem 0 .25rem;font-size:1.15rem}
-.lede{max-width:70ch;margin:1rem 0 0;font-size:clamp(1.04rem,2vw,1.24rem)}
+.project-stats{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.project-stats span{border:1px solid var(--border);border-radius:999px;background:#fffdf7;padding:.35rem .7rem;font-weight:900;color:var(--muted)}
+.project-info{margin-top:12px}
+.project-info summary{cursor:pointer;font-weight:900;color:var(--muted)}
+.project-info p{margin:.5rem 0 0;max-width:72ch}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:16px}
 .card,.panel{padding:22px}
 .document-card{border-left:8px solid #8fb4c5}
 .page-card{border-left:8px solid #9fbe8a}
 .meta{color:var(--muted);font-weight:900;font-size:.9rem}
-.section-label{margin:30px 0 8px;color:var(--muted);font-weight:900;letter-spacing:.02em}
+.section-label{margin:24px 0 8px;color:var(--muted);font-weight:900;letter-spacing:.02em}
 .actions,.form-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
 .button,button{display:inline-flex;align-items:center;justify-content:center;min-height:2.75rem;padding:.7rem 1rem;border:1px solid #c6ac80;border-radius:999px;background:#fffdf7;color:inherit;text-decoration:none;font:inherit;font-weight:900;cursor:pointer}
 .button.primary,button.primary{background:var(--green);border-color:#9fbe8a}
@@ -61,6 +66,7 @@ label{display:grid;gap:4px;font-weight:900;color:var(--muted)}
 .pill{border:1px solid var(--border);border-radius:999px;background:#fffdf7;padding:.3rem .65rem;font-weight:800;font-size:.92rem}
 .links-list{display:grid;gap:8px;margin-top:10px}
 .soft{background:rgba(255,253,247,.7);border:1px dashed var(--border);border-radius:18px;padding:14px}
+.empty-card{border-style:dashed}
 .status{min-height:1.5rem;color:var(--muted);font-weight:900}
 .shortcut-prompts{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
 .page-title-link{font-weight:900;text-decoration-thickness:.11em}
@@ -70,33 +76,67 @@ label{display:grid;gap:4px;font-weight:900;color:var(--muted)}
 .collapsible-panel>summary small{display:block;margin-top:.25rem;color:var(--muted);font-size:.92rem}
 .collapsible-panel[open]>summary{margin-bottom:12px}
 .hidden{display:none!important}
-@media(max-width:680px){.shell{width:min(100% - 20px,1120px);padding-top:18px}.hero,.card,.panel{border-radius:20px}.button,button{width:100%}.form-row{display:grid}}
+@media(max-width:680px){.shell{width:min(100% - 20px,1120px);padding-top:18px}.app-header,.card,.panel{border-radius:20px}.button,button{width:100%}.form-row{display:grid}.project-stats{justify-content:flex-start}}
 </style>
 </head>
 <body>
 <main class="shell">
-  <section class="hero">
-    <p class="eyebrow">Neuro Map Studio · Project workspace</p>
-    <h1 id="projectTitle">Loading project...</h1>
-    <p class="lede" id="projectDescription">Opening your local workspace.</p>
+  <section class="app-header">
+    <div class="header-main">
+      <div>
+        <p class="eyebrow">Neuro Map Studio · Project</p>
+        <h1 id="projectTitle">Loading project...</h1>
+      </div>
+      <div class="project-stats" id="projectStats" aria-label="Project summary"></div>
+    </div>
     <div class="actions" aria-label="Project shortcuts">
       <a class="button" href="/">Workspace home</a>
-      <button type="button" data-action="prepare-page" data-page-type="notes">Create page</button>
-      <button type="button" data-action="prepare-document">Create document</button>
+      <button type="button" data-action="prepare-page" data-page-type="notes">New page</button>
+      <button type="button" data-action="prepare-document">Add document</button>
       <a class="button primary" id="primaryLessonLink" href="page.html">Open lesson</a>
       <a class="button" id="primaryMapLink" href="page.html">Open editable map</a>
     </div>
     <div class="shortcut-prompts" id="shortcutPrompts" aria-label="Create missing page shortcuts"></div>
+    <details class="project-info">
+      <summary>Project info</summary>
+      <p id="projectDescription">Opening your local workspace.</p>
+    </details>
     <p class="status" id="status" role="status" aria-live="polite"></p>
   </section>
+
+  <h2 class="section-label">Pages</h2>
+  <section class="grid" id="pagesGrid" aria-label="Project pages"></section>
+
+  <details class="panel collapsible-panel" id="pageCreatePanel">
+    <summary>
+      <span>New page</span>
+      <small>Create a real local page with its own runtime state.</small>
+    </summary>
+    <form id="pageForm">
+      <div class="form-grid">
+        <label>Title <input name="title" required placeholder="Review prompts"/></label>
+        <label>Type
+          <select name="type" id="pageTypeSelect">
+            <option value="notes">Notes</option>
+            <option value="review">Review</option>
+            <option value="glossary">Glossary</option>
+            <option value="lesson">Lesson</option>
+            <option value="map">Map</option>
+          </select>
+        </label>
+        <label class="full">Description <textarea name="description" placeholder="What learning job does this page do?"></textarea></label>
+      </div>
+      <div class="form-row"><button class="primary" type="submit">Create page</button></div>
+    </form>
+  </details>
 
   <h2 class="section-label">Documents</h2>
   <section class="grid" id="documentsGrid" aria-label="Project document library"></section>
 
   <details class="panel collapsible-panel" id="documentCreatePanel">
     <summary>
-      <span>Add document metadata</span>
-      <small>Add a reusable project reference. File upload and document rendering come later.</small>
+      <span>Add document</span>
+      <small>Add a reusable project reference.</small>
     </summary>
     <form id="documentForm">
       <div class="form-grid">
@@ -119,35 +159,9 @@ label{display:grid;gap:4px;font-weight:900;color:var(--muted)}
     </form>
   </details>
 
-  <h2 class="section-label">Pages</h2>
-  <section class="grid" id="pagesGrid" aria-label="Project pages"></section>
-
-  <details class="panel collapsible-panel" id="pageCreatePanel">
-    <summary>
-      <span>Create page</span>
-      <small>Create a real local page with its own runtime state.</small>
-    </summary>
-    <form id="pageForm">
-      <div class="form-grid">
-        <label>Title <input name="title" required placeholder="Review prompts"/></label>
-        <label>Type
-          <select name="type" id="pageTypeSelect">
-            <option value="notes">Notes</option>
-            <option value="review">Review</option>
-            <option value="glossary">Glossary</option>
-            <option value="lesson">Lesson</option>
-            <option value="map">Map</option>
-          </select>
-        </label>
-        <label class="full">Description <textarea name="description" placeholder="What learning job does this page do?"></textarea></label>
-      </div>
-      <div class="form-row"><button class="primary" type="submit">Create page</button></div>
-    </form>
-  </details>
-
   <section class="panel" aria-label="Attach documents to pages">
     <h2>Page document references</h2>
-    <p class="meta">Pages reference project documents. The same document can support many pages.</p>
+    <p class="meta">Reusable links between pages and project documents.</p>
     <div class="soft hidden" id="linkEmptyState"></div>
     <form id="linkForm">
       <div class="form-grid">
@@ -242,6 +256,10 @@ function render(){
   document.title = `${bundle.project.title} · Neuro Map Studio`;
   document.getElementById('projectTitle').textContent = bundle.project.title;
   document.getElementById('projectDescription').textContent = bundle.project.description;
+  document.getElementById('projectStats').innerHTML = `
+    <span>${bundle.pages.length} ${bundle.pages.length === 1 ? 'page' : 'pages'}</span>
+    <span>${bundle.documents.length} ${bundle.documents.length === 1 ? 'document' : 'documents'}</span>
+  `;
 
   const lessonLink = document.getElementById('primaryLessonLink');
   const mapLink = document.getElementById('primaryMapLink');
@@ -278,7 +296,7 @@ function render(){
         <button type="button" data-action="edit-document" data-id="${document.id}">Edit metadata</button>
       </div>
     </article>
-  `).join('') || '<article class="card"><h3>No documents yet</h3><p>Add a source or reference below.</p></article>';
+  `).join('') || '<article class="card empty-card"><h3>No documents yet</h3><p>Add a document reference.</p></article>';
 
   const pagesGrid = document.getElementById('pagesGrid');
   pagesGrid.innerHTML = bundle.pages.map(page => {
@@ -307,7 +325,7 @@ function render(){
         </div>
       </article>
     `;
-  }).join('');
+  }).join('') || '<article class="card empty-card"><h3>No pages yet</h3><p>Create your first page.</p></article>';
 
   const linkPageSelect = document.getElementById('linkPageSelect');
   linkPageSelect.innerHTML = bundle.pages.map(page => `<option value="${escapeHtml(page.id)}">${escapeHtml(page.title)}</option>`).join('');
@@ -319,8 +337,8 @@ function render(){
     linkForm.classList.add('hidden');
     linkEmptyState.classList.remove('hidden');
     linkEmptyState.textContent = !bundle.pages.length
-      ? 'Create a page before attaching documents.'
-      : 'Add a project document before attaching it to pages.';
+      ? 'Create a page first.'
+      : 'Add a document first.';
   }else{
     linkForm.classList.remove('hidden');
     linkEmptyState.classList.add('hidden');
@@ -332,7 +350,7 @@ function render(){
     const document = bundle.documents.find(item => item.id === link.documentId);
     if(!page || !document) return '';
     return `<div class="soft"><strong>${escapeHtml(page.title)}</strong> uses <strong>${escapeHtml(document.title)}</strong> as ${escapeHtml(link.relationship)}.</div>`;
-  }).join('') || '<div class="soft">No document references yet.</div>';
+  }).join('') || '<div class="soft">No page-document links yet.</div>';
 }
 
 async function refresh(message=''){

@@ -244,23 +244,29 @@ async function getEdgeSnapshot(page: Page, edgeIndex = -1) {
 }
 
 test.describe('current standalone prototypes', () => {
-  test('root app exposes prototype entry links', async ({ page }) => {
+  test('root dashboard prioritizes projects and app actions over explainer copy', async ({ page }) => {
     await clearWorkspaceDatabase(page);
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /build calm learning projects from documents/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Neuro Map Studio$/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /build calm learning projects from documents/i })).toHaveCount(0);
     await expect(page.getByRole('link', { name: /open current project/i })).toHaveAttribute(
       'href',
       '/prototypes/current/project.html?projectId=geopolitics-economics',
     );
+    await expect(page.locator('.quick-actions').getByRole('button', { name: /^New project$/i })).toBeVisible();
+    await expect(page.locator('.quick-actions').getByRole('button', { name: /Backup & restore/i })).toBeVisible();
+    await expect(page.locator('.quick-actions').getByRole('button', { name: /^Help$/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Geopolitics & Economics/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /create project locally/i })).toBeVisible();
-    await expect(page.getByText(/Development links/i)).toBeVisible();
+    await expect(page.locator('#new-project-panel')).toHaveJSProperty('open', false);
+    await expect(page.locator('.backup-details')).toHaveJSProperty('open', false);
+    await expect(page.getByText(/Build calm learning projects from documents/i)).toBeHidden();
   });
 
   test('root workspace dashboard can create a project that persists after reload', async ({ page }) => {
     await clearWorkspaceDatabase(page);
     await page.goto('/');
 
+    await page.locator('.quick-actions').getByRole('button', { name: /^New project$/i }).click();
     await page.getByLabel(/Project title/i).fill('Neuroscience study');
     await page.getByLabel(/Theme or domain/i).fill('neuroscience');
     await page.getByLabel(/Short description/i).fill('A calm project for memory, attention, and learning.');
@@ -274,7 +280,7 @@ test.describe('current standalone prototypes', () => {
   test('workspace backup export includes schema metadata and all local stores', async ({ page }) => {
     await clearWorkspaceDatabase(page);
     await page.goto('/');
-    await expect(page.locator('.status').first()).toContainText(/Workspace ready/i);
+    await expect(page.locator('.status-chip')).toContainText(/Workspace ready/i);
 
     await page.evaluate(async () => {
       const runtime = window as unknown as Window & {
@@ -311,7 +317,7 @@ test.describe('current standalone prototypes', () => {
       });
     });
 
-    await page.getByText(/Backup & restore/i).click();
+    await page.locator('.quick-actions').getByRole('button', { name: /Backup & restore/i }).click();
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: /Export workspace backup/i }).click();
     const download = await downloadPromise;
@@ -342,7 +348,7 @@ test.describe('current standalone prototypes', () => {
   test('workspace backup import merges valid data and persists after reload', async ({ page }) => {
     await clearWorkspaceDatabase(page);
     await page.goto('/');
-    await expect(page.locator('.status').first()).toContainText(/Workspace ready/i);
+    await expect(page.locator('.status-chip')).toContainText(/Workspace ready/i);
     const backup = await page.evaluate(async () => {
       const runtime = window as unknown as Window & {
         neuroMapWorkspaceStore: {
@@ -382,7 +388,7 @@ test.describe('current standalone prototypes', () => {
 
     await clearWorkspaceDatabase(page);
     await page.goto('/');
-    await page.getByText(/Backup & restore/i).click();
+    await page.locator('.quick-actions').getByRole('button', { name: /Backup & restore/i }).click();
     await page.getByLabel(/Import workspace backup/i).setInputFiles({
       name: 'backup.json',
       mimeType: 'application/json',
@@ -404,7 +410,7 @@ test.describe('current standalone prototypes', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: /Geopolitics & Economics/i })).toBeVisible();
 
-    await page.getByText(/Backup & restore/i).click();
+    await page.locator('.quick-actions').getByRole('button', { name: /Backup & restore/i }).click();
     await page.getByLabel(/Import workspace backup/i).setInputFiles({
       name: 'not-a-backup.json',
       mimeType: 'application/json',
@@ -421,6 +427,7 @@ test.describe('current standalone prototypes', () => {
     await clearWorkspaceDatabase(page);
     await page.goto('/');
 
+    await page.locator('.quick-actions').getByRole('button', { name: /^New project$/i }).click();
     await page.getByLabel(/Project title/i).fill('Empty runtime project');
     await page.getByLabel(/Theme or domain/i).fill('learning lab');
     await page.getByLabel(/Short description/i).fill('A fresh project with no pages yet.');
@@ -446,8 +453,10 @@ test.describe('current standalone prototypes', () => {
 
     await expect(page.getByRole('heading', { name: 'Geopolitics & Economics' })).toBeVisible();
     await expect(page.getByText(/Neuro Map Studio/i).first()).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Documents/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Pages/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Pages$/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Documents$/i })).toBeVisible();
+    await expect(page.locator('#pageCreatePanel')).toHaveJSProperty('open', false);
+    await expect(page.locator('#documentCreatePanel')).toHaveJSProperty('open', false);
     await expect(page.getByRole('heading', { name: /Simon Dixon debt-power interview\/model/i })).toBeVisible();
     await expect(page.locator('#primaryLessonLink')).toHaveAttribute(
       'href',
@@ -713,6 +722,7 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('.map-node.type-document')).toContainText(/Simon Dixon debt-power interview\/model/i);
 
     await page.goto('/');
+    await page.locator('.quick-actions').getByRole('button', { name: /^New project$/i }).click();
     await page.getByLabel(/Project title/i).fill('No document project');
     await page.getByLabel(/Theme or domain/i).fill('starter');
     await page.getByLabel(/Short description/i).fill('A project with no documents.');

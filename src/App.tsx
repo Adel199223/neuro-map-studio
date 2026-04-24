@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import type { ChangeEvent, FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ChangeEvent, FormEvent, RefObject } from 'react';
 
 const docsUrl = 'https://github.com/Adel199223/neuro-map-studio/tree/main/docs';
 
@@ -67,6 +67,9 @@ async function loadWorkspaceStore(): Promise<WorkspaceStore> {
 }
 
 export default function App() {
+  const newProjectPanelRef = useRef<HTMLDetailsElement>(null);
+  const backupPanelRef = useRef<HTMLDetailsElement>(null);
+  const helpPanelRef = useRef<HTMLDetailsElement>(null);
   const [store, setStore] = useState<WorkspaceStore | null>(null);
   const [snapshot, setSnapshot] = useState<WorkspaceSnapshot | null>(null);
   const [status, setStatus] = useState('Loading local workspace...');
@@ -166,6 +169,15 @@ export default function App() {
     }
   }
 
+  function openPanel(panelRef: RefObject<HTMLDetailsElement | null>) {
+    const panel = panelRef.current;
+    if (!panel) return;
+    panel.open = true;
+    panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    const target = panel.querySelector<HTMLElement>('input, textarea, select, button, a');
+    target?.focus({ preventScroll: true });
+  }
+
   const projects = snapshot
     ? [...snapshot.projects].sort((a, b) => {
         const order = snapshot.workspace.projectOrder;
@@ -176,31 +188,43 @@ export default function App() {
     projects.find((project) => project.id === snapshot?.workspace.currentProjectId) ?? projects[0];
 
   return (
-    <main className="shell">
-      <section className="hero-card">
-        <p className="eyebrow">Neuro Map Studio · Local-first workspace</p>
-        <h1>Build calm learning projects from documents, lessons, maps, and review pages</h1>
-        <p className="lede">
-          Keep sources at the project level, connect them to pages, and turn ideas into editable
-          maps without losing the thread.
-        </p>
-        <div className="actions">
-          {currentProject ? (
-            <a className="primary" href={projectUrl(currentProject.id)}>
-              Open current project
-            </a>
-          ) : null}
-          <a href={prototypeProject}>Open project workspace</a>
+    <main className="shell app-dashboard">
+      <header className="app-bar" aria-label="Workspace header">
+        <div>
+          <p className="eyebrow">Local-first workspace</p>
+          <h1>Neuro Map Studio</h1>
         </div>
-        <p className="status" role="status" aria-live="polite">
+        <p className="status-chip" role="status" aria-live="polite">
           {status}
         </p>
-      </section>
+      </header>
 
-      <section className="section-block" aria-label="Projects">
+      <nav className="quick-actions" aria-label="Primary workspace actions">
+        {currentProject ? (
+          <a className="primary" href={projectUrl(currentProject.id)}>
+            Open current project
+          </a>
+        ) : null}
+        <button type="button" onClick={() => openPanel(newProjectPanelRef)}>
+          New project
+        </button>
+        <button type="button" onClick={() => openPanel(backupPanelRef)}>
+          Backup & restore
+        </button>
+        <button type="button" onClick={() => openPanel(helpPanelRef)}>
+          Help
+        </button>
+      </nav>
+
+      <section className="section-block projects-first" aria-label="Projects">
         <div className="section-heading">
-          <p className="eyebrow">Workspace</p>
-          <h2>Projects</h2>
+          <div>
+            <p className="eyebrow">Workspace</p>
+            <h2>Projects</h2>
+          </div>
+          <button type="button" onClick={() => openPanel(newProjectPanelRef)}>
+            New project
+          </button>
         </div>
         <div className="grid">
           {projects.map((project) => (
@@ -218,18 +242,22 @@ export default function App() {
           {!projects.length ? (
             <article className="card">
               <h3>No projects yet</h3>
-              <p>Create a first local project below.</p>
+              <p>Create a first local project.</p>
+              <div className="actions">
+                <button className="primary" type="button" onClick={() => openPanel(newProjectPanelRef)}>
+                  New project
+                </button>
+              </div>
             </article>
           ) : null}
         </div>
       </section>
 
-      <section className="card create-card" aria-label="Create project">
-        <h2>Create project</h2>
-        <p>
-          Start small: a project can hold documents, pages, maps, review prompts, glossary pages,
-          and source notes.
-        </p>
+      <details className="card action-panel" id="new-project-panel" ref={newProjectPanelRef}>
+        <summary>
+          <span>New project</span>
+          <small>Create a local workspace container.</small>
+        </summary>
         <form onSubmit={handleCreateProject}>
           <label>
             Project title
@@ -252,13 +280,15 @@ export default function App() {
             </button>
           </div>
         </form>
-      </section>
+      </details>
 
-      <details className="card backup-details">
-        <summary>Backup & restore</summary>
+      <details className="card action-panel backup-details" ref={backupPanelRef}>
+        <summary>
+          <span>Backup & restore</span>
+          <small>Export or merge a JSON workspace backup.</small>
+        </summary>
         <p>
-          Export a plain JSON backup before doing serious learning work. Import is merge-only here:
-          existing local records are kept, and matching backup IDs are skipped.
+          Export a plain JSON backup. Import safely merges new records and skips matching IDs.
         </p>
         <div className="actions">
           <button className="primary" type="button" onClick={() => void handleExportBackup()}>
@@ -279,8 +309,38 @@ export default function App() {
         </p>
       </details>
 
-      <details className="card dev-details">
-        <summary>Development links</summary>
+      <details className="card action-panel help-details" ref={helpPanelRef}>
+        <summary>
+          <span>Help / About</span>
+          <small>Quick orientation and learning tips.</small>
+        </summary>
+        <div className="help-grid">
+          <article>
+            <h3>What this is for</h3>
+            <p>
+              Build calm learning projects from documents, lessons, maps, and review pages.
+            </p>
+          </article>
+          <article>
+            <h3>How it fits</h3>
+            <p>
+              Keep sources at the project level, connect them to pages, and turn ideas into editable maps.
+            </p>
+          </article>
+          <article>
+            <h3>Backup reminder</h3>
+            <p>
+              Export a JSON backup before serious learning sessions or before testing big changes.
+            </p>
+          </article>
+        </div>
+      </details>
+
+      <details className="card action-panel dev-details">
+        <summary>
+          <span>Developer tools</span>
+          <small>Prototype and documentation links.</small>
+        </summary>
         <div className="actions">
           <a href={prototypePageRuntime}>Open runtime page entry</a>
           <a href={prototypeMindMap}>Open editable map page</a>
