@@ -127,10 +127,7 @@ async function pointerTap(
   locator: Locator,
   options: { pointerId?: number; pointerType?: 'mouse' | 'touch' | 'pen'; pressure?: number; tiltX?: number; tiltY?: number } = {},
 ) {
-  const box = await locator.boundingBox();
-  if (!box) {
-    throw new Error('Could not determine locator bounding box for pointer tap test.');
-  }
+  const box = await visibleBoundingBox(locator, 'pointer tap test');
   const clientX = box.x + box.width / 2;
   const clientY = box.y + box.height / 2;
   const payload = {
@@ -169,10 +166,7 @@ async function dragByHandle(
 ) {
   const handle = page.locator(`.map-node[data-id="${nodeId}"] .drag-handle`);
   const moveTarget = page.locator('#nodeLayer');
-  const box = await handle.boundingBox();
-  if (!box) {
-    throw new Error('Could not determine drag handle bounding box for pointer drag test.');
-  }
+  const box = await visibleBoundingBox(handle, 'drag handle pointer drag test');
   const clientX = box.x + box.width / 2;
   const clientY = box.y + box.height / 2;
   const payload = {
@@ -203,10 +197,7 @@ async function beginHandleDrag(
 ) {
   const handle = page.locator(`.map-node[data-id="${nodeId}"] .drag-handle`);
   const moveTarget = page.locator('#nodeLayer');
-  const box = await handle.boundingBox();
-  if (!box) {
-    throw new Error('Could not determine drag handle bounding box for pointer drag test.');
-  }
+  const box = await visibleBoundingBox(handle, 'drag handle begin drag test');
   const clientX = box.x + box.width / 2;
   const clientY = box.y + box.height / 2;
   const payload = {
