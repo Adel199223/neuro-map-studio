@@ -264,8 +264,9 @@ a{color:inherit}
 .toolbar button,.file-label{width:2.45rem;height:2.45rem;min-height:2.45rem;padding:0;border-radius:15px;font-weight:900;position:relative;}
 .toolbar button.zoom-readout{width:3.45rem;font-size:.82rem;letter-spacing:-.02em;}
 .toolbar button.active{background:var(--blue);border-color:var(--blue-border);}
-.zoom-dock{position:absolute;right:max(.85rem, env(safe-area-inset-right));bottom:calc(max(.85rem, env(safe-area-inset-bottom)) + var(--zoom-dock-lift, 0px));display:flex;flex-direction:column;gap:.42rem;z-index:19;pointer-events:none;}
+.zoom-dock{position:absolute;right:calc(max(.85rem, env(safe-area-inset-right)) + var(--zoom-dock-right-offset, 0px));bottom:calc(max(.85rem, env(safe-area-inset-bottom)) + var(--zoom-dock-lift, 0px));display:flex;flex-direction:column;gap:.42rem;z-index:19;pointer-events:none;transition:right .16s ease,bottom .16s ease;}
 .zoom-dock .toolbar-group{pointer-events:auto;}
+.stage.connect-targeting .zoom-dock .toolbar-group,.stage.zoom-dock-pass-through .zoom-dock .toolbar-group{pointer-events:none;opacity:.58;}
 .zoom-dock button{width:2.8rem;height:2.8rem;min-height:2.8rem;padding:0;border-radius:16px;font-weight:900;position:relative;}
 .zoom-dock button.zoom-readout{width:3.7rem;font-size:.82rem;letter-spacing:-.02em;}
 .side-panel{position:absolute;right:.65rem;top:50%;transform:translateY(-50%);z-index:14;display:flex;flex-direction:row-reverse;align-items:flex-start;gap:.55rem;pointer-events:none;}
@@ -290,9 +291,12 @@ a{color:inherit}
 .selection-shelf{position:absolute;left:50%;top:1rem;transform:translateX(-50%);z-index:16;border:1px solid var(--border);border-radius:22px;background:rgba(255,250,242,.96);box-shadow:0 10px 24px rgba(72,54,31,.11);padding:.38rem .46rem;display:none;align-items:center;gap:.42rem;max-width:min(920px,calc(100vw - 165px));white-space:normal;pointer-events:auto;}
 .selection-shelf.show{display:flex}
 .selection-shelf[hidden]{display:none!important}
-.selection-shelf.anchored{transform:none}
+.selection-shelf.anchored{transform:none;bottom:auto}
 .selection-shelf.docked{left:50%;top:1rem;transform:translateX(-50%)}
-.selection-shelf.collapsed .selection-actions{display:none}
+.selection-shelf.tight{width:auto;max-width:min(320px,calc(100vw - 1rem))!important}
+.selection-shelf.collapsed .selection-actions,.selection-shelf.tight .selection-actions{display:none}
+.selection-shelf.tight .selection-meta span{display:none}
+.selection-shelf.tight .selection-meta strong{max-width:min(240px,42vw);white-space:nowrap}
 .selection-meta{display:flex;align-items:center;gap:.35rem;min-width:0;padding:0 .18rem 0 .08rem}
 .selection-meta span{font-size:.8rem;font-weight:900;color:var(--muted)}
 .selection-meta strong{overflow:hidden;text-overflow:ellipsis;max-width:min(280px,34vw);}
@@ -328,8 +332,9 @@ a{color:inherit}
 .map-workbench{position:absolute;right:.9rem;top:.9rem;z-index:17;display:grid;justify-items:end;gap:.5rem;pointer-events:none;max-width:calc(100vw - 6.3rem);}
 .workbench-toggle,.workbench-close,.workbench-action,.workbench-source-action{border:1px solid var(--border);border-radius:999px;background:#fffaf4;font:inherit;font-weight:900;cursor:pointer;}
 .workbench-toggle{min-height:2.45rem;padding:.38rem .72rem;box-shadow:0 12px 24px rgba(72,54,31,.12);pointer-events:auto;white-space:nowrap;}
+.map-workbench.open .workbench-toggle{display:none}
 .workbench-toggle:hover,.workbench-toggle:focus-visible,.workbench-close:hover,.workbench-action:hover,.workbench-source-action:hover{border-color:var(--strong);background:#fffdf8;}
-.workbench-drawer{width:min(365px,calc(100vw - 7rem));max-height:calc(100dvh - 8rem);overflow:auto;border:1px solid var(--border);border-radius:22px;background:rgba(255,250,242,.97);box-shadow:0 20px 42px rgba(72,54,31,.18);padding:.82rem;display:grid;gap:.62rem;pointer-events:auto;}
+.workbench-drawer{width:min(365px,calc(100vw - 7rem));max-height:calc(100dvh - 8rem);overflow:auto;overscroll-behavior:contain;border:1px solid var(--border);border-radius:22px;background:rgba(255,250,242,.97);box-shadow:0 20px 42px rgba(72,54,31,.18);padding:.82rem;display:grid;gap:.62rem;pointer-events:auto;}
 .workbench-drawer[hidden]{display:none!important;}
 .workbench-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.65rem;}
 .workbench-title{display:grid;gap:.12rem;min-width:0;}
@@ -363,10 +368,10 @@ a{color:inherit}
 .map-starter-actions button.primary{background:var(--green);border-color:var(--green-border);}
 .document-panel-actions{display:flex;justify-content:flex-end;gap:.5rem;margin-top:.8rem;}
 .document-panel-actions button{min-height:2.4rem;border:1px solid var(--border);border-radius:999px;background:#fffdf7;font:inherit;font-weight:900;cursor:pointer;padding:.4rem .75rem;}
-.import-input{display:none}.toast{position:absolute;right:1rem;bottom:1rem;z-index:94;max-width:min(340px,calc(100vw - 2rem));border:1px solid var(--border);border-radius:999px;background:rgba(255,250,242,.97);color:var(--muted);padding:.5rem .82rem;box-shadow:0 12px 24px rgba(72,54,31,.16);opacity:0;transform:translateY(8px);transition:opacity .18s ease, transform .18s ease;pointer-events:none;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.toast.show{opacity:1;transform:translateY(0)}
+.import-input{display:none}.toast{position:absolute;left:calc(max(.85rem, env(safe-area-inset-left)) + var(--toast-left-offset, 0px));bottom:calc(max(.85rem, env(safe-area-inset-bottom)) + var(--toast-bottom-offset, 0px));z-index:94;max-width:min(340px,calc(100vw - 2rem));border:1px solid var(--border);border-radius:999px;background:rgba(255,250,242,.97);color:var(--muted);padding:.5rem .82rem;box-shadow:0 12px 24px rgba(72,54,31,.16);opacity:0;transform:translateY(8px);transition:opacity .18s ease, transform .18s ease, bottom .16s ease, left .16s ease;pointer-events:none;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.toast.show{opacity:1;transform:translateY(0)}
 @media(max-width:1120px){.topbar{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"title status" "nav pagebar";align-items:start;gap:.4rem .55rem;padding:.5rem .65rem}.nav-links{align-self:center;flex-wrap:wrap}.pagebar{align-self:center;justify-self:end;flex-wrap:wrap}.pagebar select{width:min(230px,38vw)}.title-wrap h1{max-width:min(100%,64vw)}.project-kicker{max-width:min(100%,64vw)}.status-pill{font-size:.8rem}.back-link,.pagebar button{min-height:2rem;padding:.28rem .62rem}}
-@media(max-width:720px){.topbar{grid-template-columns:minmax(0,1fr);grid-template-areas:"title" "nav" "pagebar" "status";gap:.32rem;padding:.45rem .55rem}.title-wrap h1{max-width:100%}.project-kicker{max-width:100%}.nav-links,.pagebar{justify-content:flex-start}.pagebar{display:grid;grid-template-columns:auto minmax(0,1fr) repeat(4,auto);width:100%;gap:.28rem}.pagebar select{width:100%;max-width:100%;min-width:0}.side-panel{right:.45rem;top:.45rem}.side-tab{min-width:2.25rem;min-height:2.25rem;padding:.2rem}.panel-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem)}.map-workbench{right:.45rem;top:.45rem;max-width:calc(100vw - 5.4rem)}.workbench-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem);padding:.68rem}.workbench-actions{grid-template-columns:1fr}.toolbar{left:.45rem;top:.45rem}.toolbar button,.file-label{width:2.2rem;height:2.2rem;min-height:2.2rem}.zoom-dock{right:max(.5rem, env(safe-area-inset-right));bottom:calc(max(.5rem, env(safe-area-inset-bottom)) + var(--zoom-dock-lift, 0px))}.zoom-dock button{width:2.85rem;height:2.85rem;min-height:2.85rem}.zoom-dock button.zoom-readout{width:3.85rem}.map-node{width:235px;min-height:120px}.map-node .node-content{padding:.78rem .75rem 1.2rem}.node-title{font-size:.96rem}.node-body{font-size:.84rem}.selection-shelf{top:auto;bottom:.85rem;max-width:calc(100vw - 1rem)}.selection-shelf.docked{top:auto;bottom:.85rem}.selection-meta strong{max-width:36vw}.selection-toggle,.selection-action{width:2.75rem;height:2.75rem;min-height:2.75rem}.connect-banner{bottom:4.2rem;max-width:calc(100vw - 1rem);border-radius:16px}.input-debug{left:.5rem;bottom:.5rem;width:calc(100vw - 1rem);max-width:calc(100vw - 1rem)}}
-@media(max-width:520px){.project-kicker{display:none}.pagebar{grid-template-columns:1fr repeat(4,auto)}.pagebar label{grid-column:1/-1}.back-link{max-width:100%}.pagebar button{padding:.24rem .52rem}.map-workbench{left:.5rem;right:.5rem;top:auto;bottom:5rem;max-width:none;justify-items:stretch}.workbench-toggle{justify-self:end}.workbench-drawer{width:100%;max-height:45dvh}.toast{left:.6rem;right:.6rem;bottom:4.9rem;max-width:none;text-align:center}}
+@media(max-width:720px){.topbar{grid-template-columns:minmax(0,1fr);grid-template-areas:"title" "nav" "pagebar" "status";gap:.32rem;padding:.45rem .55rem}.title-wrap h1{max-width:100%}.project-kicker{max-width:100%}.nav-links,.pagebar{justify-content:flex-start}.pagebar{display:grid;grid-template-columns:auto minmax(0,1fr) repeat(4,auto);width:100%;gap:.28rem}.pagebar select{width:100%;max-width:100%;min-width:0}.side-panel{right:.45rem;top:.45rem}.side-tab{min-width:2.25rem;min-height:2.25rem;padding:.2rem}.panel-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem)}.map-workbench{right:.45rem;top:.45rem;max-width:calc(100vw - 5.4rem)}.workbench-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem);padding:.68rem}.workbench-actions{grid-template-columns:1fr}.toolbar{left:.45rem;top:.45rem}.toolbar button,.file-label{width:2.2rem;height:2.2rem;min-height:2.2rem}.zoom-dock{right:calc(max(.5rem, env(safe-area-inset-right)) + var(--zoom-dock-right-offset, 0px));bottom:calc(max(.5rem, env(safe-area-inset-bottom)) + var(--zoom-dock-lift, 0px))}.zoom-dock button{width:2.85rem;height:2.85rem;min-height:2.85rem}.zoom-dock button.zoom-readout{width:3.85rem}.map-node{width:235px;min-height:120px}.map-node .node-content{padding:.78rem .75rem 1.2rem}.node-title{font-size:.96rem}.node-body{font-size:.84rem}.selection-shelf{top:auto;bottom:.85rem;max-width:calc(100vw - 1rem)}.selection-shelf.docked{top:auto;bottom:.85rem}.selection-meta strong{max-width:36vw}.selection-toggle,.selection-action{width:2.75rem;height:2.75rem;min-height:2.75rem}.connect-banner{bottom:4.2rem;max-width:calc(100vw - 1rem);border-radius:16px}.input-debug{left:.5rem;bottom:.5rem;width:calc(100vw - 1rem);max-width:calc(100vw - 1rem)}}
+@media(max-width:520px){.project-kicker{display:none}.pagebar{grid-template-columns:1fr repeat(4,auto)}.pagebar label{grid-column:1/-1}.back-link{max-width:100%}.pagebar button{padding:.24rem .52rem}.map-workbench{left:.5rem;right:.5rem;top:auto;bottom:5rem;max-width:none;justify-items:stretch}.map-workbench.open{bottom:.75rem}.workbench-toggle{justify-self:end}.map-workbench.open .workbench-toggle{display:none}.workbench-drawer{width:100%;max-height:min(20dvh,190px)}.toast{left:.6rem;right:auto;bottom:calc(5.1rem + var(--toast-bottom-offset, 0px));max-width:calc(100vw - 1.2rem);text-align:center}}
 @media (pointer:coarse){.menu button{min-height:2.75rem;padding:.46rem .62rem}.menu-row button{min-width:2.75rem;height:2.75rem;min-height:2.75rem}.selection-toggle,.selection-action{width:2.95rem;height:2.95rem;min-height:2.95rem}.input-debug button{min-height:2.75rem}.drag-handle{width:3rem;height:3rem;min-height:3rem}.drag-handle-icon{width:2.1rem;height:2.1rem;min-height:2.1rem}.map-node.shape-oval .drag-handle{width:2.65rem;height:2.65rem;min-height:2.65rem}.map-node.shape-oval .drag-handle-icon{width:1.85rem;height:1.85rem;min-height:1.85rem}.zoom-dock button{width:3rem;height:3rem;min-height:3rem}.zoom-dock button.zoom-readout{width:4rem}}
 @media print{.topbar,.pagebar,.toolbar,.zoom-dock,.side-panel,.menu,.toast,.connect-banner,.selection-shelf,.input-debug,.document-picker,.document-detail-card,.map-workbench{display:none!important}body{overflow:visible;background:white}.stage{overflow:visible}.map-node{break-inside:avoid}}
 </style>
@@ -651,6 +656,7 @@ import {
   const btnVisualPanel = document.getElementById('btnVisualPanel');
   const btnClosePanel = document.getElementById('btnClosePanel');
   const zoomPercent = document.getElementById('btnZoomPercent');
+  const zoomDock = document.getElementById('zoomDock');
   const pageSelect = document.getElementById('pageSelect');
   const btnNewPage = document.getElementById('btnNewPage');
   const btnPageMenu = document.getElementById('btnPageMenu');
@@ -760,6 +766,7 @@ import {
   let saveTimer = null;
   let menuContext = null;
   let connectFrom = null;
+  let zoomDockPassThroughTimer = null;
   let focusMode = false;
   let wheelTimer = null;
   let activePanel = null;
@@ -1144,8 +1151,12 @@ import {
     setStatus(text);
     toast.textContent = text;
     toast.classList.add('show');
+    updateOverlayOffsets();
     clearTimeout(showToast.t);
-    showToast.t = setTimeout(() => toast.classList.remove('show'), 1600);
+    showToast.t = setTimeout(() => {
+      toast.classList.remove('show');
+      updateOverlayOffsets();
+    }, 1600);
   }
   function documentById(documentId){ return projectDocuments.find(document => document.id === documentId) || null; }
   async function refreshProjectDocuments(){
@@ -1405,11 +1416,177 @@ import {
     applyFocus();
     logInputDebug('selection-cleared', source, {mode:'selection', reason, target:stage});
   }
+  function rectFromElement(element){
+    if(!element || element.hidden) return null;
+    const style = getComputedStyle(element);
+    if(style.display === 'none' || style.visibility === 'hidden') return null;
+    const rect = element.getBoundingClientRect();
+    if(rect.width <= 0 || rect.height <= 0) return null;
+    return {left:rect.left, top:rect.top, right:rect.right, bottom:rect.bottom, width:rect.width, height:rect.height};
+  }
+  function rectsOverlap(a, b, margin=0){
+    if(!a || !b) return false;
+    return a.left < b.right + margin && a.right > b.left - margin && a.top < b.bottom + margin && a.bottom > b.top - margin;
+  }
+  function overlayVisible(element, className=''){
+    if(!element) return false;
+    if(className && !element.classList.contains(className)) return false;
+    return !!rectFromElement(element);
+  }
+  function getOverlayRects(options={}){
+    const includeShelf = options.includeShelf !== false;
+    const includeToast = options.includeToast !== false;
+    return {
+      stage:rectFromElement(stage),
+      toolbar:rectFromElement(document.querySelector('.toolbar')),
+      workbench:workbenchOpen && workbenchDrawer && !workbenchDrawer.hidden ? rectFromElement(workbenchDrawer) : null,
+      workbenchToggle:!workbenchOpen ? rectFromElement(btnWorkbenchToggle) : null,
+      zoomDock:rectFromElement(zoomDock),
+      shelf:includeShelf && overlayVisible(selectionShelf, 'show') ? rectFromElement(selectionShelf) : null,
+      toast:includeToast && toast.classList.contains('show') ? rectFromElement(toast) : null,
+      starter:mapStarterPanel && !mapStarterPanel.hidden ? rectFromElement(mapStarterPanel) : null,
+      documentPicker:documentPicker && !documentPicker.hidden ? rectFromElement(documentPicker) : null,
+      documentDetail:documentDetailCard && !documentDetailCard.hidden ? rectFromElement(documentDetailCard) : null
+    };
+  }
+  function getCanvasSafeArea(options={}){
+    const overlays = getOverlayRects(options);
+    const stageRect = overlays.stage || stage.getBoundingClientRect();
+    const nodeWidth = Number(options.nodeWidth) || 268;
+    const nodeHeight = Number(options.nodeHeight) || 145;
+    const margin = Number(options.margin) || 20;
+    const minWidth = Math.min(Math.max(nodeWidth * view.scale + 28, 190), Math.max(190, stageRect.width - 28));
+    const minHeight = Math.min(Math.max(nodeHeight * view.scale + 28, 150), Math.max(150, stageRect.height - 28));
+    const safe = {left:margin, top:margin, right:stageRect.width - margin, bottom:stageRect.height - margin, stageRect};
+    const consumeLeft = rect => {
+      if(rectsOverlap(rect, stageRect)) safe.left = Math.max(safe.left, rect.right - stageRect.left + margin);
+    };
+    const consumeRight = rect => {
+      if(!rectsOverlap(rect, stageRect)) return;
+      const next = rect.left - stageRect.left - margin;
+      if(next - safe.left >= minWidth) safe.right = Math.min(safe.right, next);
+    };
+    const consumeTop = rect => {
+      if(rectsOverlap(rect, stageRect)) safe.top = Math.max(safe.top, rect.bottom - stageRect.top + margin);
+    };
+    const consumeBottom = rect => {
+      if(!rectsOverlap(rect, stageRect)) return;
+      const next = rect.top - stageRect.top - margin;
+      if(next - safe.top >= minHeight) safe.bottom = Math.min(safe.bottom, next);
+    };
+    consumeLeft(overlays.toolbar);
+    const rightSide = stageRect.left + stageRect.width * .52;
+    const lowerHalf = stageRect.top + stageRect.height * .42;
+    [overlays.workbench, overlays.documentPicker, overlays.documentDetail].forEach(rect => {
+      if(!rect) return;
+      if(rect.left >= rightSide) consumeRight(rect);
+      if(rect.top >= lowerHalf || rect.width > stageRect.width * .72) consumeBottom(rect);
+    });
+    if(overlays.zoomDock){
+      if(overlays.zoomDock.left >= rightSide) consumeRight(overlays.zoomDock);
+      if(overlays.zoomDock.top >= lowerHalf) consumeBottom(overlays.zoomDock);
+    }
+    if(overlays.shelf){
+      if(overlays.shelf.top < stageRect.top + stageRect.height * .33) consumeTop(overlays.shelf);
+      else consumeBottom(overlays.shelf);
+    }
+    if(overlays.toast){
+      if(overlays.toast.top < stageRect.top + stageRect.height * .5) consumeTop(overlays.toast);
+      else consumeBottom(overlays.toast);
+    }
+    if(safe.right - safe.left < minWidth){
+      safe.left = Math.max(margin, Math.min(safe.left, stageRect.width - minWidth - margin));
+      safe.right = Math.min(stageRect.width - margin, safe.left + minWidth);
+    }
+    if(safe.bottom - safe.top < minHeight){
+      safe.top = Math.max(margin, Math.min(safe.top, stageRect.height - minHeight - margin));
+      safe.bottom = Math.min(stageRect.height - margin, safe.top + minHeight);
+    }
+    safe.width = Math.max(1, safe.right - safe.left);
+    safe.height = Math.max(1, safe.bottom - safe.top);
+    return safe;
+  }
+  function nodeScreenRectFromWorld(x, y, w, h){
+    const left = view.x + x * view.scale;
+    const top = view.y + y * view.scale;
+    const width = w * view.scale;
+    const height = h * view.scale;
+    return {left, top, right:left + width, bottom:top + height, width, height};
+  }
+  function nodeFitsSafeArea(candidate, w, h, safe){
+    const rect = nodeScreenRectFromWorld(candidate.x, candidate.y, w, h);
+    return rect.left >= safe.left && rect.top >= safe.top && rect.right <= safe.right && rect.bottom <= safe.bottom;
+  }
+  function safeAreaFallbackPosition(w, h, safe){
+    const screenWidth = w * view.scale;
+    const screenHeight = h * view.scale;
+    const localX = clamp(safe.left + Math.min(28, safe.width * .12), safe.left, Math.max(safe.left, safe.right - screenWidth));
+    const localY = clamp(safe.top + Math.min(28, safe.height * .12), safe.top, Math.max(safe.top, safe.bottom - screenHeight));
+    return {x:(localX - view.x) / view.scale, y:(localY - view.y) / view.scale};
+  }
+  function scanSafeNodePosition(w, h, safe){
+    const screenWidth = w * view.scale;
+    const screenHeight = h * view.scale;
+    const stepX = Math.max(96, Math.min(180, screenWidth * .72));
+    const stepY = Math.max(82, Math.min(150, screenHeight * .72));
+    for(let localY = safe.top; localY <= Math.max(safe.top, safe.bottom - screenHeight); localY += stepY){
+      for(let localX = safe.left; localX <= Math.max(safe.left, safe.right - screenWidth); localX += stepX){
+        const candidate = {x:(localX - view.x) / view.scale, y:(localY - view.y) / view.scale};
+        if(nodeSlotIsOpen(candidate.x, candidate.y, w, h)) return candidate;
+      }
+    }
+    return null;
+  }
+  function chooseSafeNodePosition(w=268, h=145, options={}){
+    const safe = getCanvasSafeArea({nodeWidth:w, nodeHeight:h, includeShelf:options.includeShelf});
+    const candidates = [];
+    const addCandidate = candidate => {
+      if(candidate && Number.isFinite(candidate.x) && Number.isFinite(candidate.y)) candidates.push(candidate);
+    };
+    if(options.preferredTopLeft) addCandidate(options.preferredTopLeft);
+    const nearNode = byId(options.preferredNearNodeId) || byId(selectedId) || byId('core') || data.nodes[0];
+    if(nearNode && options.near !== false){
+      const r = nodeRect(nearNode);
+      const gap = Number(options.gap) || 120;
+      addCandidate({x:r.x + r.w + gap, y:r.y + 8});
+      addCandidate({x:r.x, y:r.y + r.h + gap});
+      addCandidate({x:r.x - w - gap, y:r.y + 8});
+      addCandidate({x:r.x, y:r.y - h - gap});
+      addCandidate({x:r.x + r.w + gap, y:r.y + r.h + gap});
+      addCandidate({x:r.x - w - gap, y:r.y + r.h + gap});
+    }
+    addCandidate(safeAreaFallbackPosition(w, h, safe));
+    return candidates.find(candidate => nodeFitsSafeArea(candidate, w, h, safe) && nodeSlotIsOpen(candidate.x, candidate.y, w, h))
+      || scanSafeNodePosition(w, h, safe)
+      || candidates.find(candidate => nodeFitsSafeArea(candidate, w, h, safe))
+      || safeAreaFallbackPosition(w, h, safe);
+  }
   function updateOverlayOffsets(){
     const narrow = window.innerWidth <= 860;
     const debugVisible = inputDebugState.enabled && !inputDebugPanel.hidden && narrow;
-    const lift = debugVisible ? Math.round(inputDebugPanel.getBoundingClientRect().height + 12) : 0;
-    stage.style.setProperty('--zoom-dock-lift', `${lift}px`);
+    const debugLift = debugVisible ? Math.round(inputDebugPanel.getBoundingClientRect().height + 12) : 0;
+    const drawerRect = workbenchOpen && workbenchDrawer && !workbenchDrawer.hidden ? workbenchDrawer.getBoundingClientRect() : null;
+    const stageRect = stage.getBoundingClientRect();
+    const rightDrawerOpen = drawerRect && window.innerWidth > 520 && drawerRect.left > stageRect.left + stageRect.width * .45;
+    const bottomSheetOpen = drawerRect && window.innerWidth <= 520;
+    const zoomRightOffset = rightDrawerOpen ? Math.round(drawerRect.width + 18) : 0;
+    const zoomLift = Math.max(debugLift, bottomSheetOpen ? Math.round(drawerRect.height + 118) : 0);
+    const toastLift = Math.max(zoomLift, bottomSheetOpen ? Math.round(drawerRect.height + 16) : 70);
+    const toolbarRect = rectFromElement(document.querySelector('.toolbar'));
+    const toastLeftOffset = toolbarRect && toolbarRect.bottom > stageRect.top + stageRect.height * .55
+      ? Math.max(0, Math.round(toolbarRect.right - stageRect.left + 12))
+      : 0;
+    stage.style.setProperty('--zoom-dock-right-offset', `${zoomRightOffset}px`);
+    stage.style.setProperty('--zoom-dock-lift', `${zoomLift}px`);
+    stage.style.setProperty('--toast-left-offset', `${toastLeftOffset}px`);
+    stage.style.setProperty('--toast-bottom-offset', `${toastLift}px`);
+  }
+  function temporarilyPassThroughZoomDock(duration=1600){
+    stage.classList.add('zoom-dock-pass-through');
+    clearTimeout(zoomDockPassThroughTimer);
+    zoomDockPassThroughTimer = setTimeout(() => {
+      stage.classList.remove('zoom-dock-pass-through');
+    }, duration);
   }
   function openMenuFromButton(button, title, items, context){
     const point = menuPointFromButton(button);
@@ -1446,9 +1623,13 @@ import {
   }
   function syncGestureLockUI(){
     const active = gestureLockReasons.size > 0 || !!connectFrom;
+    const connecting = !!connectFrom;
     document.body.classList.toggle('drag-gesture-lock', active);
+    document.body.classList.toggle('connect-targeting', connecting);
     stage.classList.toggle('drag-gesture-lock', active);
+    stage.classList.toggle('connect-targeting', connecting);
     nodeLayer.classList.toggle('drag-gesture-lock', active);
+    nodeLayer.classList.toggle('connect-targeting', connecting);
     if(active) clearGestureSelection();
   }
   function setGestureLock(reason, active){
@@ -1995,33 +2176,80 @@ import {
   }
   function positionSelectionShelf(){
     if(selectionShelf.hidden || !selectionShelf.classList.contains('show')) return;
-    selectionShelf.classList.remove('anchored', 'docked');
+    selectionShelf.classList.remove('anchored', 'docked', 'tight');
     selectionShelf.style.left = '';
     selectionShelf.style.top = '';
+    selectionShelf.style.bottom = '';
     const anchor = getSelectionAnchor();
-    const stageRect = stage.getBoundingClientRect();
-    const compact = window.innerWidth <= 860;
-    if(!anchor || compact){
-      selectionShelf.classList.add('docked');
-      return;
-    }
-    const width = selectionShelf.offsetWidth;
-    const height = selectionShelf.offsetHeight;
+    let width = selectionShelf.offsetWidth;
+    let height = selectionShelf.offsetHeight;
     if(!width || !height){
       selectionShelf.classList.add('docked');
       return;
     }
-    const margin = 12;
-    const gap = 12;
-    const left = clamp(anchor.x - width / 2, margin, Math.max(margin, stageRect.width - width - margin));
-    const top = anchor.y - height - gap;
-    if(top < margin){
-      selectionShelf.classList.add('docked');
+    const safe = getCanvasSafeArea({includeShelf:false, includeToast:true, nodeWidth:width / Math.max(view.scale, .01), nodeHeight:height / Math.max(view.scale, .01), margin:14});
+    const drawerOpenForShelf = Boolean(workbenchDrawer && !workbenchDrawer.hidden);
+    const selectedNode = selectedId ? byId(selectedId) : null;
+    const documentShelfNeedsCompact = selectedNode?.nodeType === 'document' && window.innerWidth <= 720;
+    if(width > safe.width || drawerOpenForShelf || documentShelfNeedsCompact){
+      selectionShelf.classList.add('tight');
+      width = selectionShelf.offsetWidth || width;
+      height = selectionShelf.offsetHeight || height;
+    }
+    const gap = workbenchOpen ? 44 : 30;
+    let selectedRect = selectedNode ? nodeScreenRectFromWorld(selectedNode.x, selectedNode.y, nodeDims(selectedNode).w, nodeDims(selectedNode).h) : null;
+    let effectiveAnchor = anchor;
+    if(selectedNode){
+      const nodeElement = nodeLayer.querySelector(`[data-id="${CSS.escape(selectedNode.id)}"]`);
+      const nodeBox = rectFromElement(nodeElement);
+      if(nodeBox){
+        const stageRect = stage.getBoundingClientRect();
+        selectedRect = {
+          left:nodeBox.left - stageRect.left,
+          top:nodeBox.top - stageRect.top,
+          right:nodeBox.right - stageRect.left,
+          bottom:nodeBox.bottom - stageRect.top,
+          width:nodeBox.width,
+          height:nodeBox.height
+        };
+        effectiveAnchor = {x:selectedRect.left + selectedRect.width / 2, y:selectedRect.top};
+      }
+    }
+    const shelfRect = (left, top) => ({left, top, right:left + width, bottom:top + height, width, height});
+    const insideSafe = rect => rect.left >= safe.left && rect.right <= safe.right && rect.top >= safe.top && rect.bottom <= safe.bottom;
+    const clearNode = rect => !selectedRect || !rectsOverlap(rect, selectedRect, 16);
+    const place = rect => {
+      selectionShelf.classList.add('anchored');
+      selectionShelf.style.left = Math.round(rect.left) + 'px';
+      selectionShelf.style.top = Math.round(rect.top) + 'px';
+      selectionShelf.style.bottom = 'auto';
+    };
+    const fallbackLeft = clamp((effectiveAnchor?.x ?? safe.left + safe.width / 2) - width / 2, safe.left, Math.max(safe.left, safe.right - width));
+    const candidates = [];
+    if(effectiveAnchor && selectedRect){
+      candidates.push(shelfRect(clamp(effectiveAnchor.x - width / 2, safe.left, Math.max(safe.left, safe.right - width)), selectedRect.top - height - gap));
+      candidates.push(shelfRect(clamp(effectiveAnchor.x - width / 2, safe.left, Math.max(safe.left, safe.right - width)), selectedRect.bottom + gap));
+    }else if(effectiveAnchor){
+      candidates.push(shelfRect(clamp(effectiveAnchor.x - width / 2, safe.left, Math.max(safe.left, safe.right - width)), effectiveAnchor.y - height - gap));
+      candidates.push(shelfRect(clamp(effectiveAnchor.x - width / 2, safe.left, Math.max(safe.left, safe.right - width)), effectiveAnchor.y + gap));
+    }
+    candidates.push(shelfRect(fallbackLeft, safe.top));
+    candidates.push(shelfRect(fallbackLeft, Math.max(safe.top, safe.bottom - height)));
+    const chosen = candidates.find(rect => insideSafe(rect) && clearNode(rect)) || (!selectedRect ? candidates.find(insideSafe) : null);
+    if(chosen){
+      place(chosen);
       return;
     }
-    selectionShelf.classList.add('anchored');
-    selectionShelf.style.left = Math.round(left) + 'px';
-    selectionShelf.style.top = Math.round(top) + 'px';
+    if(selectedRect){
+      const below = selectedRect.bottom + gap;
+      const above = selectedRect.top - height - gap;
+      const top = below + height <= safe.bottom
+        ? below
+        : (above >= safe.top ? above : clamp(below, safe.top, Math.max(safe.top, safe.bottom - height)));
+      place(shelfRect(fallbackLeft, top));
+      return;
+    }
+    selectionShelf.classList.add('docked');
   }
   function applyFocus(){
     document.body.classList.toggle('focus-mode', focusMode);
@@ -2168,28 +2396,12 @@ import {
   }
   function chooseDocumentBlockPosition(worldPoint=null, w=300, h=170){
     const selected = byId(selectedId) || byId('core') || data.nodes[0];
-    const candidates = [];
-    if(selected){
-      const r = nodeRect(selected);
-      const gap = 140;
-      candidates.push(
-        {x:r.x + r.w + gap, y:r.y},
-        {x:r.x, y:r.y + r.h + gap},
-        {x:r.x - w - gap, y:r.y},
-        {x:r.x, y:r.y - h - gap},
-        {x:r.x + r.w + gap + w + gap, y:r.y},
-        {x:r.x - (w + gap) * 2, y:r.y},
-        {x:r.x + r.w + gap, y:r.y + r.h + gap},
-        {x:r.x - w - gap, y:r.y + r.h + gap}
-      );
-    }
-    if(worldPoint) candidates.push({x:worldPoint.x - w/2, y:worldPoint.y - h/2});
-    else {
-      const sr = stage.getBoundingClientRect();
-      const center = screenToWorld(sr.left + sr.width/2, sr.top + sr.height/2);
-      candidates.push({x:center.x - w/2, y:center.y - h/2});
-    }
-    return candidates.find(candidate => nodeSlotIsOpen(candidate.x, candidate.y, w, h)) || candidates[candidates.length - 1];
+    const preferredTopLeft = worldPoint ? {x:worldPoint.x - w/2, y:worldPoint.y - h/2} : null;
+    return chooseSafeNodePosition(w, h, {
+      preferredTopLeft,
+      preferredNearNodeId:selected?.id || 'core',
+      gap:140
+    });
   }
   function renderDocumentPicker(){
     if(!documentPickerList) return;
@@ -2252,7 +2464,7 @@ import {
     mapWorkbench.classList.toggle('collapsed', !workbenchOpen);
     workbenchDrawer.hidden = !workbenchOpen;
     btnWorkbenchToggle.setAttribute('aria-expanded', String(workbenchOpen));
-    btnWorkbenchToggle.textContent = workbenchOpen ? 'Hide workbench' : 'Sources & blocks';
+    btnWorkbenchToggle.textContent = 'Sources & blocks';
     if(options.user) workbenchUserToggled = true;
     if(workbenchOpen && options.focus) workbenchDrawer.querySelector('button,summary')?.focus();
     requestAnimationFrame(() => { updateOverlayOffsets(); renderEdges(); });
@@ -2293,45 +2505,10 @@ import {
     if(shouldOpenFresh && !workbenchUserToggled && !workbenchOpen) setWorkbenchOpen(true);
   }
   function visibleWorkbenchPosition(w=268, h=145){
-    const stageRect = stage.getBoundingClientRect();
-    if(stageRect.width < 120 || stageRect.height < 120) return starterPosition(320, 0, w, h);
-    const toolbarRect = document.querySelector('.toolbar')?.getBoundingClientRect();
-    const drawerRect = workbenchOpen && workbenchDrawer && !workbenchDrawer.hidden ? workbenchDrawer.getBoundingClientRect() : null;
-    const zoomRect = document.querySelector('.zoom-dock')?.getBoundingClientRect();
-    const shelfRect = selectionShelf && !selectionShelf.hidden && selectionShelf.classList.contains('show') ? selectionShelf.getBoundingClientRect() : null;
-    const toolbarRight = toolbarRect && toolbarRect.right > stageRect.left ? toolbarRect.right - stageRect.left : 72;
-    const leftInset = clamp(toolbarRight + 24, 24, Math.max(24, stageRect.width * .46));
-    const rightInset = drawerRect && drawerRect.left < stageRect.right && drawerRect.right > stageRect.left
-      ? Math.max(24, stageRect.right - drawerRect.left + 24)
-      : 24;
-    const zoomInset = zoomRect && zoomRect.top < stageRect.bottom && zoomRect.right > stageRect.left
-      ? Math.max(24, stageRect.bottom - zoomRect.top + 24)
-      : 24;
-    const shelfBottomInset = shelfRect && shelfRect.top > stageRect.top + stageRect.height * .45
-      ? Math.max(zoomInset, stageRect.bottom - shelfRect.top + 24)
-      : zoomInset;
-    const topInset = shelfRect && shelfRect.top < stageRect.top + stageRect.height * .45
-      ? Math.max(28, shelfRect.bottom - stageRect.top + 18)
-      : 28;
-    const maxScreenX = Math.max(leftInset, stageRect.width - rightInset - w);
-    const maxScreenY = Math.max(topInset, stageRect.height - shelfBottomInset - h);
-    const screenX = clamp(leftInset + 8, leftInset, maxScreenX);
-    const screenY = clamp(topInset + 8, topInset, maxScreenY);
-    return screenToWorld(stageRect.left + screenX, stageRect.top + screenY);
+    return chooseSafeNodePosition(w, h, {near:false});
   }
   function chooseWorkbenchBlockPosition(w=268, h=145){
-    const candidates = [];
-    const selected = byId(selectedId);
-    if(selected){
-      const r = nodeRect(selected);
-      candidates.push(
-        {x:r.x + r.w + 100, y:r.y + 10},
-        {x:r.x, y:r.y + r.h + 90},
-        {x:r.x - w - 100, y:r.y + 10}
-      );
-    }
-    candidates.push(visibleWorkbenchPosition(w, h));
-    return candidates.find(candidate => nodeSlotIsOpen(candidate.x, candidate.y, w, h)) || candidates[candidates.length - 1];
+    return chooseSafeNodePosition(w, h, {preferredNearNodeId:selectedId || 'core'});
   }
   function markStarterMeaningfulAction(){
     if(!starterHidden && isFreshStarterMap()){
@@ -2351,6 +2528,7 @@ import {
     const p = chooseWorkbenchBlockPosition(config.w, config.h);
     addNodeAt(p.x, p.y, config);
     showToast(config.toast);
+    requestAnimationFrame(() => positionSelectionShelf());
     renderMapStarter();
   }
   async function addWorkbenchDocumentBlock(documentId=null){
@@ -2366,6 +2544,7 @@ import {
     markStarterMeaningfulAction();
     const p = chooseWorkbenchBlockPosition(300, 170);
     const node = addDocumentBlock(docId, {x:p.x + 150, y:p.y + 85});
+    if(window.innerWidth <= 640) setWorkbenchOpen(false);
     renderMapStarter();
     return node;
   }
@@ -2395,7 +2574,7 @@ import {
       renderMapStarter();
       return;
     }
-    const p = starterPosition(360, 330, 300, 170);
+    const p = chooseSafeNodePosition(300, 170, {preferredNearNodeId:selectedId || 'core'});
     openDocumentPicker({x:p.x + 150, y:p.y + 85});
   }
   function handleMapStarterClick(event){
@@ -2430,6 +2609,8 @@ import {
       documentId:documentRecord.id
     });
     showToast('Document block added');
+    temporarilyPassThroughZoomDock();
+    requestAnimationFrame(() => positionSelectionShelf());
     return node;
   }
   function openDocumentDetail(nodeOrDocumentId){
@@ -2455,7 +2636,7 @@ import {
     if(!from || !to || from===to || !byId(from) || !byId(to)) return;
     if(data.edges.some(e => e.from === from && e.to === to)){ showToast('Already connected'); return; }
     const e = {id:edgeId(), from, to, relation:opts.relation || 'causes', strength:opts.strength || 3, shape:opts.shape || 'curve', fromPort:opts.fromPort || 'auto', toPort:opts.toPort || 'auto', label:opts.label || ''};
-    data.edges.push(e); selectedEdgeId = e.id; selectedId = null; render(); save('Connected'); showToast('Connected. Use the link toolbar or right-click/long-press to style it.'); logInputDebug('connect-complete', inputDebugState.lastPointer, {mode:'edge'});
+    data.edges.push(e); selectedEdgeId = e.id; selectedId = null; render(); save('Connected'); showToast('Connected. Use the link toolbar or right-click/long-press to style it.'); temporarilyPassThroughZoomDock(); logInputDebug('connect-complete', inputDebugState.lastPointer, {mode:'edge'});
   }
   function deleteEdge(edgeId){ data.edges = data.edges.filter(e => e.id !== edgeId); selectedEdgeId = null; suppressSelectionShelf = false; render(); save('Link deleted'); showToast('Link deleted'); }
   function reverseEdge(edgeId){ const e = edgeById(edgeId); if(!e) return; const old = e.from; e.from = e.to; e.to = old; const oldPort = e.fromPort; e.fromPort = e.toPort || 'auto'; e.toPort = oldPort || 'auto'; render(); save('Link reversed'); }
@@ -2912,7 +3093,7 @@ import {
     else if(e.key.toLowerCase() === 'c' && selectedId){ e.preventDefault(); startConnect(selectedId); }
     else if(e.key.toLowerCase() === 'f'){ e.preventDefault(); toggleFocus(); }
   });
-  window.addEventListener('resize', () => { applyView(); renderEdges(); applyFocus(); updateOverlayOffsets(); });
+  window.addEventListener('resize', () => { applyView(); renderEdges(); applyFocus(); updateOverlayOffsets(); positionSelectionShelf(); });
   if(inputDebugState.enabled){
     document.addEventListener('pointerdown', e => rememberDebugPointer(e), true);
     document.addEventListener('pointermove', e => {

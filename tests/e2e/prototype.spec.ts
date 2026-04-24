@@ -48,6 +48,33 @@ async function visibleBoundingBox(locator: Locator, description: string) {
   throw new Error(`Could not determine locator bounding box for ${description}.`);
 }
 
+function boxesOverlap(
+  a: { x: number; y: number; width: number; height: number },
+  b: { x: number; y: number; width: number; height: number },
+  margin = 0,
+) {
+  return (
+    a.x < b.x + b.width + margin &&
+    a.x + a.width > b.x - margin &&
+    a.y < b.y + b.height + margin &&
+    a.y + a.height > b.y - margin
+  );
+}
+
+async function expectNoBoxOverlap(first: Locator, second: Locator, description: string, margin = 0) {
+  const firstBox = await visibleBoundingBox(first, `${description} first`);
+  const secondBox = await visibleBoundingBox(second, `${description} second`);
+  expect(boxesOverlap(firstBox, secondBox, margin)).toBe(false);
+  return { firstBox, secondBox };
+}
+
+async function expectWorkbenchControlsClearOfZoom(page: Page, description: string) {
+  const zoomControls = page.locator('#zoomDock .toolbar-group');
+  await expectNoBoxOverlap(page.locator('#btnWorkbenchClose'), zoomControls, `${description} close control`, 4);
+  const visiblePrimaryAction = page.locator('#workbenchDrawer button:visible').first();
+  await expectNoBoxOverlap(visiblePrimaryAction, zoomControls, `${description} visible workbench control`, 4);
+}
+
 async function longPress(locator: Locator, options: { pointerId?: number; x?: number; y?: number } = {}) {
   const box = await visibleBoundingBox(locator, 'long-press test');
   const clientX = box.x + (options.x ?? box.width / 2);
@@ -296,6 +323,7 @@ async function expectFreshMapNodeClearOfOverlays(page: Page) {
     const toolbar = rectOf('.toolbar');
     const starter = rectOf('#mapStarterPanel:not([hidden])');
     const zoomDock = rectOf('#zoomDock');
+    const workbench = rectOf('#workbenchDrawer:not([hidden])');
     const selectionShelf = rectOf('#selectionShelf:not([hidden])');
     const stage = rectOf('#stage');
     const overlaps = (a: NonNullable<typeof node>, b: NonNullable<typeof node>) =>
@@ -305,11 +333,13 @@ async function expectFreshMapNodeClearOfOverlays(page: Page) {
       toolbar,
       starter,
       zoomDock,
+      workbench,
       selectionShelf,
       stage,
       overlapsToolbar: node && toolbar ? overlaps(node, toolbar) : false,
       overlapsStarter: node && starter ? overlaps(node, starter) : false,
       overlapsZoomDock: node && zoomDock ? overlaps(node, zoomDock) : false,
+      overlapsWorkbench: node && workbench ? overlaps(node, workbench) : false,
       overlapsSelectionShelf: node && selectionShelf ? overlaps(node, selectionShelf) : false,
     };
   });
@@ -318,9 +348,11 @@ async function expectFreshMapNodeClearOfOverlays(page: Page) {
   expect(geometry.stage).not.toBeNull();
   expect(geometry.toolbar).not.toBeNull();
   expect(geometry.starter).not.toBeNull();
+  expect(geometry.workbench).not.toBeNull();
   expect(geometry.zoomDock).not.toBeNull();
   expect(geometry.overlapsToolbar).toBe(false);
   expect(geometry.overlapsStarter).toBe(false);
+  expect(geometry.overlapsWorkbench).toBe(false);
   expect(geometry.overlapsZoomDock).toBe(false);
   expect(geometry.overlapsSelectionShelf).toBe(false);
   expect(geometry.node!.left).toBeGreaterThanOrEqual(geometry.stage!.left + 12);
@@ -944,12 +976,16 @@ test.describe('current standalone prototypes', () => {
   test('map status feedback uses a transient toast without stretching the header', async ({ page }) => {
     await page.setViewportSize({ width: 1000, height: 760 });
     await resetMindmap(page);
+    await page.locator('#btnWorkbenchToggle').click();
+    await expect(page.locator('#workbenchDrawer')).toBeVisible();
 
     await page.getByRole('button', { name: /Reset to 100 percent/i }).click();
 
     const toast = page.locator('#toast');
     await expect(toast).toContainText(/View reset/i);
     await expect(toast).toHaveClass(/show/);
+    await expectNoBoxOverlap(toast, page.locator('#workbenchDrawer'), 'view reset toast and workbench', 4);
+    await expectNoBoxOverlap(toast, page.locator('#zoomDock .toolbar-group'), 'view reset toast and zoom dock', 4);
     await expect(page.locator('#saveStatus')).toContainText(/View reset/i);
     const statusBox = await page.locator('#saveStatus').boundingBox();
     expect(statusBox?.width ?? 0).toBeLessThan(4);
@@ -976,7 +1012,7 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#workbenchAddEvidence')).toBeVisible();
     await expect(page.locator('#workbenchAddDocument')).toBeVisible();
 
-    await page.getByRole('button', { name: /Hide workbench/i }).click();
+    await page.locator('#btnWorkbenchClose').click();
     await expect(page.locator('#workbenchDrawer')).toBeHidden();
     await expectUsableCanvasHeight(page);
     await page.getByRole('button', { name: /Sources & blocks/i }).click();
@@ -1033,6 +1069,36 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(1);
   });
 
+  test('map workbench overlays keep zoom dock, shelf, toast, and document blocks separated', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.setViewportSize({ width: 1000, height: 760 });
+    await page.goto(projectPath);
+
+    await openDetails(page, '#pageCreatePanel');
+    await page.locator('#pageForm').getByLabel(/Title/i).fill('Overlay safe source map');
+    await page.locator('#pageForm').getByLabel(/Type/i).selectOption('map');
+    await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
+
+    await expect(page.locator('#workbenchDrawer')).toBeVisible();
+    await expectNoBoxOverlap(page.locator('#workbenchDrawer'), page.locator('#zoomDock .toolbar-group'), 'workbench drawer and zoom dock', 4);
+    await page.locator('#btnZoomIn').click();
+    await expect(page.locator('#btnZoomPercent')).not.toHaveText('100%');
+
+    await page.locator('#workbenchDocumentList [data-workbench-document-id]').first().click();
+    const documentNode = page.locator('.map-node.type-document').first();
+    await expect(documentNode).toContainText(/Simon Dixon debt-power interview\/model/i);
+    await expect(page.locator('#toast')).toContainText(/Document block added/i);
+    await expect(page.locator('#selectionShelf')).toBeVisible();
+
+    await expectNoBoxOverlap(documentNode, page.locator('#workbenchDrawer'), 'document block and workbench drawer', 4);
+    await expectNoBoxOverlap(documentNode, page.locator('.toolbar'), 'document block and toolbar', 4);
+    await expectNoBoxOverlap(documentNode, page.locator('#zoomDock .toolbar-group'), 'document block and zoom dock', 4);
+    await expectNoBoxOverlap(documentNode, page.locator('#selectionShelf'), 'document block and selected shelf', 4);
+    await expectNoBoxOverlap(page.locator('#toast'), page.locator('#workbenchDrawer'), 'document toast and workbench drawer', 4);
+    await expectNoBoxOverlap(page.locator('#toast'), page.locator('#zoomDock .toolbar-group'), 'document toast and zoom dock', 4);
+    await expectNoHorizontalOverflow(page);
+  });
+
   test('map workbench stays canvas-safe at medium and narrow widths', async ({ page }) => {
     await clearWorkspaceDatabase(page);
     await page.setViewportSize({ width: 900, height: 760 });
@@ -1046,14 +1112,16 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#workbenchDrawer')).toBeVisible();
     await expectFreshMapNodeClearOfOverlays(page);
     await expect(page.locator('#zoomDock')).toBeVisible();
+    await expectWorkbenchControlsClearOfZoom(page, 'medium workbench and zoom dock');
     await expectNoHorizontalOverflow(page);
 
     await page.setViewportSize({ width: 520, height: 760 });
     await expect(page.locator('#workbenchDrawer')).toBeVisible();
-    await expect(page.locator('#btnWorkbenchToggle')).toBeVisible();
+    await expect(page.locator('#btnWorkbenchClose')).toBeVisible();
     await expect(page.locator('#zoomDock')).toBeVisible();
+    await expectWorkbenchControlsClearOfZoom(page, 'narrow workbench and zoom dock');
     await expectNoHorizontalOverflow(page);
-    await page.getByRole('button', { name: /Hide workbench/i }).click();
+    await page.locator('#btnWorkbenchClose').click();
     await expect(page.locator('#workbenchDrawer')).toBeHidden();
     await expectUsableCanvasHeight(page, 360);
   });
