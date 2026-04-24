@@ -361,6 +361,19 @@ async function expectFreshMapNodeClearOfOverlays(page: Page) {
   expect(geometry.node!.bottom).toBeLessThanOrEqual(geometry.stage!.bottom - 12);
 }
 
+async function clickCanvasAt(page: Page, position: { xRatio?: number; yRatio?: number } = {}) {
+  const stageBox = await visibleBoundingBox(page.locator('#stage'), 'canvas placement stage');
+  await page.mouse.click(
+    stageBox.x + stageBox.width * (position.xRatio ?? 0.44),
+    stageBox.y + stageBox.height * (position.yRatio ?? 0.46),
+  );
+}
+
+async function clickLocatorCenter(page: Page, locator: Locator, description: string) {
+  const box = await visibleBoundingBox(locator, description);
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+}
+
 test.describe('current standalone prototypes', () => {
   test('root dashboard prioritizes projects and app actions over explainer copy', async ({ page }) => {
     await clearWorkspaceDatabase(page);
@@ -995,7 +1008,7 @@ test.describe('current standalone prototypes', () => {
     await expect.poll(async () => page.locator('#toast').evaluate((el) => el.classList.contains('show'))).toBe(false);
   });
 
-  test('map workbench opens, collapses, and creates question and evidence blocks', async ({ page }) => {
+  test('map workbench placement mode opens, cancels, and creates question and evidence blocks', async ({ page }) => {
     await clearWorkspaceDatabase(page);
     await page.goto(projectPath);
 
@@ -1017,17 +1030,45 @@ test.describe('current standalone prototypes', () => {
     await expectUsableCanvasHeight(page);
     await page.getByRole('button', { name: /Sources & blocks/i }).click();
     await expect(page.locator('#workbenchDrawer')).toBeVisible();
+    const reopenWorkbench = async () => {
+      if (await page.locator('#workbenchDrawer').isHidden()) {
+        await page.getByRole('button', { name: /Sources & blocks/i }).click();
+        await expect(page.locator('#workbenchDrawer')).toBeVisible();
+      }
+    };
 
+    await page.locator('#workbenchAddConcept').click();
+    await expect(page.locator('#placementOverlay')).toContainText(/Tap the canvas to place concept block/i);
+    await expect(page.locator('#placementOverlay')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#placementOverlay')).toBeHidden();
+    await expect(page.locator('.map-node.type-concept', { hasText: /New concept/i })).toHaveCount(0);
+
+    await reopenWorkbench();
     await page.locator('#workbenchAddQuestion').click();
+    await expect(page.locator('#placementOverlay')).toContainText(/Tap the canvas to place question block/i);
+    await clickCanvasAt(page, { xRatio: 0.42, yRatio: 0.42 });
     await expect(page.locator('.map-node.type-question', { hasText: /Question to answer|Central question/i })).toBeVisible();
     await expect(page.locator('#mapStarterPanel')).toBeHidden();
-    await page.locator('#workbenchAddEvidence').click();
-    await expect(page.locator('.map-node.type-evidence', { hasText: /Evidence block/i })).toBeVisible();
-    await expect(page.locator('#saveStatus')).toContainText(/Added block/i);
 
+    await reopenWorkbench();
+    await page.locator('#workbenchAddEvidence').click();
+    await expect(page.locator('#placementOverlay')).toContainText(/Tap the canvas to place evidence block/i);
+    await clickCanvasAt(page, { xRatio: 0.34, yRatio: 0.62 });
+    await expect(page.locator('.map-node.type-evidence', { hasText: /Evidence block/i })).toBeVisible();
+    await expect(page.locator('#saveStatus')).toContainText(/Evidence block placed/i);
+
+    await reopenWorkbench();
+    await page.locator('#workbenchAddDocument').click();
+    await expect(page.locator('#placementOverlay')).toContainText(/Tap the canvas to place document block/i);
+    await clickCanvasAt(page, { xRatio: 0.5, yRatio: 0.66 });
+    await expect(page.locator('.map-node.type-document')).toContainText(/Simon Dixon debt-power interview\/model/i);
+
+    await page.waitForTimeout(350);
     await page.reload();
     await expect(page.locator('.map-node.type-question')).toBeVisible();
     await expect(page.locator('.map-node.type-evidence')).toBeVisible();
+    await expect(page.locator('.map-node.type-document')).toBeVisible();
     await expect(page.locator('#mapStarterPanel')).toBeHidden();
   });
 
@@ -1042,6 +1083,8 @@ test.describe('current standalone prototypes', () => {
 
     await expect(page.locator('#workbenchDrawer')).toBeVisible();
     await page.locator('#workbenchDocumentList [data-workbench-document-id]').first().click();
+    await expect(page.locator('#placementOverlay')).toContainText(/Tap the canvas to place document block/i);
+    await clickCanvasAt(page, { xRatio: 0.45, yRatio: 0.52 });
 
     const documentNode = page.locator('.map-node.type-document').first();
     await expect(documentNode).toContainText(/Simon Dixon debt-power interview\/model/i);
@@ -1051,17 +1094,18 @@ test.describe('current standalone prototypes', () => {
     expect(documentNodeId).toBeTruthy();
     expect(documentId).toBeTruthy();
 
-    const before = await documentNode.boundingBox();
-    await dragByHandle(page, documentNodeId!, { pointerType: 'touch', deltaX: 82, deltaY: 54 });
-    const after = await documentNode.boundingBox();
-    expect(after?.x).not.toBe(before?.x);
-
     await page.locator('.map-node[data-id="core"]').click();
     await page.locator('#btnConnect').click();
     await documentNode.click();
     await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(1);
     await expect(page.locator('#saveStatus')).toContainText(/Connected/i);
     await page.waitForTimeout(500);
+
+    const before = await documentNode.boundingBox();
+    await dragByHandle(page, documentNodeId!, { pointerType: 'touch', deltaX: 82, deltaY: 54 });
+    const after = await documentNode.boundingBox();
+    expect(after?.x).not.toBe(before?.x);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(1);
 
     await page.reload();
     const persistedDocumentNode = page.locator(`.map-node.type-document[data-document-id="${documentId}"]`);
@@ -1085,6 +1129,8 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#btnZoomPercent')).not.toHaveText('100%');
 
     await page.locator('#workbenchDocumentList [data-workbench-document-id]').first().click();
+    await expect(page.locator('#placementOverlay')).toContainText(/Tap the canvas to place document block/i);
+    await clickCanvasAt(page, { xRatio: 0.42, yRatio: 0.58 });
     const documentNode = page.locator('.map-node.type-document').first();
     await expect(documentNode).toContainText(/Simon Dixon debt-power interview\/model/i);
     await expect(page.locator('#toast')).toContainText(/Document block added/i);
@@ -1097,6 +1143,28 @@ test.describe('current standalone prototypes', () => {
     await expectNoBoxOverlap(page.locator('#toast'), page.locator('#workbenchDrawer'), 'document toast and workbench drawer', 4);
     await expectNoBoxOverlap(page.locator('#toast'), page.locator('#zoomDock .toolbar-group'), 'document toast and zoom dock', 4);
     await expectNoHorizontalOverflow(page);
+  });
+
+  test('map placement nudges new blocks away from occupied nodes', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.setViewportSize({ width: 1000, height: 760 });
+    await page.goto(projectPath);
+
+    await openDetails(page, '#pageCreatePanel');
+    await page.locator('#pageForm').getByLabel(/Title/i).fill('Placement collision map');
+    await page.locator('#pageForm').getByLabel(/Type/i).selectOption('map');
+    await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
+
+    const mainIdea = page.locator('.map-node[data-id="core"]', { hasText: 'Main idea' });
+    await expect(mainIdea).toBeVisible();
+    await page.locator('#workbenchAddQuestion').click();
+    await expect(page.locator('#placementOverlay')).toContainText(/question block/i);
+    await clickLocatorCenter(page, mainIdea, 'main idea occupied placement target');
+
+    const questionNode = page.locator('.map-node.type-question', { hasText: /Question to answer/i });
+    await expect(questionNode).toBeVisible();
+    await expectNoBoxOverlap(questionNode, mainIdea, 'nudged question and main idea', 8);
+    await expectNoBoxOverlap(questionNode, page.locator('#workbenchDrawer'), 'nudged question and workbench', 4);
   });
 
   test('map workbench stays canvas-safe at medium and narrow widths', async ({ page }) => {
@@ -1121,8 +1189,13 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#zoomDock')).toBeVisible();
     await expectWorkbenchControlsClearOfZoom(page, 'narrow workbench and zoom dock');
     await expectNoHorizontalOverflow(page);
-    await page.locator('#btnWorkbenchClose').click();
+    await page.locator('#workbenchAddQuestion').click();
+    await expect(page.locator('#placementOverlay')).toContainText(/Tap the canvas to place question block/i);
     await expect(page.locator('#workbenchDrawer')).toBeHidden();
+    await clickCanvasAt(page, { xRatio: 0.48, yRatio: 0.5 });
+    await expect(page.locator('.map-node.type-question')).toBeVisible();
+    await expect(page.locator('#zoomDock')).toBeVisible();
+    await expectNoHorizontalOverflow(page);
     await expectUsableCanvasHeight(page, 360);
   });
 

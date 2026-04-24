@@ -348,6 +348,7 @@ a{color:inherit}
 .workbench-action{min-height:2.7rem;border-radius:16px;padding:.42rem .58rem;text-align:left;display:grid;gap:.04rem;background:rgba(255,255,255,.7);}
 .workbench-action strong{font-size:.88rem;line-height:1.12;}
 .workbench-action span{font-size:.74rem;color:var(--muted);line-height:1.2;}
+.workbench-action.placement-active,.workbench-source-action.placement-active{border-color:var(--strong);background:var(--blue);box-shadow:0 0 0 3px rgba(191,220,229,.38);}
 .workbench-action:disabled,.workbench-source-action:disabled{opacity:.48;cursor:not-allowed;}
 .workbench-documents{display:grid;gap:.46rem;}
 .workbench-document{display:grid;gap:.42rem;border:1px solid rgba(217,199,170,.78);border-radius:16px;background:rgba(255,255,255,.64);padding:.58rem;}
@@ -369,11 +370,18 @@ a{color:inherit}
 .document-panel-actions{display:flex;justify-content:flex-end;gap:.5rem;margin-top:.8rem;}
 .document-panel-actions button{min-height:2.4rem;border:1px solid var(--border);border-radius:999px;background:#fffdf7;font:inherit;font-weight:900;cursor:pointer;padding:.4rem .75rem;}
 .import-input{display:none}.toast{position:absolute;left:calc(max(.85rem, env(safe-area-inset-left)) + var(--toast-left-offset, 0px));bottom:calc(max(.85rem, env(safe-area-inset-bottom)) + var(--toast-bottom-offset, 0px));z-index:94;max-width:min(340px,calc(100vw - 2rem));border:1px solid var(--border);border-radius:999px;background:rgba(255,250,242,.97);color:var(--muted);padding:.5rem .82rem;box-shadow:0 12px 24px rgba(72,54,31,.16);opacity:0;transform:translateY(8px);transition:opacity .18s ease, transform .18s ease, bottom .16s ease, left .16s ease;pointer-events:none;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.toast.show{opacity:1;transform:translateY(0)}
+.placement-overlay{position:absolute;left:calc(max(.85rem, env(safe-area-inset-left)) + var(--placement-left-offset, 0px));bottom:calc(max(.85rem, env(safe-area-inset-bottom)) + var(--placement-bottom-offset, 0px));z-index:23;display:flex;align-items:center;gap:.55rem;max-width:min(520px,calc(100vw - 2rem));border:1px solid var(--blue-border);border-radius:999px;background:rgba(230,242,247,.97);box-shadow:0 14px 28px rgba(72,54,31,.14);padding:.44rem .52rem .44rem .78rem;color:#344f58;font-weight:900;pointer-events:auto;}
+.placement-overlay[hidden]{display:none!important;}
+.placement-overlay span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.placement-overlay button{border:1px solid var(--blue-border);border-radius:999px;background:#fffdf8;font:inherit;font-weight:900;cursor:pointer;min-height:2rem;padding:.25rem .62rem;white-space:nowrap;}
+.placement-ghost{position:absolute;z-index:7;border:2px dashed rgba(85,123,136,.68);border-radius:18px;background:rgba(230,242,247,.34);box-shadow:0 10px 24px rgba(72,54,31,.1);pointer-events:none;display:grid;place-items:center;color:#4d6770;font-weight:900;text-align:center;padding:.55rem;opacity:.82;}
+.placement-ghost[hidden]{display:none!important;}
+.stage.placement-mode{cursor:crosshair;}
 @media(max-width:1120px){.topbar{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"title status" "nav pagebar";align-items:start;gap:.4rem .55rem;padding:.5rem .65rem}.nav-links{align-self:center;flex-wrap:wrap}.pagebar{align-self:center;justify-self:end;flex-wrap:wrap}.pagebar select{width:min(230px,38vw)}.title-wrap h1{max-width:min(100%,64vw)}.project-kicker{max-width:min(100%,64vw)}.status-pill{font-size:.8rem}.back-link,.pagebar button{min-height:2rem;padding:.28rem .62rem}}
 @media(max-width:720px){.topbar{grid-template-columns:minmax(0,1fr);grid-template-areas:"title" "nav" "pagebar" "status";gap:.32rem;padding:.45rem .55rem}.title-wrap h1{max-width:100%}.project-kicker{max-width:100%}.nav-links,.pagebar{justify-content:flex-start}.pagebar{display:grid;grid-template-columns:auto minmax(0,1fr) repeat(4,auto);width:100%;gap:.28rem}.pagebar select{width:100%;max-width:100%;min-width:0}.side-panel{right:.45rem;top:.45rem}.side-tab{min-width:2.25rem;min-height:2.25rem;padding:.2rem}.panel-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem)}.map-workbench{right:.45rem;top:.45rem;max-width:calc(100vw - 5.4rem)}.workbench-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem);padding:.68rem}.workbench-actions{grid-template-columns:1fr}.toolbar{left:.45rem;top:.45rem}.toolbar button,.file-label{width:2.2rem;height:2.2rem;min-height:2.2rem}.zoom-dock{right:calc(max(.5rem, env(safe-area-inset-right)) + var(--zoom-dock-right-offset, 0px));bottom:calc(max(.5rem, env(safe-area-inset-bottom)) + var(--zoom-dock-lift, 0px))}.zoom-dock button{width:2.85rem;height:2.85rem;min-height:2.85rem}.zoom-dock button.zoom-readout{width:3.85rem}.map-node{width:235px;min-height:120px}.map-node .node-content{padding:.78rem .75rem 1.2rem}.node-title{font-size:.96rem}.node-body{font-size:.84rem}.selection-shelf{top:auto;bottom:.85rem;max-width:calc(100vw - 1rem)}.selection-shelf.docked{top:auto;bottom:.85rem}.selection-meta strong{max-width:36vw}.selection-toggle,.selection-action{width:2.75rem;height:2.75rem;min-height:2.75rem}.connect-banner{bottom:4.2rem;max-width:calc(100vw - 1rem);border-radius:16px}.input-debug{left:.5rem;bottom:.5rem;width:calc(100vw - 1rem);max-width:calc(100vw - 1rem)}}
-@media(max-width:520px){.project-kicker{display:none}.pagebar{grid-template-columns:1fr repeat(4,auto)}.pagebar label{grid-column:1/-1}.back-link{max-width:100%}.pagebar button{padding:.24rem .52rem}.map-workbench{left:.5rem;right:.5rem;top:auto;bottom:5rem;max-width:none;justify-items:stretch}.map-workbench.open{bottom:.75rem}.workbench-toggle{justify-self:end}.map-workbench.open .workbench-toggle{display:none}.workbench-drawer{width:100%;max-height:min(20dvh,190px)}.toast{left:.6rem;right:auto;bottom:calc(5.1rem + var(--toast-bottom-offset, 0px));max-width:calc(100vw - 1.2rem);text-align:center}}
+@media(max-width:520px){.project-kicker{display:none}.pagebar{grid-template-columns:1fr repeat(4,auto)}.pagebar label{grid-column:1/-1}.back-link{max-width:100%}.pagebar button{padding:.24rem .52rem}.map-workbench{left:.5rem;right:.5rem;top:auto;bottom:5rem;max-width:none;justify-items:stretch}.map-workbench.open{bottom:.75rem}.workbench-toggle{justify-self:end}.map-workbench.open .workbench-toggle{display:none}.workbench-drawer{width:100%;max-height:min(18dvh,170px)}.toast{left:.6rem;right:auto;bottom:calc(5.1rem + var(--toast-bottom-offset, 0px));max-width:calc(100vw - 1.2rem);text-align:center}.placement-overlay{left:.6rem;right:.6rem;bottom:calc(4.75rem + var(--placement-bottom-offset, 0px));max-width:none;border-radius:18px}.placement-overlay span{white-space:normal;line-height:1.2}}
 @media (pointer:coarse){.menu button{min-height:2.75rem;padding:.46rem .62rem}.menu-row button{min-width:2.75rem;height:2.75rem;min-height:2.75rem}.selection-toggle,.selection-action{width:2.95rem;height:2.95rem;min-height:2.95rem}.input-debug button{min-height:2.75rem}.drag-handle{width:3rem;height:3rem;min-height:3rem}.drag-handle-icon{width:2.1rem;height:2.1rem;min-height:2.1rem}.map-node.shape-oval .drag-handle{width:2.65rem;height:2.65rem;min-height:2.65rem}.map-node.shape-oval .drag-handle-icon{width:1.85rem;height:1.85rem;min-height:1.85rem}.zoom-dock button{width:3rem;height:3rem;min-height:3rem}.zoom-dock button.zoom-readout{width:4rem}}
-@media print{.topbar,.pagebar,.toolbar,.zoom-dock,.side-panel,.menu,.toast,.connect-banner,.selection-shelf,.input-debug,.document-picker,.document-detail-card,.map-workbench{display:none!important}body{overflow:visible;background:white}.stage{overflow:visible}.map-node{break-inside:avoid}}
+@media print{.topbar,.pagebar,.toolbar,.zoom-dock,.side-panel,.menu,.toast,.placement-overlay,.placement-ghost,.connect-banner,.selection-shelf,.input-debug,.document-picker,.document-detail-card,.map-workbench{display:none!important}body{overflow:visible;background:white}.stage{overflow:visible}.map-node{break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -517,6 +525,12 @@ a{color:inherit}
       <span id="connectText">Click another block to connect.</span>
       <button id="cancelConnect">Cancel</button>
     </div>
+
+    <div class="placement-overlay" id="placementOverlay" aria-live="polite" hidden>
+      <span id="placementText">Tap the canvas to place a block</span>
+      <button id="placementCancel" type="button">Cancel</button>
+    </div>
+    <div class="placement-ghost" id="placementGhost" aria-hidden="true" hidden></div>
 
     <div class="menu" id="contextMenu" role="menu" aria-hidden="true"></div>
     <aside class="document-picker" id="documentPicker" aria-label="Choose a project document" hidden>
@@ -687,6 +701,10 @@ import {
   const workbenchAddEvidence = document.getElementById('workbenchAddEvidence');
   const workbenchAddDocument = document.getElementById('workbenchAddDocument');
   const workbenchDocumentList = document.getElementById('workbenchDocumentList');
+  const placementOverlay = document.getElementById('placementOverlay');
+  const placementText = document.getElementById('placementText');
+  const placementCancel = document.getElementById('placementCancel');
+  const placementGhost = document.getElementById('placementGhost');
   const projectBackLink = document.getElementById('projectBackLink');
   const lessonBackLink = document.getElementById('lessonBackLink');
   const projectKicker = document.getElementById('projectKicker');
@@ -790,6 +808,8 @@ import {
   let starterHidden = false;
   let workbenchOpen = false;
   let workbenchUserToggled = false;
+  let pendingPlacement = null;
+  let suppressNextPlacementClick = false;
 
   const DEBUG_INPUT_KEY = 'neuro-map-studio:debug-input';
   const LONG_PRESS_DELAY = 450;
@@ -1428,6 +1448,18 @@ import {
     if(!a || !b) return false;
     return a.left < b.right + margin && a.right > b.left - margin && a.top < b.bottom + margin && a.bottom > b.top - margin;
   }
+  function rectToStage(rect, stageRect=null){
+    if(!rect) return null;
+    const base = stageRect || stage.getBoundingClientRect();
+    return {
+      left:rect.left - base.left,
+      top:rect.top - base.top,
+      right:rect.right - base.left,
+      bottom:rect.bottom - base.top,
+      width:rect.width,
+      height:rect.height
+    };
+  }
   function overlayVisible(element, className=''){
     if(!element) return false;
     if(className && !element.classList.contains(className)) return false;
@@ -1444,13 +1476,22 @@ import {
       zoomDock:rectFromElement(zoomDock),
       shelf:includeShelf && overlayVisible(selectionShelf, 'show') ? rectFromElement(selectionShelf) : null,
       toast:includeToast && toast.classList.contains('show') ? rectFromElement(toast) : null,
+      placement:placementOverlay && !placementOverlay.hidden ? rectFromElement(placementOverlay) : null,
       starter:mapStarterPanel && !mapStarterPanel.hidden ? rectFromElement(mapStarterPanel) : null,
       documentPicker:documentPicker && !documentPicker.hidden ? rectFromElement(documentPicker) : null,
       documentDetail:documentDetailCard && !documentDetailCard.hidden ? rectFromElement(documentDetailCard) : null
     };
   }
-  function getCanvasSafeArea(options={}){
+  function getOverlayLanes(options={}){
     const overlays = getOverlayRects(options);
+    return {
+      ...overlays,
+      rightUtility:overlays.workbench || overlays.documentPicker || overlays.documentDetail || overlays.workbenchToggle || null,
+      bottomUtility:overlays.zoomDock || overlays.toast || overlays.placement || null
+    };
+  }
+  function getCanvasSafeArea(options={}){
+    const overlays = getOverlayLanes(options);
     const stageRect = overlays.stage || stage.getBoundingClientRect();
     const nodeWidth = Number(options.nodeWidth) || 268;
     const nodeHeight = Number(options.nodeHeight) || 145;
@@ -1494,6 +1535,10 @@ import {
       if(overlays.toast.top < stageRect.top + stageRect.height * .5) consumeTop(overlays.toast);
       else consumeBottom(overlays.toast);
     }
+    if(overlays.placement){
+      if(overlays.placement.top < stageRect.top + stageRect.height * .5) consumeTop(overlays.placement);
+      else consumeBottom(overlays.placement);
+    }
     if(safe.right - safe.left < minWidth){
       safe.left = Math.max(margin, Math.min(safe.left, stageRect.width - minWidth - margin));
       safe.right = Math.min(stageRect.width - margin, safe.left + minWidth);
@@ -1513,9 +1558,67 @@ import {
     const height = h * view.scale;
     return {left, top, right:left + width, bottom:top + height, width, height};
   }
+  function nodeAtClientPoint(clientX, clientY){
+    const stageRect = stage.getBoundingClientRect();
+    const localX = clientX - stageRect.left;
+    const localY = clientY - stageRect.top;
+    return data.nodes.find(node => {
+      const dims = nodeDims(node);
+      const rect = nodeScreenRectFromWorld(node.x, node.y, dims.w, dims.h);
+      return localX >= rect.left && localX <= rect.right && localY >= rect.top && localY <= rect.bottom;
+    }) || null;
+  }
+  function firstNodeOverlappingCandidate(candidate, w, h, margin=16){
+    const candidateRect = nodeScreenRectFromWorld(candidate.x, candidate.y, w, h);
+    return data.nodes.find(node => {
+      const dims = nodeDims(node);
+      return rectsOverlap(candidateRect, nodeScreenRectFromWorld(node.x, node.y, dims.w, dims.h), margin);
+    }) || null;
+  }
   function nodeFitsSafeArea(candidate, w, h, safe){
     const rect = nodeScreenRectFromWorld(candidate.x, candidate.y, w, h);
     return rect.left >= safe.left && rect.top >= safe.top && rect.right <= safe.right && rect.bottom <= safe.bottom;
+  }
+  function getNodeAvoidRects(options={}){
+    const stageRect = stage.getBoundingClientRect();
+    const rects = [];
+    data.nodes.forEach(node => {
+      if(options.excludeNodeId && node.id === options.excludeNodeId) return;
+      const element = nodeLayer.querySelector(`[data-id="${CSS.escape(node.id)}"]`);
+      const domRect = rectFromElement(element);
+      if(domRect) rects.push(rectToStage(domRect, stageRect));
+      else{
+        const dims = nodeDims(node);
+        rects.push(nodeScreenRectFromWorld(node.x, node.y, dims.w, dims.h));
+      }
+    });
+    return rects.filter(Boolean);
+  }
+  function getPlacementAvoidRects(options={}){
+    const overlays = getOverlayLanes({includeShelf:options.includeShelf, includeToast:options.includeToast});
+    const stageRect = overlays.stage || stage.getBoundingClientRect();
+    const rects = [
+      overlays.toolbar,
+      overlays.workbench,
+      overlays.workbenchToggle,
+      overlays.zoomDock,
+      overlays.shelf,
+      overlays.toast,
+      overlays.placement,
+      overlays.starter,
+      overlays.documentPicker,
+      overlays.documentDetail,
+      overlays.rightUtility,
+      overlays.bottomUtility
+    ].map(rect => rectToStage(rect, stageRect)).filter(Boolean);
+    if(options.includeNodes !== false) rects.push(...getNodeAvoidRects(options));
+    return rects;
+  }
+  function candidateIsClear(candidate, w, h, safe, avoidRects, margin=16){
+    if(!nodeFitsSafeArea(candidate, w, h, safe)) return false;
+    if(!nodeSlotIsOpen(candidate.x, candidate.y, w, h, margin)) return false;
+    const candidateRect = nodeScreenRectFromWorld(candidate.x, candidate.y, w, h);
+    return !avoidRects.some(rect => rectsOverlap(candidateRect, rect, margin));
   }
   function safeAreaFallbackPosition(w, h, safe){
     const screenWidth = w * view.scale;
@@ -1524,26 +1627,54 @@ import {
     const localY = clamp(safe.top + Math.min(28, safe.height * .12), safe.top, Math.max(safe.top, safe.bottom - screenHeight));
     return {x:(localX - view.x) / view.scale, y:(localY - view.y) / view.scale};
   }
-  function scanSafeNodePosition(w, h, safe){
+  function scanSafeNodePosition(w, h, safe, avoidRects=[]){
     const screenWidth = w * view.scale;
     const screenHeight = h * view.scale;
-    const stepX = Math.max(96, Math.min(180, screenWidth * .72));
-    const stepY = Math.max(82, Math.min(150, screenHeight * .72));
+    const stepX = Math.max(70, Math.min(145, screenWidth * .5));
+    const stepY = Math.max(64, Math.min(125, screenHeight * .5));
     for(let localY = safe.top; localY <= Math.max(safe.top, safe.bottom - screenHeight); localY += stepY){
       for(let localX = safe.left; localX <= Math.max(safe.left, safe.right - screenWidth); localX += stepX){
         const candidate = {x:(localX - view.x) / view.scale, y:(localY - view.y) / view.scale};
-        if(nodeSlotIsOpen(candidate.x, candidate.y, w, h)) return candidate;
+        if(candidateIsClear(candidate, w, h, safe, avoidRects, 16)) return candidate;
       }
     }
     return null;
   }
+  function radialSafeNodePosition(w, h, safe, avoidRects=[], origin=null){
+    const start = origin || safeAreaFallbackPosition(w, h, safe);
+    const angles = [0, Math.PI / 2, -Math.PI / 2, Math.PI, Math.PI / 4, -Math.PI / 4, Math.PI * 3 / 4, -Math.PI * 3 / 4];
+    for(let radius = 130; radius <= 980; radius += 90){
+      for(const angle of angles){
+        const candidate = {
+          x:start.x + Math.cos(angle) * radius,
+          y:start.y + Math.sin(angle) * radius
+        };
+        if(candidateIsClear(candidate, w, h, safe, avoidRects, 16)) return candidate;
+      }
+    }
+    return null;
+  }
+  function findFreeNodePosition({preferredTopLeft=null, w=268, h=145, candidates=[], options={}}={}){
+    const safe = getCanvasSafeArea({nodeWidth:w, nodeHeight:h, includeShelf:options.includeShelf, includeToast:options.includeToast, margin:options.margin});
+    const avoidRects = getPlacementAvoidRects({includeShelf:options.includeShelf, includeToast:options.includeToast, excludeNodeId:options.excludeNodeId});
+    const allCandidates = [];
+    const addCandidate = candidate => {
+      if(candidate && Number.isFinite(candidate.x) && Number.isFinite(candidate.y)) allCandidates.push(candidate);
+    };
+    addCandidate(preferredTopLeft);
+    candidates.forEach(addCandidate);
+    addCandidate(safeAreaFallbackPosition(w, h, safe));
+    return allCandidates.find(candidate => candidateIsClear(candidate, w, h, safe, avoidRects, 16))
+      || scanSafeNodePosition(w, h, safe, avoidRects)
+      || radialSafeNodePosition(w, h, safe, avoidRects, preferredTopLeft || allCandidates[0])
+      || allCandidates.find(candidate => nodeFitsSafeArea(candidate, w, h, safe) && nodeSlotIsOpen(candidate.x, candidate.y, w, h, 8))
+      || safeAreaFallbackPosition(w, h, safe);
+  }
   function chooseSafeNodePosition(w=268, h=145, options={}){
-    const safe = getCanvasSafeArea({nodeWidth:w, nodeHeight:h, includeShelf:options.includeShelf});
     const candidates = [];
     const addCandidate = candidate => {
       if(candidate && Number.isFinite(candidate.x) && Number.isFinite(candidate.y)) candidates.push(candidate);
     };
-    if(options.preferredTopLeft) addCandidate(options.preferredTopLeft);
     const nearNode = byId(options.preferredNearNodeId) || byId(selectedId) || byId('core') || data.nodes[0];
     if(nearNode && options.near !== false){
       const r = nodeRect(nearNode);
@@ -1555,11 +1686,13 @@ import {
       addCandidate({x:r.x + r.w + gap, y:r.y + r.h + gap});
       addCandidate({x:r.x - w - gap, y:r.y + r.h + gap});
     }
-    addCandidate(safeAreaFallbackPosition(w, h, safe));
-    return candidates.find(candidate => nodeFitsSafeArea(candidate, w, h, safe) && nodeSlotIsOpen(candidate.x, candidate.y, w, h))
-      || scanSafeNodePosition(w, h, safe)
-      || candidates.find(candidate => nodeFitsSafeArea(candidate, w, h, safe))
-      || safeAreaFallbackPosition(w, h, safe);
+    return findFreeNodePosition({
+      preferredTopLeft:options.preferredTopLeft || null,
+      w,
+      h,
+      candidates,
+      options
+    });
   }
   function updateOverlayOffsets(){
     const narrow = window.innerWidth <= 860;
@@ -1571,15 +1704,24 @@ import {
     const bottomSheetOpen = drawerRect && window.innerWidth <= 520;
     const zoomRightOffset = rightDrawerOpen ? Math.round(drawerRect.width + 18) : 0;
     const zoomLift = Math.max(debugLift, bottomSheetOpen ? Math.round(drawerRect.height + 118) : 0);
-    const toastLift = Math.max(zoomLift, bottomSheetOpen ? Math.round(drawerRect.height + 16) : 70);
+    const placementLift = Math.max(zoomLift, bottomSheetOpen ? Math.round(drawerRect.height + 20) : 0);
+    const placementRect = placementOverlay && !placementOverlay.hidden ? placementOverlay.getBoundingClientRect() : null;
+    const toastLift = Math.max(
+      zoomLift,
+      bottomSheetOpen ? Math.round(drawerRect.height + 16) : 70,
+      placementRect ? placementLift + Math.round(placementRect.height + 12) : 0
+    );
     const toolbarRect = rectFromElement(document.querySelector('.toolbar'));
     const toastLeftOffset = toolbarRect && toolbarRect.bottom > stageRect.top + stageRect.height * .55
       ? Math.max(0, Math.round(toolbarRect.right - stageRect.left + 12))
       : 0;
+    const placementLeftOffset = toastLeftOffset;
     stage.style.setProperty('--zoom-dock-right-offset', `${zoomRightOffset}px`);
     stage.style.setProperty('--zoom-dock-lift', `${zoomLift}px`);
     stage.style.setProperty('--toast-left-offset', `${toastLeftOffset}px`);
     stage.style.setProperty('--toast-bottom-offset', `${toastLift}px`);
+    stage.style.setProperty('--placement-left-offset', `${placementLeftOffset}px`);
+    stage.style.setProperty('--placement-bottom-offset', `${placementLift}px`);
   }
   function temporarilyPassThroughZoomDock(duration=1600){
     stage.classList.add('zoom-dock-pass-through');
@@ -2510,20 +2652,187 @@ import {
   function chooseWorkbenchBlockPosition(w=268, h=145){
     return chooseSafeNodePosition(w, h, {preferredNearNodeId:selectedId || 'core'});
   }
+  function workbenchBlockConfig(type, options={}){
+    const starter = Boolean(options.starter);
+    const configs = {
+      concept:{title:'New concept', body:'What idea belongs here?', group:'blue', shape:'card', tag:'concept', nodeType:'concept', w:268, h:145, toast:'Concept block placed', placementLabel:'concept block'},
+      question:{title:starter ? 'Central question' : 'Question to answer', body:starter ? 'What question should this map help you answer?' : 'What needs explaining?', group:'amber', shape:'pill', tag:'question', nodeType:'question', w:300, h:132, toast:'Question block placed', placementLabel:'question block'},
+      evidence:{title:starter ? 'Evidence to check' : 'Evidence block', body:starter ? 'What source, example, or observation supports this idea?' : 'What source, example, or observation supports this?', group:'green', shape:'note', tag:'evidence', nodeType:'evidence', w:300, h:150, toast:'Evidence block placed', placementLabel:'evidence block'}
+    };
+    return configs[type] || configs.concept;
+  }
   function markStarterMeaningfulAction(){
     if(!starterHidden && isFreshStarterMap()){
       starterHidden = true;
       renderMapStarter();
     }
   }
+  function clearWorkbenchPlacementActive(){
+    mapWorkbench?.querySelectorAll('.placement-active').forEach(button => {
+      button.classList.remove('placement-active');
+      button.removeAttribute('aria-pressed');
+    });
+  }
+  function setPlacementButtonActive(button){
+    clearWorkbenchPlacementActive();
+    if(!button) return;
+    button.classList.add('placement-active');
+    button.setAttribute('aria-pressed', 'true');
+  }
+  function placementStatusText(pending){
+    return `Tap the canvas to place ${pending?.label || 'block'}`;
+  }
+  function setPlacementOverlayVisible(visible){
+    if(!placementOverlay) return;
+    placementOverlay.hidden = !visible;
+    stage.classList.toggle('placement-mode', visible);
+    if(!visible && placementGhost) placementGhost.hidden = true;
+    updateOverlayOffsets();
+  }
+  function cancelPlacementMode(reason='cancel'){
+    if(!pendingPlacement) return;
+    pendingPlacement = null;
+    clearWorkbenchPlacementActive();
+    setPlacementOverlayVisible(false);
+    setStatus(reason === 'escape' ? 'Placement canceled' : 'Map ready');
+  }
+  function startPlacementMode(pending, options={}){
+    pendingPlacement = pending;
+    closeMenu();
+    closeDocumentPicker();
+    closeDocumentDetail();
+    clearEdgeDeleteArm();
+    if(connectFrom) cancelConnect();
+    clearSelection('placement-start');
+    setPlacementButtonActive(options.sourceButton || null);
+    if(placementText) placementText.textContent = placementStatusText(pending);
+    setPlacementOverlayVisible(true);
+    if(window.innerWidth <= 640 && workbenchOpen) setWorkbenchOpen(false, {user:false});
+    setStatus(placementStatusText(pending));
+    updatePlacementGhost(null);
+  }
+  function isPlacementControlTarget(target){
+    if(!target) return false;
+    return Boolean(target.closest('.toolbar,.zoom-dock,.side-panel,.map-workbench,.selection-shelf,.connect-banner,.input-debug,.menu,.document-picker,.document-detail-card,.placement-overlay,.edge-label,g.edge-group'));
+  }
+  function placementTopLeftFromClient(clientX, clientY, w, h){
+    const worldPoint = screenToWorld(clientX, clientY);
+    return {x:worldPoint.x - w / 2, y:worldPoint.y - h / 2};
+  }
+  function candidatesAroundNode(node, w, h, gap=104){
+    if(!node) return [];
+    const r = nodeRect(node);
+    return [
+      {x:r.x, y:r.y + r.h + gap},
+      {x:r.x + r.w + gap, y:r.y + 8},
+      {x:r.x - w - gap, y:r.y + 8},
+      {x:r.x, y:r.y - h - gap},
+      {x:r.x + r.w + gap, y:r.y + r.h + gap},
+      {x:r.x - w - gap, y:r.y + r.h + gap}
+    ];
+  }
+  function choosePlacementPositionFromClient(clientX, clientY, w, h, options={}){
+    const preferredTopLeft = placementTopLeftFromClient(clientX, clientY, w, h);
+    const occupiedNode = options.occupiedNode || nodeAtClientPoint(clientX, clientY) || firstNodeOverlappingCandidate(preferredTopLeft, w, h);
+    return findFreeNodePosition({
+      preferredTopLeft,
+      w,
+      h,
+      candidates:candidatesAroundNode(occupiedNode, w, h),
+      options:{includeShelf:false, includeToast:true, margin:18}
+    });
+  }
+  function updatePlacementGhost(event){
+    if(!placementGhost || !pendingPlacement){
+      if(placementGhost) placementGhost.hidden = true;
+      return;
+    }
+    if(!event || isPlacementControlTarget(event.target instanceof Element ? event.target : null)){
+      placementGhost.hidden = true;
+      return;
+    }
+    const w = pendingPlacement.w || 268;
+    const h = pendingPlacement.h || 145;
+    const targetNodeElement = event.target instanceof Element ? event.target.closest('.map-node') : null;
+    const occupiedNode = targetNodeElement ? byId(targetNodeElement.dataset.id) : null;
+    const p = choosePlacementPositionFromClient(event.clientX, event.clientY, w, h, {occupiedNode});
+    const rect = nodeScreenRectFromWorld(p.x, p.y, w, h);
+    placementGhost.style.left = `${Math.round(rect.left)}px`;
+    placementGhost.style.top = `${Math.round(rect.top)}px`;
+    placementGhost.style.width = `${Math.round(rect.width)}px`;
+    placementGhost.style.height = `${Math.round(rect.height)}px`;
+    placementGhost.textContent = pendingPlacement.previewTitle || pendingPlacement.label || 'Block';
+    placementGhost.hidden = false;
+  }
+  function completePlacementAt(clientX, clientY, sourceEvent=null){
+    if(!pendingPlacement) return null;
+    const pending = pendingPlacement;
+    const w = pending.w || 268;
+    const h = pending.h || 145;
+    const targetNodeElement = sourceEvent?.target instanceof Element ? sourceEvent.target.closest('.map-node') : null;
+    const occupiedNode = targetNodeElement ? byId(targetNodeElement.dataset.id) : null;
+    const p = choosePlacementPositionFromClient(clientX, clientY, w, h, {occupiedNode});
+    markStarterMeaningfulAction();
+    cancelPlacementMode('placed');
+    suppressNextPlacementClick = true;
+    let node = null;
+    if(pending.kind === 'document'){
+      node = addDocumentBlock(pending.documentId, p, {topLeft:true});
+    }else{
+      node = addNodeAt(p.x, p.y, pending.config);
+      showToast(pending.toast || pending.config?.toast || 'Block placed');
+    }
+    if(node){
+      temporarilyPassThroughZoomDock();
+      renderMapStarter();
+      requestAnimationFrame(() => {
+        positionSelectionShelf();
+        updateOverlayOffsets();
+        renderEdges();
+      });
+      logInputDebug('placement-complete', sourceEvent || inputDebugState.lastPointer, {mode:'canvas', target:stage, nodeId:node.id, blockType:pending.kind});
+    }
+    return node;
+  }
+  function startWorkbenchBlockPlacement(type, sourceButton=null){
+    const config = workbenchBlockConfig(type);
+    startPlacementMode({
+      kind:type,
+      label:config.placementLabel,
+      previewTitle:config.title,
+      w:config.w,
+      h:config.h,
+      config,
+      toast:config.toast
+    }, {sourceButton});
+  }
+  async function startWorkbenchDocumentPlacement(documentId=null, sourceButton=null){
+    if(!projectDocuments.length) await refreshProjectDocuments();
+    if(!projectDocuments.length){
+      showToast('Add a document first');
+      setStatus('Add document metadata on the project page before adding document blocks.');
+      renderMapStarter();
+      return null;
+    }
+    const docId = documentId || projectDocuments[0]?.id;
+    const documentRecord = documentById(docId);
+    if(!docId || !documentRecord){
+      showToast('Document not found');
+      return null;
+    }
+    startPlacementMode({
+      kind:'document',
+      label:'document block',
+      previewTitle:documentRecord.title || 'Document block',
+      w:300,
+      h:170,
+      documentId:docId,
+      toast:'Document block added'
+    }, {sourceButton});
+    return documentRecord;
+  }
   function addWorkbenchBlock(type, options={}){
-    const starter = Boolean(options.starter);
-    const configs = {
-      concept:{title:'New concept', body:'What idea belongs here?', group:'blue', shape:'card', tag:'concept', nodeType:'concept', w:268, h:145, toast:'Concept block added'},
-      question:{title:starter ? 'Central question' : 'Question to answer', body:starter ? 'What question should this map help you answer?' : 'What needs explaining?', group:'amber', shape:'pill', tag:'question', nodeType:'question', w:300, h:132, toast:'Question block added'},
-      evidence:{title:starter ? 'Evidence to check' : 'Evidence block', body:starter ? 'What source, example, or observation supports this idea?' : 'What source, example, or observation supports this?', group:'green', shape:'note', tag:'evidence', nodeType:'evidence', w:300, h:150, toast:'Evidence block added'}
-    };
-    const config = configs[type] || configs.concept;
+    const config = workbenchBlockConfig(type, options);
     markStarterMeaningfulAction();
     const p = chooseWorkbenchBlockPosition(config.w, config.h);
     addNodeAt(p.x, p.y, config);
@@ -2592,11 +2901,13 @@ import {
       showToast('Starter hidden');
     }
   }
-  function addDocumentBlock(documentId, worldPoint=null){
+  function addDocumentBlock(documentId, worldPoint=null, options={}){
     const documentRecord = documentById(documentId);
     if(!documentRecord){ showToast('Document not found'); return null; }
     markStarterMeaningfulAction();
-    const position = chooseDocumentBlockPosition(worldPoint, 300, 170);
+    const position = options.topLeft && worldPoint
+      ? worldPoint
+      : chooseDocumentBlockPosition(worldPoint, 300, 170);
     const node = addNodeAt(position.x, position.y, {
       title:documentRecord.title,
       body:documentRecord.description || 'Add a note about why this document matters here.',
@@ -2872,10 +3183,34 @@ import {
     e.stopPropagation();
   });
 
+  stage.addEventListener('pointerdown', e => {
+    if(!pendingPlacement) return;
+    if(e.button !== 0) return;
+    const target = e.target instanceof Element ? e.target : null;
+    if(isPlacementControlTarget(target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    cancelLongPress(e.pointerId, 'placement', e);
+    stopCanvasPan(false);
+    completePlacementAt(e.clientX, e.clientY, e);
+  }, true);
+  stage.addEventListener('pointermove', e => {
+    if(!pendingPlacement) return;
+    updatePlacementGhost(e);
+  }, true);
+  stage.addEventListener('pointerleave', () => {
+    if(placementGhost) placementGhost.hidden = true;
+  });
+  stage.addEventListener('click', e => {
+    if(!suppressNextPlacementClick) return;
+    suppressNextPlacementClick = false;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
   nodeLayer.addEventListener('contextmenu', e => { const el = e.target.closest('.map-node') || e.target.closest('#nodeLayer') || e.target.closest('.drag-handle') || e.target.closest('.resize-handle') || e.target.closest('.connection-port'); if(!el) return; if(suppressGestureContextMenu(e, 'node', e.target.closest('.drag-handle') || e.target.closest('.resize-handle') || e.target.closest('.connection-port') || el)) return; if(suppressRecentContextMenu(e, 'node', el)) return; e.preventDefault(); closeMenu(); const nodeEl = e.target.closest('.map-node'); const n = nodeEl ? byId(nodeEl.dataset.id) : null; if(!n) return; select(n.id); nodeMenu(n, e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
   edgeLabelLayer.addEventListener('contextmenu', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; const ed = edgeById(lab.dataset.edgeId); if(suppressGestureContextMenu(e, 'edge', lab, {edgeId:ed?.id, hitKind:'edge-label'})) return; if(suppressRecentContextMenu(e, 'edge', lab, {edgeId:ed?.id, hitKind:'edge-label'})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind:'edge-label'}); });
   edgeLayer.addEventListener('contextmenu', e => { const g = e.target.closest('g.edge-group'); if(!g) return; const ed = edgeById(g.dataset.edgeId); const hitKind = e.target.closest('.edge-hit') ? 'edge-hit-target' : 'edge-group'; if(suppressGestureContextMenu(e, 'edge', g, {edgeId:ed?.id, hitKind})) return; if(suppressRecentContextMenu(e, 'edge', g, {edgeId:ed?.id, hitKind})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind}); });
-  stage.addEventListener('contextmenu', e => { if(suppressGestureContextMenu(e, 'canvas', e.target.closest('#stage') || stage)) return; if(suppressRecentContextMenu(e, 'canvas', stage)) return; if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.map-workbench') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.document-picker') || e.target.closest('.document-detail-card') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
+  stage.addEventListener('contextmenu', e => { if(pendingPlacement){ e.preventDefault(); e.stopPropagation(); return; } if(suppressGestureContextMenu(e, 'canvas', e.target.closest('#stage') || stage)) return; if(suppressRecentContextMenu(e, 'canvas', stage)) return; if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.map-workbench') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.document-picker') || e.target.closest('.document-detail-card') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
 
   nodeLayer.addEventListener('click', e => { const detailButton = e.target.closest('[data-action="document-detail"]'); if(detailButton){ const nodeEl = detailButton.closest('.map-node'); const node = nodeEl ? byId(nodeEl.dataset.id) : null; if(node) openDocumentDetail(node); e.stopPropagation(); return; } const el = e.target.closest('.map-node'); if(!el) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'node', target:el}); if(connectFrom && el.dataset.id !== connectFrom){ addEdge(connectFrom, el.dataset.id); cancelConnect(); return; } select(el.dataset.id); });
   edgeLabelLayer.addEventListener('click', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'edge', target:lab}); selectEdge(lab.dataset.edgeId); });
@@ -3078,6 +3413,11 @@ import {
   document.addEventListener('selectionchange', () => { if(gestureLockReasons.size > 0 || !!connectFrom) clearGestureSelection(); });
   document.addEventListener('keydown', e => {
     if(e.key === 'Escape'){
+      if(pendingPlacement){
+        e.preventDefault();
+        cancelPlacementMode('escape');
+        return;
+      }
       closeMenu();
       clearEdgeDeleteArm();
       if(connectFrom) cancelConnect();
@@ -3093,7 +3433,7 @@ import {
     else if(e.key.toLowerCase() === 'c' && selectedId){ e.preventDefault(); startConnect(selectedId); }
     else if(e.key.toLowerCase() === 'f'){ e.preventDefault(); toggleFocus(); }
   });
-  window.addEventListener('resize', () => { applyView(); renderEdges(); applyFocus(); updateOverlayOffsets(); positionSelectionShelf(); });
+  window.addEventListener('resize', () => { applyView(); renderEdges(); applyFocus(); updateOverlayOffsets(); positionSelectionShelf(); updatePlacementGhost(null); });
   if(inputDebugState.enabled){
     document.addEventListener('pointerdown', e => rememberDebugPointer(e), true);
     document.addEventListener('pointermove', e => {
@@ -3104,14 +3444,14 @@ import {
   document.addEventListener('pointerup', e => clearPointerGestureOwner(e.pointerId), true);
   document.addEventListener('pointercancel', e => clearPointerGestureOwner(e.pointerId), true);
 
-  document.getElementById('btnCenter').addEventListener('click', recenter);
-  document.getElementById('btnZoomIn').addEventListener('click', () => zoomCenter(1.25));
-  document.getElementById('btnZoomOut').addEventListener('click', () => zoomCenter(.80));
-  document.getElementById('btnZoomPercent').addEventListener('click', promptZoomPercent);
-  document.getElementById('btnResetView').addEventListener('click', resetView);
-  document.getElementById('btnAddLinked').addEventListener('click', () => selectedId ? addLinkedFrom(selectedId) : addFreeAtCenter());
-  document.getElementById('btnAddFree').addEventListener('click', addFreeAtCenter);
-  document.getElementById('btnAddDocumentBlock').addEventListener('click', () => openDocumentPicker());
+  document.getElementById('btnCenter').addEventListener('click', () => { cancelPlacementMode('tool'); recenter(); });
+  document.getElementById('btnZoomIn').addEventListener('click', () => { cancelPlacementMode('tool'); zoomCenter(1.25); });
+  document.getElementById('btnZoomOut').addEventListener('click', () => { cancelPlacementMode('tool'); zoomCenter(.80); });
+  document.getElementById('btnZoomPercent').addEventListener('click', () => { cancelPlacementMode('tool'); promptZoomPercent(); });
+  document.getElementById('btnResetView').addEventListener('click', () => { cancelPlacementMode('tool'); resetView(); });
+  document.getElementById('btnAddLinked').addEventListener('click', () => { cancelPlacementMode('tool'); selectedId ? addLinkedFrom(selectedId) : addFreeAtCenter(); });
+  document.getElementById('btnAddFree').addEventListener('click', () => { cancelPlacementMode('tool'); addFreeAtCenter(); });
+  document.getElementById('btnAddDocumentBlock').addEventListener('click', () => { cancelPlacementMode('tool'); openDocumentPicker(); });
   mapWorkbench?.addEventListener('pointerdown', event => event.stopPropagation(), true);
   mapWorkbench?.addEventListener('pointerup', event => event.stopPropagation(), true);
   mapWorkbench?.addEventListener('click', event => event.stopPropagation());
@@ -3123,31 +3463,33 @@ import {
   btnWorkbenchClose?.addEventListener('click', event => {
     event.preventDefault();
     event.stopPropagation();
+    cancelPlacementMode('workbench-close');
     setWorkbenchOpen(false, {user:true});
     btnWorkbenchToggle?.focus();
   });
-  workbenchAddConcept?.addEventListener('click', () => addWorkbenchBlock('concept'));
-  workbenchAddQuestion?.addEventListener('click', () => addWorkbenchBlock('question'));
-  workbenchAddEvidence?.addEventListener('click', () => addWorkbenchBlock('evidence'));
-  workbenchAddDocument?.addEventListener('click', () => void addWorkbenchDocumentBlock());
+  workbenchAddConcept?.addEventListener('click', () => startWorkbenchBlockPlacement('concept', workbenchAddConcept));
+  workbenchAddQuestion?.addEventListener('click', () => startWorkbenchBlockPlacement('question', workbenchAddQuestion));
+  workbenchAddEvidence?.addEventListener('click', () => startWorkbenchBlockPlacement('evidence', workbenchAddEvidence));
+  workbenchAddDocument?.addEventListener('click', () => void startWorkbenchDocumentPlacement(null, workbenchAddDocument));
   workbenchDocumentList?.addEventListener('click', event => {
     const target = event.target instanceof Element ? event.target : null;
     const button = target?.closest('[data-workbench-document-id]');
     if(!button) return;
     event.preventDefault();
     event.stopPropagation();
-    void addWorkbenchDocumentBlock(button.dataset.workbenchDocumentId);
+    void startWorkbenchDocumentPlacement(button.dataset.workbenchDocumentId, button);
   });
   mapStarterPanel.addEventListener('pointerdown', event => event.stopPropagation(), true);
   mapStarterPanel.addEventListener('pointerup', event => event.stopPropagation(), true);
   mapStarterPanel.addEventListener('click', handleMapStarterClick);
-  document.getElementById('btnConnect').addEventListener('click', () => selectedId && startConnect(selectedId));
-  document.getElementById('btnFocus').addEventListener('click', toggleFocus);
-  document.getElementById('btnLegend').addEventListener('click', toggleLegend);
-  document.getElementById('btnTidy').addEventListener('click', tidy);
-  document.getElementById('btnExport').addEventListener('click', exportWorkspace);
+  placementCancel?.addEventListener('click', () => cancelPlacementMode('cancel'));
+  document.getElementById('btnConnect').addEventListener('click', () => { cancelPlacementMode('tool'); selectedId && startConnect(selectedId); });
+  document.getElementById('btnFocus').addEventListener('click', () => { cancelPlacementMode('tool'); toggleFocus(); });
+  document.getElementById('btnLegend').addEventListener('click', () => { cancelPlacementMode('tool'); toggleLegend(); });
+  document.getElementById('btnTidy').addEventListener('click', () => { cancelPlacementMode('tool'); tidy(); });
+  document.getElementById('btnExport').addEventListener('click', () => { cancelPlacementMode('tool'); exportWorkspace(); });
   importFileInput.addEventListener('change', e => importMap(e.target.files?.[0]));
-  document.getElementById('btnResetMap').addEventListener('click', resetMap);
+  document.getElementById('btnResetMap').addEventListener('click', () => { cancelPlacementMode('tool'); resetMap(); });
   document.getElementById('cancelConnect').addEventListener('click', cancelConnect);
   documentPickerClose.addEventListener('click', closeDocumentPicker);
   documentDetailClose.addEventListener('click', closeDocumentDetail);
