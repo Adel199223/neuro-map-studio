@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+const root = process.cwd();
+
 const required = [
   'AGENTS.md',
   'CODEX_PROMPT.md',
@@ -12,41 +14,43 @@ const required = [
   'tsconfig.app.json',
   'tsconfig.node.json',
   'vite.config.ts',
+  '.github/workflows/pages.yml',
+  '.agents/skills/a11y-learning-review/SKILL.md',
+  '.agents/skills/learning-map-feature/SKILL.md',
+  '.agents/skills/prototype-migration/SKILL.md',
   'docs/architecture.md',
+  'docs/architecture/local-first-workspace.md',
   'docs/codex/codex-setup.md',
-  'docs/product/current-prototype-audit.md',
-	  'docs/exec-plans/github-pages-live-preview.md',
-	  'public/prototypes/current/project.html',
-	  'public/prototypes/current/project-data.js',
-	  'public/prototypes/current/workspace-store.js',
-	  'public/prototypes/current/page.html',
-	  'public/prototypes/current/mindmap.html',
-	  'public/prototypes/current/lesson.html',
+  'docs/handoffs/current-main-handoff.md',
+  'docs/handoffs/chatgpt-continuation-handoff.md',
+  'docs/product/current-state.md',
+  'docs/product/learning-model.md',
   'docs/product/product-requirements.md',
   'docs/product/interaction-contract.md',
   'docs/product/neuroscience-learning-principles.md',
   'docs/product/tablet-pen-sync-architecture.md',
-  'docs/exec-plans/learning-map-workspace-core.md',
-  'docs/exec-plans/harness-repair-tablet-architecture.md',
-  'docs/exec-plans/pages-enable-review-package-completeness.md',
-  'docs/exec-plans/review-zip-packaging-completeness.md',
-  'docs/exec-plans/workspace-local-model-and-document-blocks.md',
-  'docs/exec-plans/dynamic-page-runtime-and-unified-page-state.md',
-  '.github/workflows/pages.yml',
+  'docs/qa/current-smoke-checklist.md',
+  'docs/qa/galaxy-tab-spen-manual-qa.md',
+  'docs/roadmap/next-slices.md',
+  'public/prototypes/current/project.html',
+  'public/prototypes/current/project-data.js',
+  'public/prototypes/current/workspace-store.js',
+  'public/prototypes/current/page.html',
+  'public/prototypes/current/mindmap.html',
+  'public/prototypes/current/lesson.html',
   'scripts/review-package-config.mjs',
   'scripts/create-review-zip.mjs',
   'scripts/verify-review-zip.mjs',
+  'src/App.tsx',
+  'src/main.tsx',
+  'src/styles/global.css',
   'src/features/learning-map/workspaceCore.ts',
   'src/features/learning-map/types.ts',
   'src/data/simonDixonSeed.ts',
   'tests/e2e/prototype.spec.ts',
   'tests/e2e/workspace-core.spec.ts',
-  '.agents/skills/a11y-learning-review/SKILL.md',
-  '.agents/skills/learning-map-feature/SKILL.md',
-  '.agents/skills/prototype-migration/SKILL.md',
 ];
 
-const root = process.cwd();
 const missing = required.filter((file) => !existsSync(join(root, file)));
 
 if (missing.length) {
@@ -70,6 +74,13 @@ function expectIncludes(file, expected) {
   }
 }
 
+function expectEither(file, snippets, label) {
+  const source = read(file);
+  if (!snippets.some((snippet) => source.includes(snippet))) {
+    errors.push(`${file} is missing expected content for ${label}: ${snippets.join(' OR ')}`);
+  }
+}
+
 function expectOrderedSubstrings(value, ordered, label) {
   let cursor = -1;
   for (const snippet of ordered) {
@@ -82,120 +93,169 @@ function expectOrderedSubstrings(value, ordered, label) {
   }
 }
 
-const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-const neededScripts = [
-  'dev',
-  'build',
-  'typecheck',
-  'lint',
-  'test:e2e',
-  'doctor',
-  'check',
-  'package:review',
-  'package:verify',
-];
-const missingScripts = neededScripts.filter((script) => !pkg.scripts?.[script]);
+const pkg = JSON.parse(read('package.json'));
+const normalScripts = ['dev', 'build', 'typecheck', 'lint', 'test:e2e', 'doctor', 'check'];
+const packageScripts = ['package:review', 'package:verify'];
+const missingScripts = [...normalScripts, ...packageScripts].filter((script) => !pkg.scripts?.[script]);
+
 if (missingScripts.length) {
-  console.error('Missing required npm scripts:', missingScripts.join(', '));
-  process.exit(1);
+  errors.push(`package.json is missing required npm scripts: ${missingScripts.join(', ')}`);
 }
 
 if (!pkg.devDependencies?.['@types/node']) {
-  errors.push('package.json is missing the @types/node devDependency required for Node-side typechecking.');
+  errors.push('package.json is missing @types/node for Node-side typechecking.');
 }
 
-if (!pkg.scripts.typecheck.includes('tsc -b')) {
+if (!pkg.scripts?.typecheck?.includes('tsc -b')) {
   errors.push('package.json script "typecheck" must use TypeScript build mode.');
 }
 
-if (!pkg.scripts.build.includes('tsc -b')) {
-  errors.push('package.json script "build" must include TypeScript build mode before vite build.');
+if (!pkg.scripts?.build?.includes('tsc -b') || !pkg.scripts?.build?.includes('vite build')) {
+  errors.push('package.json script "build" must include TypeScript build mode and Vite build.');
 }
 
 expectOrderedSubstrings(
-  pkg.scripts.check,
+  pkg.scripts?.check ?? '',
   ['npm run doctor', 'npm run lint', 'npm run build', 'npm run test:e2e'],
   'package.json script "check"',
 );
 
 expectIncludes('AGENTS.md', [
-  'public/prototypes/current/mindmap.html',
-  'public/prototypes/current/lesson.html',
-  'docs/product/product-requirements.md',
-  'docs/product/interaction-contract.md',
-  'docs/product/neuroscience-learning-principles.md',
-  'npm run build',
-  'npm run check',
-  'npm run package:review',
-  'npm run package:verify',
+  'Current source-of-truth branch',
+  '/home/fa507/dev/neuro-map-studio-codex',
+  'Sources & blocks panel',
+  'selection toolbar',
+  'notification bubble',
+  'pageId-scoped map state',
+  'JSON workspace backup/export/import',
+  'Do not run `package:review` or `package:verify` unless explicitly asked.',
 ]);
+
+expectIncludes('CODEX_PROMPT.md', [
+  'Current architecture summary',
+  'page.html?pageId=<id>',
+  'Sources & blocks panel',
+  'Normal checks',
+  'Do not push, merge, delete branches',
+]);
+
 expectIncludes('README.md', [
-  '/prototypes/current/mindmap.html',
-  '/prototypes/current/lesson.html',
-  'https://Adel199223.github.io/neuro-map-studio/',
-  'https://Adel199223.github.io/neuro-map-studio/prototypes/current/mindmap.html',
-  'https://Adel199223.github.io/neuro-map-studio/prototypes/current/lesson.html',
-  'CODEX_PROMPT.md',
-  'docs/product/tablet-pen-sync-architecture.md',
-  '\\\\wsl.localhost\\Ubuntu\\home\\',
-  'package:review',
-  'package:verify',
-  'artifacts/neuro-map-studio-review-context.zip',
-  '.agents/',
+  'local-first ADHD/dyslexia-friendly learning workspace',
+  'Project hub',
+  'Sources & blocks panel',
+  'placement mode',
+  'docs/handoffs/current-main-handoff.md',
+  'docs/architecture/local-first-workspace.md',
+  'Do not run packaging scripts or create a zip unless explicitly asked.',
 ]);
-expectIncludes('docs/codex/codex-setup.md', [
-  '.agents/skills/',
-  'CODEX_PROMPT.md',
-  '\\\\wsl.localhost\\Ubuntu\\home\\',
-  'package:review',
-  'package:verify',
+
+expectIncludes('docs/handoffs/current-main-handoff.md', [
+  'Current main SHA',
+  '226f716e45380174095770fb58ae0ca997f012bf',
+  'Sources & blocks panel',
+  'pageId-scoped map state',
 ]);
-expectIncludes('CODEX_PROMPT.md', ['docs/product/tablet-pen-sync-architecture.md']);
-expectIncludes('LICENSE', ['MIT License']);
+
+expectIncludes('docs/handoffs/chatgpt-continuation-handoff.md', [
+  'Current main SHA',
+  'Source-of-truth branch: main',
+  'Sources & blocks panel',
+  'Normal checks',
+]);
+
+expectIncludes('docs/product/current-state.md', [
+  'Workspace Dashboard',
+  'Project Hub',
+  'Sources & blocks panel',
+  'Document blocks preserve `documentId`',
+  'Backup And Restore',
+]);
+
+expectIncludes('docs/product/learning-model.md', [
+  'Active Restructuring',
+  'Retrieval Practice',
+  'Dual Coding',
+  'Semantic Relationships',
+  'Tablet And S Pen Flow',
+]);
+
+expectIncludes('docs/architecture/local-first-workspace.md', [
+  'neuro-map-studio-local-workspace',
+  'pageDocumentLinks',
+  'pageStates',
+  'pageId-scoped map workspace state',
+  'Backup JSON',
+]);
+
+expectIncludes('docs/qa/galaxy-tab-spen-manual-qa.md', [
+  'Sources & blocks panel',
+  'Selection toolbar',
+  'Notification bubble',
+  'Zoom controls',
+  'S Pen',
+  '?debugInput=1',
+]);
+
+expectIncludes('docs/qa/current-smoke-checklist.md', [
+  'Workspace Dashboard',
+  'Project Hub',
+  'Sources & blocks panel',
+  'placement mode',
+  'backup',
+]);
+
+expectIncludes('docs/roadmap/next-slices.md', [
+  'Source And Document Workflow',
+  'Review And Retrieval Pages',
+  'Relationship Editing',
+  'Backup Safety',
+  'Future Operation Log',
+]);
+
 expectIncludes('vite.config.ts', ['GITHUB_PAGES', '/neuro-map-studio/']);
 expectIncludes('.github/workflows/pages.yml', [
   'actions/configure-pages',
   'actions/upload-pages-artifact',
   'actions/deploy-pages',
 ]);
-expectIncludes('docs/product/current-prototype-audit.md', ['v20 clean connectors']);
-expectIncludes('docs/product/tablet-pen-sync-architecture.md', [
-  'Pointer Events',
-  'IndexedDB',
-  'WebSocket',
-  'Long-press',
-  'right-click',
-  'last-writer-wins',
+
+expectIncludes('src/main.tsx', ['createRoot', '<App />']);
+expectIncludes('src/App.tsx', [
+  'Workspace board',
+  'Recent pages & diagrams',
+  'exportWorkspaceBackup',
+  'importWorkspaceBackup',
+  'Backup and restore',
+  'pageRuntimeHref',
+]);
+expectIncludes('src/styles/global.css', [
+  '.workspace-frame',
+  '.workspace-rail',
+  '.board-grid',
+  '.app-dialog',
+  'Comic Sans',
 ]);
 
-const mapPrototype = read('public/prototypes/current/mindmap.html');
-const lessonPrototype = read('public/prototypes/current/lesson.html');
-
-const mapSnippets = [
-  'Debt-power map',
-  'projectBackLink',
-  'lessonBackLink',
-  'btnAddDocumentBlock',
-  'nodeType',
-  'documentId',
+expectIncludes('public/prototypes/current/workspace-store.js', [
+  'neuro-map-studio-local-workspace',
+  'STORE_NAMES',
+  'projects',
+  'documents',
+  'pages',
+  'pageDocumentLinks',
+  'pageStates',
+  'getWorkspaceSnapshot',
+  'exportWorkspaceBackup',
+  'importWorkspaceBackup',
+  'createProject',
+  'createDocument',
+  'createPage',
   'savePageState',
-  'runtimePageId',
-];
-for (const snippet of mapSnippets) {
-  if (!mapPrototype.includes(snippet)) {
-    errors.push(`public/prototypes/current/mindmap.html is missing expected content: ${snippet}`);
-  }
-}
-
-if (!lessonPrototype.includes('href="mindmap.html"')) {
-  errors.push('public/prototypes/current/lesson.html must link back to mindmap.html.');
-}
-if (!lessonPrototype.includes('href="project.html"')) {
-  errors.push('public/prototypes/current/lesson.html must link back to project.html.');
-}
+  'linkPageDocument',
+  'pageRuntimeHref',
+]);
 
 expectIncludes('public/prototypes/current/project.html', [
-  'Neuro Map Studio',
   'Project hub',
   'Pages board',
   'Documents board',
@@ -204,32 +264,59 @@ expectIncludes('public/prototypes/current/project.html', [
   'New map',
   'New page',
   'Add document',
-  'Create document',
-  'Create page',
+  'pageRuntimeHref',
 ]);
-expectIncludes('public/prototypes/current/workspace-store.js', [
-  'neuro-map-studio-local-workspace',
-  'pageDocumentLinks',
-  'pageStates',
-  'createProject',
-  'createDocument',
-  'savePageState',
-  'linkPageDocument',
-]);
+
 expectIncludes('public/prototypes/current/page.html', [
   'Page runtime',
+  'pageId',
   'Related documents',
   'Page content',
   'savePageState',
   'mindmap.html',
   'lesson.html',
 ]);
+
+expectIncludes('public/prototypes/current/mindmap.html', [
+  'Sources &amp; blocks',
+  'placementOverlay',
+  'workbenchAddConcept',
+  'workbenchAddQuestion',
+  'workbenchAddEvidence',
+  'workbenchAddDocument',
+  'data-workbench-document-id',
+  'documentId',
+  'selectionShelf',
+  'toast',
+  'zoomDock',
+  'debugInput',
+  'savePageState',
+  'runtimePageId',
+]);
+expectEither('public/prototypes/current/mindmap.html', ['btnResetView', 'Reset to 100 percent'], 'reset view control');
+
+expectIncludes('public/prototypes/current/lesson.html', [
+  'glossary',
+  'read',
+  'href="mindmap.html"',
+  'href="project.html"',
+]);
+
 expectIncludes('public/prototypes/current/project-data.js', [
   'geopolitics-economics',
   'simon-dixon-debt-power',
   'simon-dixon-linear-lesson',
   'simon-dixon-debt-power-map',
   'page.html?pageId=',
+]);
+
+expectIncludes('tests/e2e/prototype.spec.ts', [
+  'workspace backup export includes schema metadata',
+  'workspace backup import rejects invalid JSON',
+  'page runtime dispatches seeded lesson and map pages',
+  'map workbench placement mode opens',
+  'creates a persistent movable and linkable document block',
+  '?debugInput=1',
 ]);
 
 if (errors.length) {
@@ -240,4 +327,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Doctor check passed. Harness contract looks consistent.');
+console.log('Doctor check passed. Current main harness contract looks consistent.');
