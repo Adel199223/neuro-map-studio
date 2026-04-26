@@ -262,8 +262,10 @@ a{color:inherit}
 .toolbar{position:absolute;left:.8rem;top:.8rem;display:flex;flex-direction:column;gap:.42rem;z-index:18;pointer-events:none;}
 .toolbar-group{display:flex;flex-direction:column;gap:.32rem;padding:.38rem;border:1px solid var(--border);border-radius:20px;background:rgba(255,250,242,.94);box-shadow:0 14px 28px rgba(72,54,31,.12);pointer-events:auto;}
 .toolbar button,.file-label{width:2.45rem;height:2.45rem;min-height:2.45rem;padding:0;border-radius:15px;font-weight:900;position:relative;}
+.toolbar button:disabled,.selection-action:disabled{opacity:.45;cursor:not-allowed}
 .toolbar button.zoom-readout{width:3.45rem;font-size:.82rem;letter-spacing:-.02em;}
 .toolbar button.active{background:var(--blue);border-color:var(--blue-border);}
+.toolbar button.history-live{background:#fff7e3;border-color:#d7bd8c}
 .zoom-dock{position:absolute;right:calc(max(.85rem, env(safe-area-inset-right)) + var(--zoom-dock-right-offset, 0px));bottom:calc(max(.85rem, env(safe-area-inset-bottom)) + var(--zoom-dock-lift, 0px));display:flex;flex-direction:column;gap:.42rem;z-index:19;pointer-events:none;transition:right .16s ease,bottom .16s ease;}
 .zoom-dock .toolbar-group{pointer-events:auto;}
 .stage.connect-targeting .zoom-dock .toolbar-group,.stage.zoom-dock-pass-through .zoom-dock .toolbar-group{pointer-events:none;opacity:.58;}
@@ -308,6 +310,7 @@ a{color:inherit}
 .selection-action.active{background:var(--blue);border-color:var(--blue-border)}
 .selection-action.warn{color:#8a2e2e;border-color:#c89e9e}
 .selection-action.danger-armed{background:#fff0ef;border-color:#d48787;color:#8a2e2e}
+.selection-action.utility{color:#3d5d66;border-color:#b9d2dc}
 .input-debug{position:absolute;left:1rem;bottom:1rem;z-index:21;width:min(360px,calc(100vw - 1rem));max-width:min(360px,calc(100vw - 1rem));border:1px solid var(--border);border-radius:18px;background:rgba(255,250,242,.97);box-shadow:0 14px 28px rgba(72,54,31,.13);padding:.45rem .5rem;display:grid;gap:.42rem;pointer-events:auto}
 .input-debug[hidden]{display:none!important}
 .input-debug.collapsed .input-debug-note,.input-debug.collapsed .input-debug-log,.input-debug.collapsed .input-debug-secondary{display:none}
@@ -419,6 +422,11 @@ a{color:inherit}
 
     <div class="toolbar no-print" aria-label="Learning map controls">
       <div class="toolbar-group">
+        <button id="btnUndo" title="Undo last map edit (Ctrl+Z)" aria-label="Undo last map edit" disabled>↶</button>
+        <button id="btnRedo" title="Redo last undone map edit (Ctrl+Shift+Z)" aria-label="Redo last undone map edit" disabled>↷</button>
+        <button id="btnMultiSelect" title="Select multiple blocks and relationship lines" aria-label="Select multiple blocks and relationship lines" aria-pressed="false">☑</button>
+      </div>
+      <div class="toolbar-group">
         <button id="btnAddLinked" title="Add linked block from selected" aria-label="Add linked block from selected">＋↗</button>
         <button id="btnAddFree" title="Add free block at the center" aria-label="Add free block">＋</button>
         <button id="btnAddDocumentBlock" title="Add a document reference block" aria-label="Add document reference block">▣</button>
@@ -484,6 +492,15 @@ a{color:inherit}
             </div>
           </details>
           <details>
+            <summary>Shortcuts</summary>
+            <div class="legend-list">
+              <div><strong>Ctrl/Cmd+Z</strong> undo. <strong>Ctrl/Cmd+Shift+Z</strong> redo.</div>
+              <div><strong>Shift/Ctrl/Cmd-click</strong> toggles blocks and relationship lines into the selection.</div>
+              <div><strong>Delete</strong> removes the selected blocks and relationship lines. <strong>Ctrl/Cmd+C/V/D</strong> copy, paste, and duplicate.</div>
+              <div><strong>Ctrl/Cmd+A</strong> selects all map blocks and relationship lines when the canvas is active.</div>
+            </div>
+          </details>
+          <details>
             <summary>Learning trick</summary>
             <div class="legend-list">
               <div><strong>Big block</strong> = main idea.</div>
@@ -505,6 +522,8 @@ a{color:inherit}
       <div class="selection-actions" id="selectionActions">
         <button id="shelfAddLinked" class="selection-action" type="button" title="Add linked block" aria-label="Add linked block from selected block">＋↗</button>
         <button id="shelfEdit" class="selection-action" type="button" title="Edit selected block" aria-label="Edit selected block">✎</button>
+        <button id="shelfCopy" class="selection-action utility" type="button" title="Copy selection" aria-label="Copy selected blocks and relationship lines">⎘</button>
+        <button id="shelfPaste" class="selection-action utility" type="button" title="Paste copied selection" aria-label="Paste copied map selection" hidden>⇣</button>
         <button id="shelfDuplicate" class="selection-action" type="button" title="Duplicate selected block" aria-label="Duplicate selected block">⧉</button>
         <button id="shelfConnect" class="selection-action" type="button" title="Connect selected block" aria-label="Start connection from selected block">⛓</button>
         <button id="shelfStyle" class="selection-action" type="button" title="Change block style" aria-label="Change selected block style">◧</button>
@@ -517,6 +536,7 @@ a{color:inherit}
         <button id="shelfFromPort" class="selection-action" type="button" title="Change source connection side" aria-label="Change selected link source connection side">↤</button>
         <button id="shelfToPort" class="selection-action" type="button" title="Change target connection side" aria-label="Change selected link target connection side">↦</button>
         <button id="shelfReverse" class="selection-action" type="button" title="Reverse selected link" aria-label="Reverse selected link direction">⇄</button>
+        <button id="shelfClear" class="selection-action utility" type="button" title="Clear selection" aria-label="Clear map selection">×</button>
         <button id="shelfDelete" class="selection-action warn" type="button" title="Delete selected item" aria-label="Delete selected item">⌫</button>
       </div>
     </div>
@@ -649,6 +669,8 @@ import {
   const shelfToggle = document.getElementById('shelfToggle');
   const shelfAddLinked = document.getElementById('shelfAddLinked');
   const shelfEdit = document.getElementById('shelfEdit');
+  const shelfCopy = document.getElementById('shelfCopy');
+  const shelfPaste = document.getElementById('shelfPaste');
   const shelfDuplicate = document.getElementById('shelfDuplicate');
   const shelfConnect = document.getElementById('shelfConnect');
   const shelfStyle = document.getElementById('shelfStyle');
@@ -661,6 +683,7 @@ import {
   const shelfFromPort = document.getElementById('shelfFromPort');
   const shelfToPort = document.getElementById('shelfToPort');
   const shelfReverse = document.getElementById('shelfReverse');
+  const shelfClear = document.getElementById('shelfClear');
   const shelfDelete = document.getElementById('shelfDelete');
   const promptText = document.getElementById('promptText');
   const legendCard = document.getElementById('legendCard');
@@ -671,6 +694,9 @@ import {
   const btnClosePanel = document.getElementById('btnClosePanel');
   const zoomPercent = document.getElementById('btnZoomPercent');
   const zoomDock = document.getElementById('zoomDock');
+  const btnUndo = document.getElementById('btnUndo');
+  const btnRedo = document.getElementById('btnRedo');
+  const btnMultiSelect = document.getElementById('btnMultiSelect');
   const pageSelect = document.getElementById('pageSelect');
   const btnNewPage = document.getElementById('btnNewPage');
   const btnPageMenu = document.getElementById('btnPageMenu');
@@ -778,6 +804,8 @@ import {
   let view = Object.assign({x:0,y:0,scale:1}, data.view || {});
   let selectedId = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
   let selectedEdgeId = null;
+  const selectedNodeIds = new Set(selectedId ? [selectedId] : []);
+  const selectedEdgeIds = new Set();
   let dragNode = null;
   let resizeNode = null;
   let panDrag = null;
@@ -810,8 +838,13 @@ import {
   let workbenchUserToggled = false;
   let pendingPlacement = null;
   let suppressNextPlacementClick = false;
+  let multiSelectMode = false;
+  let mapClipboard = null;
+  let textEditState = null;
+  const mapHistory = {undo:[], redo:[]};
 
   const DEBUG_INPUT_KEY = 'neuro-map-studio:debug-input';
+  const MAP_HISTORY_LIMIT = 100;
   const LONG_PRESS_DELAY = 450;
   const LONG_PRESS_MOVE = 10;
   const EDGE_HIT_WIDTH = 32;
@@ -1241,11 +1274,11 @@ import {
       }
       data = activePage().map;
       view = Object.assign({x:0,y:0,scale:1}, data.view || {});
-      selectedId = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
-      selectedEdgeId = null;
       connectFrom = null;
       const freshStartupView = positionFreshStarterView();
-      if(freshStartupView) selectedId = null;
+      const startupSelection = freshStartupView ? null : (data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null));
+      applySelectionSnapshot({nodes:startupSelection ? [startupSelection] : [], edges:[]});
+      resetMapHistory();
       renderPageControls();
       render();
       applyView();
@@ -1281,8 +1314,10 @@ import {
     workspace.activePageId = next.id;
     data = next.map;
     view = Object.assign({x:0,y:0,scale:1}, data.view || {});
-    selectedId = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
-    selectedEdgeId = null; connectFrom = null; closeMenu(); closeSidePanel();
+    const nextSelection = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
+    applySelectionSnapshot({nodes:nextSelection ? [nextSelection] : [], edges:[]});
+    resetMapHistory();
+    connectFrom = null; closeMenu(); closeSidePanel();
     render(); applyView(); updatePrompt(); recoverViewSoon('map view switched'); save('Map view switched'); showToast('Map view switched');
   }
   function createNewPage(){
@@ -1294,7 +1329,9 @@ import {
     workspace.activePageId = p.id;
     data = p.map;
     view = Object.assign({x:0,y:0,scale:1}, data.view || {});
-    selectedId = 'core'; selectedEdgeId = null; connectFrom = null;
+    applySelectionSnapshot({nodes:['core'], edges:[]});
+    resetMapHistory();
+    connectFrom = null;
     render(); resetView(); save('Map view created'); showToast('New map view created');
   }
   function duplicateCurrentPage(){
@@ -1306,8 +1343,10 @@ import {
     workspace.activePageId = p.id;
     data = p.map;
     view = Object.assign({x:0,y:0,scale:1}, data.view || {});
-    selectedId = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
-    selectedEdgeId = null; connectFrom = null;
+    const copySelection = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
+    applySelectionSnapshot({nodes:copySelection ? [copySelection] : [], edges:[]});
+    resetMapHistory();
+    connectFrom = null;
     render(); applyView(); recoverViewSoon('map view duplicated'); save('Map view duplicated'); showToast('Map view duplicated');
   }
   function renameCurrentPage(){
@@ -1326,8 +1365,10 @@ import {
     workspace.activePageId = (workspace.pages[Math.max(0,idx-1)] || workspace.pages[0]).id;
     data = activePage().map;
     view = Object.assign({x:0,y:0,scale:1}, data.view || {});
-    selectedId = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
-    selectedEdgeId = null; connectFrom = null;
+    const nextSelection = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
+    applySelectionSnapshot({nodes:nextSelection ? [nextSelection] : [], edges:[]});
+    resetMapHistory();
+    connectFrom = null;
     render(); applyView(); recoverViewSoon('map view deleted'); save('Map view deleted'); showToast('Map view deleted');
   }
   function createPageFromNode(nodeId){
@@ -1355,7 +1396,9 @@ import {
     workspace.pages.push(p);
     workspace.activePageId = p.id;
     data = p.map; view = Object.assign({x:0,y:0,scale:1}, data.view || {});
-    selectedId = nodeId; selectedEdgeId = null; connectFrom = null;
+    applySelectionSnapshot({nodes:[nodeId], edges:[]});
+    resetMapHistory();
+    connectFrom = null;
     render(); resetView(); save('Detail map view created'); showToast('Detail map view created');
   }
   function id(){ return 'node-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7); }
@@ -1364,6 +1407,7 @@ import {
   function edgeById(eid){ return data.edges.find(e => e.id === eid); }
   function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
   function clean(s){ return String(s || '').replace(/\s+/g,' ').trim(); }
+  function cloneJson(value){ return JSON.parse(JSON.stringify(value)); }
   function escapeHtml(value){
     return String(value ?? '').replace(/[&<>"']/g, char => ({
       '&':'&amp;',
@@ -1385,12 +1429,185 @@ import {
     return {x:rect.left + rect.width / 2, y:rect.bottom + 8};
   }
   function currentSelectionMode(){
-    if(selectedEdgeId) return 'edge';
-    if(selectedId) return 'node';
+    if(selectedNodeIds.size && selectedEdgeIds.size) return 'mixed';
+    if(selectedEdgeIds.size) return 'edge';
+    if(selectedNodeIds.size) return 'node';
     return 'selection';
   }
+  function isEditingElement(element){
+    return !!element?.closest?.('[contenteditable],input,textarea,select');
+  }
   function isTextEditingActive(){
-    return !!document.activeElement?.closest?.('[contenteditable]');
+    return isEditingElement(document.activeElement);
+  }
+  function isMapShortcutContext(){
+    if(isTextEditingActive()) return false;
+    const active = document.activeElement;
+    if(!active || active === document.body || active === stage) return true;
+    if(active.closest?.('#stage') && !active.closest?.('input,textarea,select,[contenteditable]')) return true;
+    return hasMapSelection();
+  }
+  function syncSelectionAliases(){
+    const nodes = Array.from(selectedNodeIds).filter(nodeId => !!byId(nodeId));
+    const edges = Array.from(selectedEdgeIds).filter(edgeId => !!edgeById(edgeId));
+    selectedNodeIds.clear();
+    selectedEdgeIds.clear();
+    nodes.forEach(nodeId => selectedNodeIds.add(nodeId));
+    edges.forEach(edgeId => selectedEdgeIds.add(edgeId));
+    selectedId = nodes[0] || null;
+    selectedEdgeId = edges[0] || null;
+  }
+  function getSelectionSnapshot(){
+    syncSelectionAliases();
+    return {nodes:Array.from(selectedNodeIds), edges:Array.from(selectedEdgeIds)};
+  }
+  function applySelectionSnapshot(selection={}){
+    selectedNodeIds.clear();
+    selectedEdgeIds.clear();
+    (selection.nodes || []).forEach(nodeId => { if(byId(nodeId)) selectedNodeIds.add(nodeId); });
+    (selection.edges || []).forEach(edgeId => { if(edgeById(edgeId)) selectedEdgeIds.add(edgeId); });
+    syncSelectionAliases();
+  }
+  function selectionCounts(){
+    syncSelectionAliases();
+    return {nodes:selectedNodeIds.size, edges:selectedEdgeIds.size, total:selectedNodeIds.size + selectedEdgeIds.size};
+  }
+  function hasMapSelection(){
+    return selectionCounts().total > 0;
+  }
+  function plural(count, singular, pluralText=singular + 's'){
+    return `${count} ${count === 1 ? singular : pluralText}`;
+  }
+  function selectionSummary(){
+    const counts = selectionCounts();
+    const parts = [];
+    if(counts.nodes) parts.push(plural(counts.nodes, 'block'));
+    if(counts.edges) parts.push(plural(counts.edges, 'line'));
+    return parts.join(', ') || 'No selection';
+  }
+  function setMultiSelectMode(active, options={}){
+    multiSelectMode = Boolean(active);
+    if(btnMultiSelect){
+      btnMultiSelect.classList.toggle('active', multiSelectMode);
+      btnMultiSelect.setAttribute('aria-pressed', String(multiSelectMode));
+      btnMultiSelect.title = multiSelectMode ? 'Selecting multiple blocks and relationship lines' : 'Select multiple blocks and relationship lines';
+    }
+    if(options.announce) showToast(multiSelectMode ? 'Select multiple on' : 'Select multiple off');
+  }
+  function shouldToggleSelection(event){
+    return !!(multiSelectMode || event?.shiftKey || event?.ctrlKey || event?.metaKey);
+  }
+  function setSelectionFromIds(nodeIds=[], edgeIds=[], reason='selection-change', source=inputDebugState.lastPointer){
+    selectedNodeIds.clear();
+    selectedEdgeIds.clear();
+    nodeIds.forEach(nodeId => { if(byId(nodeId)) selectedNodeIds.add(nodeId); });
+    edgeIds.forEach(edgeId => { if(edgeById(edgeId)) selectedEdgeIds.add(edgeId); });
+    pendingEdgeDeleteId = null;
+    syncSelectionAliases();
+    refreshSelectionUI(reason, source);
+  }
+  function toggleNodeSelection(nodeId, reason='toggle-node', source=inputDebugState.lastPointer){
+    if(!byId(nodeId)) return;
+    if(selectedNodeIds.has(nodeId)) selectedNodeIds.delete(nodeId);
+    else selectedNodeIds.add(nodeId);
+    pendingEdgeDeleteId = null;
+    syncSelectionAliases();
+    refreshSelectionUI(reason, source);
+  }
+  function toggleEdgeSelection(edgeId, reason='toggle-line', source=inputDebugState.lastPointer){
+    if(!edgeById(edgeId)) return;
+    if(selectedEdgeIds.has(edgeId)) selectedEdgeIds.delete(edgeId);
+    else selectedEdgeIds.add(edgeId);
+    pendingEdgeDeleteId = null;
+    syncSelectionAliases();
+    refreshSelectionUI(reason, source);
+  }
+  function refreshSelectionUI(reason='selection-change', source=inputDebugState.lastPointer){
+    syncSelectionAliases();
+    nodeLayer.querySelectorAll('.map-node').forEach(el => el.classList.toggle('selected', selectedNodeIds.has(el.dataset.id)));
+    renderEdges();
+    updateSelectionUI(reason);
+    updatePrompt();
+    applyFocus();
+    logInputDebug('selection-change', source, {mode:currentSelectionMode(), reason, target:stage});
+  }
+  function captureMapSnapshot(){
+    return {nodes:cloneJson(data.nodes), edges:cloneJson(data.edges)};
+  }
+  function beginMapCommand(){
+    return {map:captureMapSnapshot(), selection:getSelectionSnapshot()};
+  }
+  function mapSnapshotsMatch(a, b){
+    return JSON.stringify(a) === JSON.stringify(b);
+  }
+  function updateHistoryControls(){
+    if(btnUndo){
+      btnUndo.disabled = mapHistory.undo.length === 0;
+      btnUndo.classList.toggle('history-live', mapHistory.undo.length > 0);
+    }
+    if(btnRedo){
+      btnRedo.disabled = mapHistory.redo.length === 0;
+      btnRedo.classList.toggle('history-live', mapHistory.redo.length > 0);
+    }
+  }
+  function resetMapHistory(){
+    mapHistory.undo = [];
+    mapHistory.redo = [];
+    updateHistoryControls();
+  }
+  function commitMapCommand(label, before, options={}){
+    if(!before) return false;
+    syncSelectionAliases();
+    const after = captureMapSnapshot();
+    if(mapSnapshotsMatch(before.map, after)){
+      updateHistoryControls();
+      return false;
+    }
+    mapHistory.undo.push({
+      label,
+      before:before.map,
+      after,
+      beforeSelection:before.selection,
+      afterSelection:getSelectionSnapshot()
+    });
+    if(mapHistory.undo.length > MAP_HISTORY_LIMIT) mapHistory.undo.shift();
+    mapHistory.redo = [];
+    updateHistoryControls();
+    if(options.render !== false) render();
+    if(options.save !== false) save(label);
+    return true;
+  }
+  function applyMapSnapshot(snapshot){
+    data.nodes = cloneJson(snapshot.nodes || []);
+    data.edges = cloneJson(snapshot.edges || []);
+    data.view = view;
+    syncCurrentPage();
+  }
+  function restoreHistoryEntry(entry, direction){
+    const snapshot = direction === 'undo' ? entry.before : entry.after;
+    const selection = direction === 'undo' ? entry.beforeSelection : entry.afterSelection;
+    applyMapSnapshot(snapshot);
+    applySelectionSnapshot(selection);
+    pendingEdgeDeleteId = null;
+    suppressSelectionShelf = false;
+    render();
+    save(direction === 'undo' ? 'Undo' : 'Redo');
+    showToast(`${direction === 'undo' ? 'Undid' : 'Redid'} ${entry.label.toLowerCase()}`);
+  }
+  function undoMapCommand(){
+    const entry = mapHistory.undo.pop();
+    if(!entry){ showToast('Nothing to undo'); updateHistoryControls(); return; }
+    mapHistory.redo.push(entry);
+    restoreHistoryEntry(entry, 'undo');
+    updateHistoryControls();
+  }
+  function redoMapCommand(){
+    const entry = mapHistory.redo.pop();
+    if(!entry){ showToast('Nothing to redo'); updateHistoryControls(); return; }
+    mapHistory.undo.push(entry);
+    if(mapHistory.undo.length > MAP_HISTORY_LIMIT) mapHistory.undo.shift();
+    restoreHistoryEntry(entry, 'redo');
+    updateHistoryControls();
   }
   function setSelectionShelfRendered(visible, reason=''){
     if(!visible){
@@ -1419,21 +1636,21 @@ import {
     updateSelectionUI(reason || (active ? 'toolbar-suppressed' : 'toolbar-restored'));
   }
   function clearSelection(reason='selection-cleared', source=inputDebugState.lastPointer){
-    if(!selectedId && !selectedEdgeId){
+    if(!hasMapSelection()){
       pendingEdgeDeleteId = null;
       suppressSelectionShelf = false;
+      setMultiSelectMode(false);
       updateSelectionUI(reason);
       return;
     }
+    selectedNodeIds.clear();
+    selectedEdgeIds.clear();
     selectedId = null;
     selectedEdgeId = null;
     pendingEdgeDeleteId = null;
     suppressSelectionShelf = false;
-    nodeLayer.querySelectorAll('.map-node').forEach(el => el.classList.remove('selected'));
-    renderEdges();
-    updateSelectionUI(reason);
-    updatePrompt();
-    applyFocus();
+    setMultiSelectMode(false);
+    refreshSelectionUI(reason, source);
     logInputDebug('selection-cleared', source, {mode:'selection', reason, target:stage});
   }
   function rectFromElement(element){
@@ -1896,6 +2113,21 @@ import {
     const title = el.querySelector('.node-title');
     if(title) title.focus();
   }
+  function beginTextEdit(nodeId, field){
+    const node = byId(nodeId);
+    if(!node || !field) return;
+    if(textEditState && textEditState.nodeId === nodeId && textEditState.field === field) return;
+    commitTextEdit('switch-field');
+    textEditState = {nodeId, field, before:beginMapCommand()};
+  }
+  function commitTextEdit(reason='text-edit'){
+    if(!textEditState) return;
+    const state = textEditState;
+    textEditState = null;
+    if(!byId(state.nodeId)) return;
+    commitMapCommand('Edited block text', state.before, {render:false});
+    logInputDebug('text-edit-commit', inputDebugState.lastPointer, {mode:'node', reason, target:nodeLayer.querySelector(`[data-id="${CSS.escape(state.nodeId)}"]`)});
+  }
   function clearEdgeDeleteArm(){
     if(!pendingEdgeDeleteId) return;
     pendingEdgeDeleteId = null;
@@ -2036,7 +2268,7 @@ import {
     renderEdges();
     updateSelectionUI('node-drag-end');
     logInputDebug('drag-end', source || inputDebugState.lastPointer, {mode:'node', reason:dragReason === 'pointerup' ? '' : dragReason, target:active.handle});
-    save('Moved');
+    commitMapCommand('Moved block', active.beforeCommand, {render:false});
     if(reason === 'pointerup') showToast('Moved');
     return true;
   }
@@ -2313,7 +2545,7 @@ import {
       const nodeType = nodeTypes.includes(n.nodeType) ? n.nodeType : 'concept';
       const documentRecord = nodeType === 'document' ? documentById(n.documentId) : null;
       el.className = `map-node ${n.group} shape-${n.shape} imp-${n.importance} type-${nodeType}`;
-      if(n.id === selectedId) el.classList.add('selected');
+      if(selectedNodeIds.has(n.id)) el.classList.add('selected');
       if(connectFrom === n.id) el.classList.add('connect-source');
       if(connectFrom && connectFrom !== n.id) el.classList.add('connect-target');
       el.dataset.id = n.id;
@@ -2442,12 +2674,12 @@ import {
       hit.setAttribute('stroke-width', String(Math.max(window.matchMedia('(pointer:coarse)').matches ? EDGE_HIT_WIDTH_COARSE : EDGE_HIT_WIDTH, layout.style.base + e.strength*.58 + 12)));
       g.appendChild(hit);
       const p = document.createElementNS('http://www.w3.org/2000/svg','path');
-      p.setAttribute('class', 'edge' + (e.id === selectedEdgeId ? ' selected' : ''));
+      p.setAttribute('class', 'edge' + (selectedEdgeIds.has(e.id) ? ' selected' : ''));
       p.setAttribute('d', layout.path); p.setAttribute('stroke', layout.style.color); p.setAttribute('stroke-width', String(layout.style.base + e.strength*.58));
       if(layout.style.dash) p.setAttribute('stroke-dasharray', layout.style.dash);
       g.appendChild(p); edgeLayer.appendChild(g);
       const label = document.createElement('button');
-      label.className = 'edge-label' + (e.id === selectedEdgeId ? ' selected' : '');
+      label.className = 'edge-label' + (selectedEdgeIds.has(e.id) ? ' selected' : '');
       label.type = 'button'; label.dataset.edgeId = e.id;
       label.style.left = layout.mid.x + 'px'; label.style.top = layout.mid.y + 'px'; label.style.borderColor = layout.style.color + '66';
       label.textContent = e.label || layout.style.label;
@@ -2456,6 +2688,19 @@ import {
     });
   }
   function getSelectionAnchor(){
+    syncSelectionAliases();
+    const selectedNodes = Array.from(selectedNodeIds).map(nodeId => byId(nodeId)).filter(Boolean);
+    if(selectedNodes.length > 1){
+      const bounds = selectedNodes.reduce((acc, node) => {
+        const rect = nodeRect(node);
+        acc.left = Math.min(acc.left, rect.x);
+        acc.top = Math.min(acc.top, rect.y);
+        acc.right = Math.max(acc.right, rect.x + rect.w);
+        acc.bottom = Math.max(acc.bottom, rect.y + rect.h);
+        return acc;
+      }, {left:Infinity, top:Infinity, right:-Infinity, bottom:-Infinity});
+      return worldToStage((bounds.left + bounds.right) / 2, bounds.top);
+    }
     if(selectedId){
       const node = byId(selectedId);
       if(node){
@@ -2470,6 +2715,29 @@ import {
       }
     }
     return null;
+  }
+  function getSelectionScreenRect(){
+    syncSelectionAliases();
+    const rects = [];
+    selectedNodeIds.forEach(nodeId => {
+      const node = byId(nodeId);
+      if(node) rects.push(nodeScreenRectFromWorld(node.x, node.y, nodeDims(node).w, nodeDims(node).h));
+    });
+    selectedEdgeIds.forEach(edgeId => {
+      const layout = getEdgeLayout(edgeById(edgeId));
+      if(layout) rects.push({left:layout.mid.x * view.scale + view.x - 22, top:layout.mid.y * view.scale + view.y - 18, right:layout.mid.x * view.scale + view.x + 22, bottom:layout.mid.y * view.scale + view.y + 18, width:44, height:36});
+    });
+    if(!rects.length) return null;
+    const bounds = rects.reduce((acc, rect) => {
+      acc.left = Math.min(acc.left, rect.left);
+      acc.top = Math.min(acc.top, rect.top);
+      acc.right = Math.max(acc.right, rect.right);
+      acc.bottom = Math.max(acc.bottom, rect.bottom);
+      return acc;
+    }, {left:Infinity, top:Infinity, right:-Infinity, bottom:-Infinity});
+    bounds.width = bounds.right - bounds.left;
+    bounds.height = bounds.bottom - bounds.top;
+    return bounds;
   }
   function positionSelectionShelf(){
     if(selectionShelf.hidden || !selectionShelf.classList.contains('show')) return;
@@ -2494,9 +2762,9 @@ import {
       height = selectionShelf.offsetHeight || height;
     }
     const gap = workbenchOpen ? 44 : 30;
-    let selectedRect = selectedNode ? nodeScreenRectFromWorld(selectedNode.x, selectedNode.y, nodeDims(selectedNode).w, nodeDims(selectedNode).h) : null;
+    let selectedRect = getSelectionScreenRect();
     let effectiveAnchor = anchor;
-    if(selectedNode){
+    if(selectedNode && selectedNodeIds.size === 1 && selectedEdgeIds.size === 0){
       const nodeElement = nodeLayer.querySelector(`[data-id="${CSS.escape(selectedNode.id)}"]`);
       const nodeBox = rectFromElement(nodeElement);
       if(nodeBox){
@@ -2566,33 +2834,34 @@ import {
 
   function select(nodeId, reason='select-node'){
     if(!byId(nodeId)) return;
-    selectedId = nodeId; selectedEdgeId = null;
-    nodeLayer.querySelectorAll('.map-node').forEach(el => el.classList.toggle('selected', el.dataset.id === nodeId));
-    edgeLabelLayer.querySelectorAll('.edge-label').forEach(el => el.classList.remove('selected'));
-    updateSelectionUI(reason); updatePrompt(); applyFocus(); save('Selected');
+    setSelectionFromIds([nodeId], [], reason);
   }
   function selectEdge(edgeId, reason='select-edge'){
     const e = edgeById(edgeId); if(!e) return;
-    selectedEdgeId = edgeId; selectedId = null;
-    nodeLayer.querySelectorAll('.map-node').forEach(el => el.classList.remove('selected'));
-    renderEdges(); updateSelectionUI(reason); updatePrompt(); applyFocus(); save('Selected link');
+    setSelectionFromIds([], [edgeId], reason);
   }
   function updateSelectionUI(reason='selection-change'){
-    const node = selectedId ? byId(selectedId) : null;
-    const edge = !node && selectedEdgeId ? edgeById(selectedEdgeId) : null;
-    const hasSelection = !!(node || edge);
+    syncSelectionAliases();
+    const counts = selectionCounts();
+    const node = counts.nodes === 1 && counts.edges === 0 ? byId(selectedId) : null;
+    const edge = counts.edges === 1 && counts.nodes === 0 ? edgeById(selectedEdgeId) : null;
+    const hasSelection = counts.total > 0;
+    const hasCopyableBlocks = counts.nodes > 0;
+    const hasClipboard = !!(mapClipboard && mapClipboard.nodes && mapClipboard.nodes.length);
     selectionShelf.classList.toggle('collapsed', shelfCollapsed);
     shelfToggle.textContent = shelfCollapsed ? '▸' : '▾';
     shelfToggle.title = shelfCollapsed ? 'Expand selected item toolbar' : 'Collapse selected item toolbar';
     shelfToggle.setAttribute('aria-label', shelfToggle.title);
     if(node){
       pendingEdgeDeleteId = null;
-      selectionLabel.textContent = 'Block:';
-      selectedTitle.textContent = node.title || 'Untitled block';
+      selectionLabel.textContent = 'Selection:';
+      selectedTitle.textContent = '1 block';
       selectionShelf.dataset.mode = 'node';
-      selectionShelf.setAttribute('aria-label', 'Selected block actions');
+      selectionShelf.setAttribute('aria-label', 'Selection toolbar for selected block');
       setButtonVisible(shelfAddLinked, true);
       setButtonVisible(shelfEdit, true);
+      setButtonVisible(shelfCopy, true);
+      setButtonVisible(shelfPaste, hasClipboard);
       setButtonVisible(shelfDuplicate, true);
       setButtonVisible(shelfConnect, true);
       setButtonVisible(shelfStyle, true);
@@ -2605,19 +2874,25 @@ import {
       setButtonVisible(shelfFromPort, false);
       setButtonVisible(shelfToPort, false);
       setButtonVisible(shelfReverse, false);
+      setButtonVisible(shelfClear, true);
       setButtonVisible(shelfDelete, true);
+      shelfDuplicate.disabled = false;
+      shelfCopy.disabled = false;
+      shelfPaste.disabled = !hasClipboard;
       shelfDelete.textContent = '⌫';
       shelfDelete.title = 'Delete selected block';
       shelfDelete.setAttribute('aria-label', 'Delete selected block');
     }else if(edge){
       if(pendingEdgeDeleteId && pendingEdgeDeleteId !== edge.id) pendingEdgeDeleteId = null;
-      selectionLabel.textContent = 'Link:';
-      selectedTitle.textContent = `${byId(edge.from)?.title || 'block'} — ${byId(edge.to)?.title || 'block'}`;
+      selectionLabel.textContent = 'Selection:';
+      selectedTitle.textContent = '1 line';
       selectionShelf.dataset.mode = 'edge';
-      selectionShelf.setAttribute('aria-label', 'Selected link actions');
+      selectionShelf.setAttribute('aria-label', 'Selection toolbar for selected relationship line');
       setButtonVisible(shelfAddLinked, false);
       setButtonVisible(shelfEdit, false);
-      setButtonVisible(shelfDuplicate, false);
+      setButtonVisible(shelfCopy, true);
+      setButtonVisible(shelfPaste, hasClipboard);
+      setButtonVisible(shelfDuplicate, true);
       setButtonVisible(shelfConnect, false);
       setButtonVisible(shelfStyle, false);
       setButtonVisible(shelfCenter, false);
@@ -2629,21 +2904,66 @@ import {
       setButtonVisible(shelfFromPort, true);
       setButtonVisible(shelfToPort, true);
       setButtonVisible(shelfReverse, true);
+      setButtonVisible(shelfClear, true);
       setButtonVisible(shelfDelete, true);
-      const deleteArmed = pendingEdgeDeleteId === edge.id;
-      shelfDelete.textContent = deleteArmed ? '⌫!' : '⌫';
-      shelfDelete.title = deleteArmed ? 'Confirm delete selected link' : 'Delete selected link';
+      shelfDuplicate.disabled = true;
+      shelfCopy.disabled = false;
+      shelfPaste.disabled = !hasClipboard;
+      shelfDelete.textContent = '⌫';
+      shelfDelete.title = 'Delete selected line';
+      shelfDelete.setAttribute('aria-label', shelfDelete.title);
+    }else if(hasSelection){
+      pendingEdgeDeleteId = null;
+      selectionLabel.textContent = 'Selection:';
+      selectedTitle.textContent = selectionSummary();
+      selectionShelf.dataset.mode = currentSelectionMode();
+      selectionShelf.setAttribute('aria-label', 'Selection toolbar for selected blocks and relationship lines');
+      setButtonVisible(shelfAddLinked, false);
+      setButtonVisible(shelfEdit, false);
+      setButtonVisible(shelfCopy, true);
+      setButtonVisible(shelfPaste, hasClipboard);
+      setButtonVisible(shelfDuplicate, true);
+      setButtonVisible(shelfConnect, false);
+      setButtonVisible(shelfStyle, false);
+      setButtonVisible(shelfCenter, false);
+      setButtonVisible(shelfFocus, false);
+      setButtonVisible(shelfLabel, false);
+      setButtonVisible(shelfRelation, false);
+      setButtonVisible(shelfStrength, false);
+      setButtonVisible(shelfRoute, false);
+      setButtonVisible(shelfFromPort, false);
+      setButtonVisible(shelfToPort, false);
+      setButtonVisible(shelfReverse, false);
+      setButtonVisible(shelfClear, true);
+      setButtonVisible(shelfDelete, true);
+      shelfDuplicate.disabled = !hasCopyableBlocks;
+      shelfCopy.disabled = false;
+      shelfPaste.disabled = !hasClipboard;
+      shelfDelete.textContent = '⌫';
+      shelfDelete.title = `Delete ${selectionSummary()}`;
       shelfDelete.setAttribute('aria-label', shelfDelete.title);
     }else{
       pendingEdgeDeleteId = null;
+      setButtonVisible(shelfCopy, false);
+      setButtonVisible(shelfPaste, hasClipboard);
+      setButtonVisible(shelfClear, false);
+      shelfDuplicate.disabled = false;
+      shelfCopy.disabled = false;
+      shelfPaste.disabled = !hasClipboard;
     }
     setSelectionShelfRendered(hasSelection && !suppressSelectionShelf, reason);
-    shelfDelete.classList.toggle('danger-armed', !!(edge && pendingEdgeDeleteId === edge.id));
+    shelfDelete.classList.toggle('danger-armed', false);
     document.getElementById('btnConnect').classList.toggle('active', !!connectFrom);
     document.getElementById('btnFocus').classList.toggle('active', focusMode);
     shelfFocus.classList.toggle('active', focusMode && !!node);
+    updateHistoryControls();
   }
   function updatePrompt(){
+    const counts = selectionCounts();
+    if(counts.total > 1){
+      promptText.textContent = `Teach-back: explain why this ${selectionSummary()} belongs together.`;
+      return;
+    }
     if(selectedEdgeId){
       const e = edgeById(selectedEdgeId), style = e && relationStyles[e.relation];
       if(e) promptText.textContent = `Teach-back: explain why “${byId(e.from)?.title || 'block'}” ${e.label || style.label} “${byId(e.to)?.title || 'block'}”.`;
@@ -2658,13 +2978,165 @@ import {
   }
 
   function addNodeAt(x,y, opts={}){
+    const before = opts.history === false ? null : beginMapCommand();
     const nodeType = nodeTypes.includes(opts.nodeType) ? opts.nodeType : 'concept';
     const newNode = { id:id(), title:opts.title || (opts.linkFrom ? 'New linked idea' : 'New block'), body:opts.body || 'Rewrite this in your own words.', group:opts.group || 'blue', shape:opts.shape || 'card', importance:2, x:Math.round(x), y:Math.round(y), w:opts.w || 268, h:opts.h || 145, tag:opts.tag || (nodeType === 'document' ? 'document' : 'custom'), nodeType, documentId:nodeType === 'document' ? String(opts.documentId || '') : '' };
     data.nodes.push(newNode);
     if(opts.linkFrom && byId(opts.linkFrom)) data.edges.push({id:edgeId(), from:opts.linkFrom, to:newNode.id, relation:opts.relation || 'causes', strength:3, shape:'curve', fromPort:opts.fromPort || 'auto', toPort:opts.toPort || 'auto', label:''});
-    selectedId = newNode.id; selectedEdgeId = null; render(); save('Added block'); showToast(opts.linkFrom ? 'Linked block added' : 'Block added');
-    setTimeout(() => nodeLayer.querySelector(`[data-id="${CSS.escape(newNode.id)}"] .node-title`)?.focus(), 30);
+    applySelectionSnapshot({nodes:[newNode.id], edges:[]});
+    render();
+    if(before) commitMapCommand(opts.historyLabel || 'Added block', before, {render:false});
+    else if(opts.save !== false) save(opts.historyLabel || 'Added block');
+    showToast(opts.linkFrom ? 'Linked block added' : 'Block added');
+    if(opts.focus !== false) setTimeout(() => nodeLayer.querySelector(`[data-id="${CSS.escape(newNode.id)}"] .node-title`)?.focus(), 30);
     return newNode;
+  }
+  function selectedClipboardPayload(){
+    syncSelectionAliases();
+    const selectedNodes = Array.from(selectedNodeIds).map(nodeId => byId(nodeId)).filter(Boolean);
+    const copiedNodeIds = new Set(selectedNodes.map(node => node.id));
+    const copiedEdges = data.edges.filter(edge => copiedNodeIds.has(edge.from) && copiedNodeIds.has(edge.to));
+    const skippedSelectedLines = Array.from(selectedEdgeIds).filter(edgeId => {
+      const edge = edgeById(edgeId);
+      return edge && !(copiedNodeIds.has(edge.from) && copiedNodeIds.has(edge.to));
+    });
+    if(!selectedNodes.length){
+      return {nodes:[], edges:[], skippedSelectedLines};
+    }
+    return {
+      nodes:selectedNodes.map(node => cloneJson(node)),
+      edges:copiedEdges.map(edge => cloneJson(edge)),
+      skippedSelectedLines
+    };
+  }
+  function clipboardBounds(nodes){
+    if(!nodes.length) return {left:0, top:0, right:0, bottom:0, width:0, height:0};
+    const bounds = nodes.reduce((acc, node) => {
+      const dims = nodeDims(node);
+      acc.left = Math.min(acc.left, Number(node.x) || 0);
+      acc.top = Math.min(acc.top, Number(node.y) || 0);
+      acc.right = Math.max(acc.right, (Number(node.x) || 0) + dims.w);
+      acc.bottom = Math.max(acc.bottom, (Number(node.y) || 0) + dims.h);
+      return acc;
+    }, {left:Infinity, top:Infinity, right:-Infinity, bottom:-Infinity});
+    bounds.width = bounds.right - bounds.left;
+    bounds.height = bounds.bottom - bounds.top;
+    return bounds;
+  }
+  function clipboardSummary(payload){
+    const parts = [];
+    if(payload.nodes?.length) parts.push(plural(payload.nodes.length, 'block'));
+    if(payload.edges?.length) parts.push(plural(payload.edges.length, 'line'));
+    return parts.join(' and ') || 'nothing';
+  }
+  function copySelectionToClipboard(options={}){
+    const payload = selectedClipboardPayload();
+    if(!payload.nodes.length){
+      if(!options.silent) showToast(payload.skippedSelectedLines.length ? 'Copy the blocks on both ends of a line to paste it.' : 'Select blocks to copy.');
+      return null;
+    }
+    mapClipboard = {
+      nodes:payload.nodes,
+      edges:payload.edges,
+      pasteCount:0
+    };
+    updateSelectionUI('clipboard-updated');
+    if(!options.silent){
+      const skipped = payload.skippedSelectedLines.length ? ` Skipped ${plural(payload.skippedSelectedLines.length, 'line')} without both blocks.` : '';
+      showToast(`Copied ${clipboardSummary(payload)}.${skipped}`);
+    }
+    return cloneJson(mapClipboard);
+  }
+  function groupWouldBeVisible(targetLeft, targetTop, bounds){
+    const stageBox = stage.getBoundingClientRect();
+    const left = view.x + targetLeft * view.scale;
+    const top = view.y + targetTop * view.scale;
+    const right = left + bounds.width * view.scale;
+    const bottom = top + bounds.height * view.scale;
+    return right > 36 && bottom > 36 && left < stageBox.width - 36 && top < stageBox.height - 36;
+  }
+  function pasteTargetForPayload(payload, pasteCount){
+    const bounds = clipboardBounds(payload.nodes);
+    const offset = 42 * Math.max(1, pasteCount);
+    let target = {x:bounds.left + offset, y:bounds.top + offset};
+    if(!groupWouldBeVisible(target.x, target.y, bounds)){
+      const safe = getBroadCanvasSafeArea({includeShelf:false, includeToast:true, margin:42});
+      const stageBox = stage.getBoundingClientRect();
+      const worldPoint = screenToWorld(
+        stageBox.left + safe.left + safe.width * .45,
+        stageBox.top + safe.top + safe.height * .38
+      );
+      target = {x:worldPoint.x - bounds.width / 2, y:worldPoint.y - bounds.height / 2};
+    }
+    return {target, bounds};
+  }
+  function pasteClipboardPayload(payload, options={}){
+    if(!payload?.nodes?.length){ showToast('Nothing to paste'); return false; }
+    const pasteCount = options.pasteCount || ((mapClipboard && payload === mapClipboard) ? mapClipboard.pasteCount + 1 : 1);
+    const {target, bounds} = pasteTargetForPayload(payload, pasteCount);
+    const before = beginMapCommand();
+    const idMap = new Map();
+    const newNodes = payload.nodes.map(node => {
+      const next = cloneJson(node);
+      const nextId = id();
+      idMap.set(node.id, nextId);
+      next.id = nextId;
+      next.x = Math.round(target.x + ((Number(node.x) || 0) - bounds.left));
+      next.y = Math.round(target.y + ((Number(node.y) || 0) - bounds.top));
+      return next;
+    });
+    const newEdges = (payload.edges || []).filter(edge => idMap.has(edge.from) && idMap.has(edge.to)).map(edge => ({
+      ...cloneJson(edge),
+      id:edgeId(),
+      from:idMap.get(edge.from),
+      to:idMap.get(edge.to)
+    }));
+    data.nodes.push(...newNodes);
+    data.edges.push(...newEdges);
+    applySelectionSnapshot({nodes:newNodes.map(node => node.id), edges:newEdges.map(edge => edge.id)});
+    if(mapClipboard && payload === mapClipboard) mapClipboard.pasteCount = pasteCount;
+    render();
+    commitMapCommand(options.label || 'Pasted selection', before, {render:false});
+    showToast(options.toast || `Pasted ${clipboardSummary({nodes:newNodes, edges:newEdges})}. Ctrl+Z to undo.`);
+    return true;
+  }
+  function pasteClipboard(){
+    if(!mapClipboard?.nodes?.length){ showToast('Nothing to paste'); return false; }
+    return pasteClipboardPayload(mapClipboard, {label:'Pasted selection'});
+  }
+  function duplicateSelection(){
+    const payload = selectedClipboardPayload();
+    if(!payload.nodes.length){
+      showToast(payload.skippedSelectedLines.length ? 'Duplicate the blocks on both ends of a line to copy the line.' : 'Select blocks to duplicate.');
+      return false;
+    }
+    return pasteClipboardPayload(payload, {label:'Duplicated selection', toast:`Duplicated ${clipboardSummary(payload)}. Ctrl+Z to undo.`});
+  }
+  function deleteSummary(blockCount, lineCount){
+    const parts = [];
+    if(blockCount) parts.push(plural(blockCount, 'block'));
+    if(lineCount) parts.push(plural(lineCount, 'line'));
+    return parts.join(' and ') || 'nothing';
+  }
+  function deleteSelection(){
+    syncSelectionAliases();
+    if(!hasMapSelection()){ showToast('Nothing selected'); return false; }
+    const blockIds = new Set(Array.from(selectedNodeIds).filter(nodeId => byId(nodeId)));
+    const explicitLineIds = new Set(Array.from(selectedEdgeIds).filter(edgeId => edgeById(edgeId)));
+    const lineIds = new Set(explicitLineIds);
+    data.edges.forEach(edge => {
+      if(blockIds.has(edge.from) || blockIds.has(edge.to)) lineIds.add(edge.id);
+    });
+    const before = beginMapCommand();
+    data.nodes = data.nodes.filter(node => !blockIds.has(node.id));
+    data.edges = data.edges.filter(edge => !lineIds.has(edge.id));
+    if(connectFrom && blockIds.has(connectFrom)) connectFrom = null;
+    applySelectionSnapshot({nodes:[], edges:[]});
+    suppressSelectionShelf = false;
+    render();
+    commitMapCommand('Deleted selection', before, {render:false});
+    showToast(`Deleted ${deleteSummary(blockIds.size, lineIds.size)}. Ctrl+Z to undo.`);
+    return true;
   }
   function addLinkedFrom(nodeId, x, y, fromPort='auto'){
     const source = byId(nodeId); if(!source) return;
@@ -3114,38 +3586,57 @@ import {
   function closeDocumentDetail(){
     documentDetailCard.hidden = true;
   }
-  function duplicateNode(nodeId){ const n = byId(nodeId); if(!n) return; addNodeAt(n.x+42, n.y+42, {title:n.title + ' copy', body:n.body, group:n.group, shape:n.shape, tag:n.tag, w:n.w, h:n.h, nodeType:n.nodeType, documentId:n.documentId}); }
-  function deleteNode(nodeId){
-    const n = byId(nodeId); if(!n) return; if(!confirm(`Delete “${n.title || 'this block'}”?`)) return;
+  function duplicateNode(nodeId){ const n = byId(nodeId); if(!n) return; setSelectionFromIds([nodeId], [], 'duplicate-source'); duplicateSelection(); }
+  function deleteNode(nodeId, options={}){
+    const n = byId(nodeId); if(!n) return; if(options.confirm !== false && !confirm(`Delete “${n.title || 'this block'}”?`)) return;
+    const before = beginMapCommand();
     data.nodes = data.nodes.filter(x => x.id !== nodeId); data.edges = data.edges.filter(e => e.from !== nodeId && e.to !== nodeId);
-    if(connectFrom === nodeId) connectFrom = null; selectedId = null; selectedEdgeId = null; suppressSelectionShelf = false; render(); save('Deleted'); showToast('Block deleted');
+    if(connectFrom === nodeId) connectFrom = null;
+    applySelectionSnapshot({nodes:[], edges:[]});
+    suppressSelectionShelf = false;
+    render();
+    commitMapCommand('Deleted block', before, {render:false});
+    showToast('Block deleted. Ctrl+Z to undo.');
   }
   function addEdge(from,to,opts={}){
     if(!from || !to || from===to || !byId(from) || !byId(to)) return;
     if(data.edges.some(e => e.from === from && e.to === to)){ showToast('Already connected'); return; }
+    const before = beginMapCommand();
     const e = {id:edgeId(), from, to, relation:opts.relation || 'causes', strength:opts.strength || 3, shape:opts.shape || 'curve', fromPort:opts.fromPort || 'auto', toPort:opts.toPort || 'auto', label:opts.label || ''};
-    data.edges.push(e); selectedEdgeId = e.id; selectedId = null; render(); save('Connected'); showToast('Connected. Use the link toolbar or right-click/long-press to style it.'); temporarilyPassThroughZoomDock(); logInputDebug('connect-complete', inputDebugState.lastPointer, {mode:'edge'});
+    data.edges.push(e);
+    applySelectionSnapshot({nodes:[], edges:[e.id]});
+    render();
+    commitMapCommand('Connected blocks', before, {render:false});
+    showToast('Connected. Use the link toolbar or right-click/long-press to style it.');
+    temporarilyPassThroughZoomDock(); logInputDebug('connect-complete', inputDebugState.lastPointer, {mode:'edge'});
   }
-  function deleteEdge(edgeId){ data.edges = data.edges.filter(e => e.id !== edgeId); selectedEdgeId = null; suppressSelectionShelf = false; render(); save('Link deleted'); showToast('Link deleted'); }
-  function reverseEdge(edgeId){ const e = edgeById(edgeId); if(!e) return; const old = e.from; e.from = e.to; e.to = old; const oldPort = e.fromPort; e.fromPort = e.toPort || 'auto'; e.toPort = oldPort || 'auto'; render(); save('Link reversed'); }
-  function removeNodeEdges(nodeId){ data.edges = data.edges.filter(e => e.from !== nodeId && e.to !== nodeId); render(); save('Connections removed'); showToast('Connections removed'); }
-  function setNodeColor(nodeId, color){ const n = byId(nodeId); if(!n) return; n.group = color; render(); save('Color changed'); }
-  function setNodeShape(nodeId, shape){ const n = byId(nodeId); if(!n) return; n.shape = shape; render(); save('Shape changed'); }
-  function setNodeImportance(nodeId, val){ const n = byId(nodeId); if(!n) return; n.importance = clamp(Number(val),1,3); render(); save('Importance changed'); }
-  function setNodeSize(nodeId, preset){ const n = byId(nodeId), s = sizePresets[preset]; if(!n || !s) return; n.w = s.w; n.h = s.h; render(); save('Size changed'); }
-  function setEdgeRelation(edgeId, relation){ const e = edgeById(edgeId); if(!e) return; e.relation = relation; render(); save('Link type changed'); }
-  function setEdgeStrength(edgeId, strength){ const e = edgeById(edgeId); if(!e) return; e.strength = clamp(Number(strength),1,5); render(); save('Link strength changed'); }
-  function setEdgeShape(edgeId, shape){ const e = edgeById(edgeId); if(!e) return; e.shape = shape; render(); save('Line route changed'); }
-  function setEdgePort(edgeId, end, port){ const e = edgeById(edgeId); if(!e || !ports.includes(port)) return; if(end === 'from') e.fromPort = port; else e.toPort = port; render(); save('Connection side changed'); showToast('Connection side changed'); }
-  function setEdgeLabel(edgeId){ const e = edgeById(edgeId); if(!e) return; const style = relationStyles[e.relation]; const txt = prompt('Short label for this link:', e.label || style.label); if(txt === null) return; e.label = clean(txt); render(); save('Link label changed'); }
+  function deleteEdge(edgeId){
+    if(!edgeById(edgeId)) return;
+    const before = beginMapCommand();
+    data.edges = data.edges.filter(e => e.id !== edgeId);
+    applySelectionSnapshot({nodes:Array.from(selectedNodeIds), edges:Array.from(selectedEdgeIds).filter(id => id !== edgeId)});
+    suppressSelectionShelf = false; render(); commitMapCommand('Deleted line', before, {render:false}); showToast('Line deleted. Ctrl+Z to undo.');
+  }
+  function reverseEdge(edgeId){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); const old = e.from; e.from = e.to; e.to = old; const oldPort = e.fromPort; e.fromPort = e.toPort || 'auto'; e.toPort = oldPort || 'auto'; render(); commitMapCommand('Reversed line', before, {render:false}); }
+  function removeNodeEdges(nodeId){ const before = beginMapCommand(); data.edges = data.edges.filter(e => e.from !== nodeId && e.to !== nodeId); render(); if(commitMapCommand('Removed connections', before, {render:false})) showToast('Connections removed'); }
+  function setNodeColor(nodeId, color){ const n = byId(nodeId); if(!n) return; const before = beginMapCommand(); n.group = color; render(); commitMapCommand('Color changed', before, {render:false}); }
+  function setNodeShape(nodeId, shape){ const n = byId(nodeId); if(!n) return; const before = beginMapCommand(); n.shape = shape; render(); commitMapCommand('Shape changed', before, {render:false}); }
+  function setNodeImportance(nodeId, val){ const n = byId(nodeId); if(!n) return; const before = beginMapCommand(); n.importance = clamp(Number(val),1,3); render(); commitMapCommand('Importance changed', before, {render:false}); }
+  function setNodeSize(nodeId, preset){ const n = byId(nodeId), s = sizePresets[preset]; if(!n || !s) return; const before = beginMapCommand(); n.w = s.w; n.h = s.h; render(); commitMapCommand('Size changed', before, {render:false}); }
+  function setEdgeRelation(edgeId, relation){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); e.relation = relation; render(); commitMapCommand('Line type changed', before, {render:false}); }
+  function setEdgeStrength(edgeId, strength){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); e.strength = clamp(Number(strength),1,5); render(); commitMapCommand('Line strength changed', before, {render:false}); }
+  function setEdgeShape(edgeId, shape){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); e.shape = shape; render(); commitMapCommand('Line route changed', before, {render:false}); }
+  function setEdgePort(edgeId, end, port){ const e = edgeById(edgeId); if(!e || !ports.includes(port)) return; const before = beginMapCommand(); if(end === 'from') e.fromPort = port; else e.toPort = port; render(); if(commitMapCommand('Connection side changed', before, {render:false})) showToast('Connection side changed'); }
+  function setEdgeLabel(edgeId){ const e = edgeById(edgeId); if(!e) return; const style = relationStyles[e.relation]; const txt = prompt('Short label for this link:', e.label || style.label); if(txt === null) return; const before = beginMapCommand(); e.label = clean(txt); render(); commitMapCommand('Line label changed', before, {render:false}); }
   function startConnect(nodeId){ if(!byId(nodeId)) return; connectFrom = nodeId; syncGestureLockUI(); render(); const source = byId(nodeId); connectText.textContent = `Connecting from “${source.title || 'block'}”: click another block.`; connectBanner.classList.add('show'); showToast('Click target block'); logInputDebug('connect-start', inputDebugState.lastPointer, {mode:'node'}); }
   function cancelConnect(){ connectFrom = null; syncGestureLockUI(); connectBanner.classList.remove('show'); render(); }
 
   function tidy(){
+    const before = beginMapCommand();
     const positions = { core:[-120,-40], money:[-620,-40], dependence:[-380,190], cheap:[-50,190], assets:[310,120], policy:[310,-170], public:[-50,-315], assetmgr:[-50,475], government:[-625,-315], crises:[-925,-110], media:[-760,275], bitcoin:[310,460], exit:[-380,675] };
     let custom = 0;
     data.nodes.forEach(n => { if(positions[n.id]){ n.x=positions[n.id][0]; n.y=positions[n.id][1]; } else { const col = custom % 4, row = Math.floor(custom/4); n.x = -820 + col*330; n.y = 930 + row*210; custom++; } });
-    render(); save('Tidied'); recenter();
+    render(); commitMapCommand('Tidied map', before, {render:false}); recenter();
   }
   function safeFileName(name){ return clean(name || 'learning-map').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'learning-map'; }
   function downloadJson(payload, filename, toastText){
@@ -3180,7 +3671,10 @@ import {
           workspace.activePageId = p.id;
         }
         data = activePage().map; view = Object.assign({x:0,y:0,scale:1}, data.view);
-        selectedId = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null); selectedEdgeId = null; connectFrom = null;
+        const importedSelection = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
+        applySelectionSnapshot({nodes:importedSelection ? [importedSelection] : [], edges:[]});
+        resetMapHistory();
+        connectFrom = null;
         render(); applyView(); save('Imported'); showToast('Import complete');
       }catch(e){ showToast('Import failed'); }
     };
@@ -3195,8 +3689,8 @@ import {
     data = seededReset ? cloneDefault() : blankMap();
     activePage().map = data;
     view = Object.assign({}, data.view);
-    selectedId = 'core';
-    selectedEdgeId = null;
+    applySelectionSnapshot({nodes:['core'], edges:[]});
+    resetMapHistory();
     connectFrom = null;
     render();
     recenter();
@@ -3390,21 +3884,23 @@ import {
   edgeLayer.addEventListener('contextmenu', e => { const g = e.target.closest('g.edge-group'); if(!g) return; const ed = edgeById(g.dataset.edgeId); const hitKind = e.target.closest('.edge-hit') ? 'edge-hit-target' : 'edge-group'; if(suppressGestureContextMenu(e, 'edge', g, {edgeId:ed?.id, hitKind})) return; if(suppressRecentContextMenu(e, 'edge', g, {edgeId:ed?.id, hitKind})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind}); });
   stage.addEventListener('contextmenu', e => { if(pendingPlacement){ e.preventDefault(); e.stopPropagation(); return; } if(suppressGestureContextMenu(e, 'canvas', e.target.closest('#stage') || stage)) return; if(suppressRecentContextMenu(e, 'canvas', stage)) return; if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.map-workbench') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.document-picker') || e.target.closest('.document-detail-card') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
 
-  nodeLayer.addEventListener('click', e => { const detailButton = e.target.closest('[data-action="document-detail"]'); if(detailButton){ const nodeEl = detailButton.closest('.map-node'); const node = nodeEl ? byId(nodeEl.dataset.id) : null; if(node) openDocumentDetail(node); e.stopPropagation(); return; } const el = e.target.closest('.map-node'); if(!el) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'node', target:el}); if(connectFrom && el.dataset.id !== connectFrom){ addEdge(connectFrom, el.dataset.id); cancelConnect(); return; } select(el.dataset.id); });
-  edgeLabelLayer.addEventListener('click', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'edge', target:lab}); selectEdge(lab.dataset.edgeId); });
-  edgeLayer.addEventListener('click', e => { const g = e.target.closest('g.edge-group'); if(!g) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'edge', target:g}); selectEdge(g.dataset.edgeId); });
-  nodeLayer.addEventListener('input', e => { const field = e.target.dataset.field, el = e.target.closest('.map-node'); if(!field || !el) return; const n = byId(el.dataset.id); if(!n) return; n[field] = clean(e.target.textContent) || (field === 'title' ? 'Untitled block' : ''); renderEdges(); save('Saved'); updateSelectionUI(); updatePrompt(); });
+  nodeLayer.addEventListener('click', e => { const detailButton = e.target.closest('[data-action="document-detail"]'); if(detailButton){ const nodeEl = detailButton.closest('.map-node'); const node = nodeEl ? byId(nodeEl.dataset.id) : null; if(node) openDocumentDetail(node); e.stopPropagation(); return; } const el = e.target.closest('.map-node'); if(!el) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'node', target:el}); if(connectFrom && el.dataset.id !== connectFrom){ addEdge(connectFrom, el.dataset.id); cancelConnect(); return; } if(shouldToggleSelection(e)) toggleNodeSelection(el.dataset.id, 'toggle-node', e); else select(el.dataset.id); });
+  edgeLabelLayer.addEventListener('click', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'edge', target:lab}); if(shouldToggleSelection(e)) toggleEdgeSelection(lab.dataset.edgeId, 'toggle-line', e); else selectEdge(lab.dataset.edgeId); });
+  edgeLayer.addEventListener('click', e => { const g = e.target.closest('g.edge-group'); if(!g) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'edge', target:g}); if(shouldToggleSelection(e)) toggleEdgeSelection(g.dataset.edgeId, 'toggle-line', e); else selectEdge(g.dataset.edgeId); });
+  nodeLayer.addEventListener('focusin', e => { const field = e.target.dataset.field, el = e.target.closest('.map-node'); if(!field || !el) return; beginTextEdit(el.dataset.id, field); });
+  nodeLayer.addEventListener('focusout', e => { if(e.target.closest('[contenteditable]')) commitTextEdit('blur'); });
+  nodeLayer.addEventListener('input', e => { const field = e.target.dataset.field, el = e.target.closest('.map-node'); if(!field || !el) return; const n = byId(el.dataset.id); if(!n) return; beginTextEdit(el.dataset.id, field); n[field] = clean(e.target.textContent) || (field === 'title' ? 'Untitled block' : ''); renderEdges(); save('Saved'); updateSelectionUI(); updatePrompt(); });
   nodeLayer.addEventListener('paste', e => { if(!e.target.closest('[contenteditable]')) return; e.preventDefault(); const text = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, text); });
 
   nodeLayer.addEventListener('pointerdown', e => {
     if(dragNode && dragNode.pointerId !== e.pointerId) return;
     const resize = e.target.closest('.resize-handle');
-    if(resize){ const el = resize.closest('.map-node'), n = byId(el.dataset.id); if(!n) return; cancelLongPress(e.pointerId, 'resize-start', e); e.preventDefault(); closeMenu(); clearEdgeDeleteArm(); suppressSelectionShelf = true; select(n.id, 'resize-start'); resizeNode = {id:n.id, pointerId:e.pointerId, sx:e.clientX, sy:e.clientY, w:n.w, h:n.h, handle:resize}; noteDragInteraction('resize-handle', e.pointerId, resize); setGestureLock('node-resize', true); resize.setPointerCapture(e.pointerId); logInputDebug('resize-start', e, {mode:'node', target:resize}); return; }
+    if(resize){ const el = resize.closest('.map-node'), n = byId(el.dataset.id); if(!n) return; cancelLongPress(e.pointerId, 'resize-start', e); e.preventDefault(); closeMenu(); clearEdgeDeleteArm(); suppressSelectionShelf = true; select(n.id, 'resize-start'); resizeNode = {id:n.id, pointerId:e.pointerId, sx:e.clientX, sy:e.clientY, w:n.w, h:n.h, handle:resize, beforeCommand:beginMapCommand()}; noteDragInteraction('resize-handle', e.pointerId, resize); setGestureLock('node-resize', true); resize.setPointerCapture(e.pointerId); logInputDebug('resize-start', e, {mode:'node', target:resize}); return; }
     const handle = e.target.closest('.drag-handle');
     if(handle){
       const el = handle.closest('.map-node'), n = byId(el.dataset.id); if(!n) return;
       cancelLongPress(e.pointerId, 'drag-start', e);
-      e.preventDefault(); e.stopPropagation(); closeMenu(); clearEdgeDeleteArm(); suppressSelectionShelf = true; select(n.id, 'drag-start'); dragNode = {id:n.id, pointerId:e.pointerId, sx:e.clientX, sy:e.clientY, x:n.x, y:n.y, handle, captureTarget:nodeLayer, captureAcquired:false}; noteDragInteraction('drag-handle', e.pointerId, handle); setGestureLock('node-drag', true);
+      e.preventDefault(); e.stopPropagation(); closeMenu(); clearEdgeDeleteArm(); suppressSelectionShelf = true; select(n.id, 'drag-start'); dragNode = {id:n.id, pointerId:e.pointerId, sx:e.clientX, sy:e.clientY, x:n.x, y:n.y, handle, captureTarget:nodeLayer, captureAcquired:false, beforeCommand:beginMapCommand()}; noteDragInteraction('drag-handle', e.pointerId, handle); setGestureLock('node-drag', true);
       logInputDebug('drag-start', e, {mode:'node', target:handle});
       dragNode.captureAcquired = requestPointerCapture(nodeLayer, e.pointerId, e, 'node');
       return;
@@ -3414,6 +3910,13 @@ import {
     const node = byId(el.dataset.id);
     if(!node) return;
     e.preventDefault();
+    if(multiSelectMode){
+      e.stopPropagation();
+      closeMenu();
+      toggleNodeSelection(node.id, 'touch-toggle-node', e);
+      setPointerGestureOwner(e.pointerId, {owner:'node', nodeId:node.id});
+      return;
+    }
     closeMenu();
     startLongPress({type:'node', id:node.id, pointerId:e.pointerId, pointerType:e.pointerType, buttons:e.buttons, pressure:e.pressure, tiltX:e.tiltX, tiltY:e.tiltY, clientX:e.clientX, clientY:e.clientY, target:el});
   });
@@ -3421,8 +3924,8 @@ import {
     if(resizeNode){ const n = byId(resizeNode.id); if(!n) return; n.w = clamp(Math.round(resizeNode.w + (e.clientX - resizeNode.sx)/view.scale), 160, 640); n.h = clamp(Math.round(resizeNode.h + (e.clientY - resizeNode.sy)/view.scale), 95, 520); const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`); if(el){ el.style.width = n.w + 'px'; el.style.height = n.h + 'px'; } renderEdges(); return; }
     if(!dragNode || dragNode.pointerId !== e.pointerId) return; e.preventDefault(); const n = byId(dragNode.id); if(!n) return; n.x = Math.round(dragNode.x + (e.clientX - dragNode.sx)/view.scale); n.y = Math.round(dragNode.y + (e.clientY - dragNode.sy)/view.scale); const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`); if(el){ el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; } renderEdges();
   });
-  nodeLayer.addEventListener('pointerup', e => { cancelLongPress(e.pointerId, 'pointerup', e); if(resizeNode && resizeNode.pointerId === e.pointerId){ setGestureLock('node-resize', false); finishDragInteraction(e.pointerId, 'pointerup', resizeNode.handle); logInputDebug('resize-end', e, {mode:'node'}); resizeNode=null; suppressSelectionShelf = false; renderEdges(); updateSelectionUI('resize-end'); save('Resized'); showToast('Resized'); } finishNodeDrag(e, 'pointerup'); });
-  nodeLayer.addEventListener('pointercancel', e => { cancelLongPress(e.pointerId, 'pointercancel', e); if(resizeNode && resizeNode.pointerId === e.pointerId){ setGestureLock('node-resize', false); finishDragInteraction(e.pointerId, 'pointercancel', resizeNode.handle); logInputDebug('resize-end', e, {mode:'node', reason:'pointercancel'}); resizeNode=null; suppressSelectionShelf = false; renderEdges(); updateSelectionUI('resize-cancel'); save('Resized'); } finishNodeDrag(e, 'pointercancel'); });
+  nodeLayer.addEventListener('pointerup', e => { cancelLongPress(e.pointerId, 'pointerup', e); if(resizeNode && resizeNode.pointerId === e.pointerId){ const activeResize = resizeNode; setGestureLock('node-resize', false); finishDragInteraction(e.pointerId, 'pointerup', activeResize.handle); logInputDebug('resize-end', e, {mode:'node'}); resizeNode=null; suppressSelectionShelf = false; renderEdges(); updateSelectionUI('resize-end'); commitMapCommand('Resized block', activeResize.beforeCommand, {render:false}); showToast('Resized'); } finishNodeDrag(e, 'pointerup'); });
+  nodeLayer.addEventListener('pointercancel', e => { cancelLongPress(e.pointerId, 'pointercancel', e); if(resizeNode && resizeNode.pointerId === e.pointerId){ const activeResize = resizeNode; setGestureLock('node-resize', false); finishDragInteraction(e.pointerId, 'pointercancel', activeResize.handle); logInputDebug('resize-end', e, {mode:'node', reason:'pointercancel'}); resizeNode=null; suppressSelectionShelf = false; renderEdges(); updateSelectionUI('resize-cancel'); commitMapCommand('Resized block', activeResize.beforeCommand, {render:false}); } finishNodeDrag(e, 'pointercancel'); });
   nodeLayer.addEventListener('lostpointercapture', e => {
     if(!dragNode || dragNode.pointerId !== e.pointerId) return;
     finishNodeDrag(e, 'lostpointercapture');
@@ -3435,6 +3938,11 @@ import {
     e.preventDefault();
     e.stopPropagation();
     closeMenu();
+    if(multiSelectMode){
+      toggleEdgeSelection(edge.id, 'touch-toggle-line', e);
+      setPointerGestureOwner(e.pointerId, {owner:'edge', edgeId:edge.id, hitKind:'edge-label'});
+      return;
+    }
     selectEdge(edge.id);
     setPointerGestureOwner(e.pointerId, {owner:'edge', edgeId:edge.id, hitKind:'edge-label'});
     startLongPress({type:'edge', id:edge.id, edgeId:edge.id, hitKind:'edge-label', suppressed:'canvas-long-press', pointerId:e.pointerId, pointerType:e.pointerType, buttons:e.buttons, pressure:e.pressure, tiltX:e.tiltX, tiltY:e.tiltY, clientX:e.clientX, clientY:e.clientY, target:label});
@@ -3448,6 +3956,11 @@ import {
     e.stopPropagation();
     closeMenu();
     const hitKind = e.target.closest('.edge-hit') ? 'edge-hit-target' : 'edge-group';
+    if(multiSelectMode){
+      toggleEdgeSelection(edge.id, 'touch-toggle-line', e);
+      setPointerGestureOwner(e.pointerId, {owner:'edge', edgeId:edge.id, hitKind});
+      return;
+    }
     selectEdge(edge.id);
     setPointerGestureOwner(e.pointerId, {owner:'edge', edgeId:edge.id, hitKind});
     startLongPress({type:'edge', id:edge.id, edgeId:edge.id, hitKind, suppressed:'canvas-long-press', pointerId:e.pointerId, pointerType:e.pointerType, buttons:e.buttons, pressure:e.pressure, tiltX:e.tiltX, tiltY:e.tiltY, clientX:e.clientX, clientY:e.clientY, target:group});
@@ -3470,6 +3983,7 @@ import {
     if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.map-workbench') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return;
     e.preventDefault();
     closeMenu();
+    if(multiSelectMode) return;
     clearSelection('canvas-deselect', e);
     if(isTouchLikePointer(e)){
       startLongPress({type:'canvas', pointerId:e.pointerId, pointerType:e.pointerType, buttons:e.buttons, pressure:e.pressure, tiltX:e.tiltX, tiltY:e.tiltY, clientX:e.clientX, clientY:e.clientY, target:stage});
@@ -3565,7 +4079,7 @@ import {
   function toggleRemember(){ toggleSidePanel('remember'); }
 
   document.addEventListener('pointerdown', e => {
-    if((selectedId || selectedEdgeId) && e.button === 0){
+    if(hasMapSelection() && !multiSelectMode && e.button === 0){
       const target = e.target instanceof Element ? e.target : null;
       if(!target) return;
       if(
@@ -3599,17 +4113,56 @@ import {
       closeMenu();
       clearEdgeDeleteArm();
       if(connectFrom) cancelConnect();
+      if(multiSelectMode){
+        e.preventDefault();
+        setMultiSelectMode(false, {announce:true});
+        return;
+      }
       if(!isTextEditingActive()) clearSelection('escape', e);
       return;
     }
-    const editing = document.activeElement && document.activeElement.closest('[contenteditable]'); if(editing) return;
+    if(!isMapShortcutContext()) return;
+    const key = e.key.toLowerCase();
+    const commandKey = e.ctrlKey || e.metaKey;
+    if(commandKey && key === 'z'){
+      e.preventDefault();
+      if(e.shiftKey) redoMapCommand();
+      else undoMapCommand();
+      return;
+    }
+    if((e.ctrlKey && key === 'y') || (commandKey && e.shiftKey && key === 'z')){
+      e.preventDefault();
+      redoMapCommand();
+      return;
+    }
+    if(commandKey && key === 'c'){
+      e.preventDefault();
+      copySelectionToClipboard();
+      return;
+    }
+    if(commandKey && key === 'v'){
+      e.preventDefault();
+      pasteClipboard();
+      return;
+    }
+    if(commandKey && key === 'd'){
+      e.preventDefault();
+      duplicateSelection();
+      return;
+    }
+    if(commandKey && key === 'a'){
+      e.preventDefault();
+      setSelectionFromIds(data.nodes.map(node => node.id), data.edges.map(edge => edge.id), 'select-all', e);
+      showToast(`Selected ${selectionSummary()}`);
+      return;
+    }
     if(e.key === 'Home'){ e.preventDefault(); recenter(); }
     else if(e.key === '+' || e.key === '='){ e.preventDefault(); zoomCenter(1.25); }
     else if(e.key === '-' || e.key === '_'){ e.preventDefault(); zoomCenter(.80); }
     else if(e.key === '0'){ e.preventDefault(); resetView(); }
-    else if(e.key === 'Delete' || e.key === 'Backspace'){ if(selectedId){ e.preventDefault(); deleteNode(selectedId); } else if(selectedEdgeId){ e.preventDefault(); deleteEdge(selectedEdgeId); } }
-    else if(e.key.toLowerCase() === 'c' && selectedId){ e.preventDefault(); startConnect(selectedId); }
-    else if(e.key.toLowerCase() === 'f'){ e.preventDefault(); toggleFocus(); }
+    else if(e.key === 'Delete' || e.key === 'Backspace'){ if(hasMapSelection()){ e.preventDefault(); deleteSelection(); } }
+    else if(key === 'c' && selectedId && !commandKey){ e.preventDefault(); startConnect(selectedId); }
+    else if(key === 'f' && !commandKey){ e.preventDefault(); toggleFocus(); }
   });
   window.addEventListener('resize', () => { applyView(); renderEdges(); applyFocus(); updateOverlayOffsets(); positionSelectionShelf(); updatePlacementGhost(null); });
   if(inputDebugState.enabled){
@@ -3622,6 +4175,9 @@ import {
   document.addEventListener('pointerup', e => clearPointerGestureOwner(e.pointerId), true);
   document.addEventListener('pointercancel', e => clearPointerGestureOwner(e.pointerId), true);
 
+  btnUndo?.addEventListener('click', () => { cancelPlacementMode('tool'); undoMapCommand(); });
+  btnRedo?.addEventListener('click', () => { cancelPlacementMode('tool'); redoMapCommand(); });
+  btnMultiSelect?.addEventListener('click', () => { cancelPlacementMode('tool'); setMultiSelectMode(!multiSelectMode, {announce:true}); });
   document.getElementById('btnCenter').addEventListener('click', () => { cancelPlacementMode('tool'); recenter(); });
   document.getElementById('btnZoomIn').addEventListener('click', () => { cancelPlacementMode('tool'); zoomCenter(1.25); });
   document.getElementById('btnZoomOut').addEventListener('click', () => { cancelPlacementMode('tool'); zoomCenter(.80); });
@@ -3682,7 +4238,9 @@ import {
   shelfToggle.addEventListener('click', () => { shelfCollapsed = !shelfCollapsed; updateSelectionUI(); });
   shelfAddLinked.addEventListener('click', () => selectedId && addLinkedFrom(selectedId));
   shelfEdit.addEventListener('click', () => selectedId && focusNodeEditor(selectedId));
-  shelfDuplicate.addEventListener('click', () => selectedId && duplicateNode(selectedId));
+  shelfCopy.addEventListener('click', copySelectionToClipboard);
+  shelfPaste.addEventListener('click', pasteClipboard);
+  shelfDuplicate.addEventListener('click', duplicateSelection);
   shelfConnect.addEventListener('click', () => selectedId && startConnect(selectedId));
   shelfStyle.addEventListener('click', () => {
     if(!selectedId) return;
@@ -3727,19 +4285,8 @@ import {
     ], {type:'edge', id:selectedEdgeId});
   });
   shelfReverse.addEventListener('click', () => selectedEdgeId && reverseEdge(selectedEdgeId));
-  shelfDelete.addEventListener('click', () => {
-    if(selectedId){
-      deleteNode(selectedId);
-      return;
-    }
-    if(!selectedEdgeId) return;
-    if(pendingEdgeDeleteId === selectedEdgeId){
-      pendingEdgeDeleteId = null;
-      deleteEdge(selectedEdgeId);
-      return;
-    }
-    armEdgeDelete(selectedEdgeId);
-  });
+  shelfClear.addEventListener('click', () => clearSelection('toolbar-clear'));
+  shelfDelete.addEventListener('click', deleteSelection);
   btnRememberPanel.addEventListener('click', toggleRemember);
   btnVisualPanel.addEventListener('click', toggleLegend);
   btnClosePanel.addEventListener('click', closeSidePanel);
@@ -3755,6 +4302,7 @@ import {
   stage.addEventListener('click', e => {
     if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.map-workbench') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.document-picker') || e.target.closest('.document-detail-card') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return;
     if(isTextEditingActive()) return;
+    if(multiSelectMode) return;
     clearSelection('canvas-tap', e);
   });
 

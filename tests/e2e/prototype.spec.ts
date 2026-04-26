@@ -119,7 +119,10 @@ async function contextMenu(locator: Locator, options: { x?: number; y?: number }
   });
 }
 
-async function syntheticClick(locator: Locator, options: { x?: number; y?: number } = {}) {
+async function syntheticClick(
+  locator: Locator,
+  options: { x?: number; y?: number; shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean } = {},
+) {
   const box = await visibleBoundingBox(locator, 'synthetic click test');
   await locator.dispatchEvent('click', {
     bubbles: true,
@@ -127,6 +130,9 @@ async function syntheticClick(locator: Locator, options: { x?: number; y?: numbe
     composed: true,
     button: 0,
     buttons: 1,
+    shiftKey: options.shiftKey ?? false,
+    ctrlKey: options.ctrlKey ?? false,
+    metaKey: options.metaKey ?? false,
     clientX: box.x + (options.x ?? box.width / 2),
     clientY: box.y + (options.y ?? box.height / 2),
   });
@@ -271,6 +277,60 @@ async function getEdgeSnapshot(page: Page, edgeIndex = -1) {
       endpoint,
     };
   }, edgeIndex);
+}
+
+async function getSelectedMapIds(page: Page) {
+  return page.evaluate(() => ({
+    nodes: Array.from(document.querySelectorAll<HTMLElement>('.map-node.selected')).map(
+      (node) => node.dataset.id || '',
+    ),
+    edges: Array.from(document.querySelectorAll<SVGGElement>('#edgeLayer g.edge-group')).flatMap(
+      (group) => (group.querySelector('.edge.selected') ? [group.dataset.edgeId || ''] : []),
+    ),
+  }));
+}
+
+async function getSeedMapState(page: Page) {
+  await page.waitForTimeout(250);
+  return page.evaluate(async () => {
+    const runtime = window as Window & {
+      neuroMapWorkspaceStore?: {
+        getPageState: (pageId: string) => Promise<{
+          data?: {
+            workspace?: {
+              activePageId?: string;
+              pages?: Array<{
+                id: string;
+                map: {
+                  nodes: Array<{
+                    id: string;
+                    title: string;
+                    x: number;
+                    y: number;
+                    documentId?: string;
+                  }>;
+                  edges: Array<{
+                    id: string;
+                    from: string;
+                    to: string;
+                    relation?: string;
+                    label?: string;
+                    strength?: number;
+                    shape?: string;
+                  }>;
+                };
+              }>;
+            };
+          };
+        } | null>;
+      };
+    };
+    const state = await runtime.neuroMapWorkspaceStore?.getPageState('simon-dixon-debt-power-map');
+    const workspace = state?.data?.workspace;
+    const pageId = workspace?.activePageId || workspace?.pages?.[0]?.id;
+    const mapPage = workspace?.pages?.find((entry) => entry.id === pageId) || workspace?.pages?.[0];
+    return mapPage?.map || null;
+  });
 }
 
 async function expectNoHorizontalOverflow(page: Page) {
@@ -1531,6 +1591,111 @@ test.describe('current standalone prototypes', () => {
     await expect(page.getByRole('button', { name: /change selected link route/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /change selected link source connection side/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /change selected link target connection side/i })).toBeVisible();
+  });
+
+  test('map multi-select bulk delete can undo and redo blocks with connected lines', async ({ page }) => {
+    await resetMindmap(page);
+
+    await syntheticClick(page.locator('.map-node[data-id="core"]'));
+    await syntheticClick(page.locator('.map-node[data-id="money"]'), { shiftKey: true });
+    await syntheticClick(page.locator('.edge-label').first(), { shiftKey: true });
+
+    await expect(page.locator('#selectionShelf')).toBeVisible();
+    await expect(page.locator('#selectedTitle')).toContainText('2 blocks, 1 line');
+    expect(await getSelectedMapIds(page)).toEqual({
+      nodes: ['core', 'money'],
+      edges: ['e1'],
+    });
+
+    await page.locator('#stage').focus();
+    await page.keyboard.press('Delete');
+    await expect(page.locator('#toast')).toContainText(/Deleted 2 blocks and 3 lines/i);
+    await expect(page.locator('.map-node')).toHaveCount(11);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(11);
+    await expect(page.locator('.map-node[data-id="core"]')).toHaveCount(0);
+    await expect(page.locator('.map-node[data-id="money"]')).toHaveCount(0);
+
+    await page.keyboard.press('Control+Z');
+    await expect(page.locator('.map-node')).toHaveCount(13);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(14);
+    await expect(page.locator('.map-node[data-id="core"]')).toBeVisible();
+    await expect(page.locator('.map-node[data-id="money"]')).toBeVisible();
+
+    await page.keyboard.press('Control+Shift+Z');
+    await expect(page.locator('.map-node')).toHaveCount(11);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(11);
+  });
+
+  test('map copy paste and duplicate remap selected blocks with internal relationship lines', async ({ page }) => {
+    await resetMindmap(page);
+
+    await syntheticClick(page.locator('.map-node[data-id="core"]'));
+    await syntheticClick(page.locator('.map-node[data-id="money"]'), { shiftKey: true });
+
+    await page.locator('#stage').focus();
+    await page.keyboard.press('Control+C');
+    await expect(page.locator('#toast')).toContainText(/Copied 2 blocks and 1 line/i);
+    await page.keyboard.press('Control+V');
+    await expect(page.locator('.map-node')).toHaveCount(15);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
+
+    let selected = await getSelectedMapIds(page);
+    expect(selected.nodes).toHaveLength(2);
+    expect(selected.edges).toHaveLength(1);
+    expect(selected.nodes).not.toContain('core');
+    expect(selected.nodes).not.toContain('money');
+    expect(selected.edges).not.toContain('e1');
+
+    const pastedMap = await getSeedMapState(page);
+    expect(pastedMap).not.toBeNull();
+    const pastedNodes = pastedMap!.nodes.filter((node) => selected.nodes.includes(node.id));
+    const pastedEdge = pastedMap!.edges.find((edge) => selected.edges.includes(edge.id));
+    const originalCore = pastedMap!.nodes.find((node) => node.id === 'core');
+    const originalMoney = pastedMap!.nodes.find((node) => node.id === 'money');
+    const pastedCore = pastedNodes.find((node) => node.title === originalCore?.title);
+    const pastedMoney = pastedNodes.find((node) => node.title === originalMoney?.title);
+
+    expect(pastedCore).toBeTruthy();
+    expect(pastedMoney).toBeTruthy();
+    expect(pastedEdge).toBeTruthy();
+    expect(new Set([pastedEdge!.from, pastedEdge!.to])).toEqual(new Set(selected.nodes));
+    expect(pastedEdge!.from).not.toBe('core');
+    expect(pastedEdge!.to).not.toBe('money');
+    expect({
+      dx: Math.round(pastedMoney!.x - pastedCore!.x),
+      dy: Math.round(pastedMoney!.y - pastedCore!.y),
+    }).toEqual({
+      dx: Math.round(originalMoney!.x - originalCore!.x),
+      dy: Math.round(originalMoney!.y - originalCore!.y),
+    });
+
+    await page.keyboard.press('Control+Z');
+    await expect(page.locator('.map-node')).toHaveCount(13);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(14);
+
+    selected = await getSelectedMapIds(page);
+    expect(selected.nodes).toEqual(['core', 'money']);
+    await page.keyboard.press('Control+D');
+    await expect(page.locator('.map-node')).toHaveCount(15);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
+    selected = await getSelectedMapIds(page);
+    expect(selected.nodes).toHaveLength(2);
+    expect(selected.edges).toHaveLength(1);
+  });
+
+  test('map keyboard shortcuts do not run while editing block text', async ({ page }) => {
+    await resetMindmap(page);
+
+    await syntheticClick(page.locator('.map-node[data-id="core"]'));
+    const title = page.locator('.map-node[data-id="core"] .node-title');
+    await title.evaluate((element) => (element as HTMLElement).focus());
+    await page.keyboard.press('Control+A');
+    await expect(page.locator('.map-node.selected')).toHaveCount(1);
+    await expect(page.locator('#edgeLayer .edge.selected')).toHaveCount(0);
+
+    await page.keyboard.press('Delete');
+    await expect(page.locator('.map-node')).toHaveCount(13);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(14);
   });
 
   test('selected toolbar dismisses on canvas and Escape, stays usable inside, and returns after drag', async ({ page }) => {
