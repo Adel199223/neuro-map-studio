@@ -38,6 +38,15 @@ async function openDetails(page: Page, selector: string) {
   });
 }
 
+async function waitForWorkspaceStore(page: Page) {
+  await page.waitForFunction(() => {
+    const runtime = window as unknown as {
+      neuroMapWorkspaceStore?: { createProject?: unknown };
+    };
+    return typeof runtime.neuroMapWorkspaceStore?.createProject === 'function';
+  });
+}
+
 async function visibleBoundingBox(locator: Locator, description: string) {
   await locator.waitFor({ state: 'visible' });
   for (let attempt = 0; attempt < 20; attempt += 1) {
@@ -521,6 +530,7 @@ test.describe('current standalone prototypes', () => {
     await clearWorkspaceDatabase(page);
     await page.goto('/');
     await expect(page.getByLabel(/Workspace board/i)).toBeVisible();
+    await waitForWorkspaceStore(page);
 
     await page.evaluate(async () => {
       const runtime = window as unknown as Window & {
@@ -589,6 +599,7 @@ test.describe('current standalone prototypes', () => {
     await clearWorkspaceDatabase(page);
     await page.goto('/');
     await expect(page.getByLabel(/Workspace board/i)).toBeVisible();
+    await waitForWorkspaceStore(page);
     const backup = await page.evaluate(async () => {
       const runtime = window as unknown as Window & {
         neuroMapWorkspaceStore: {
@@ -1047,7 +1058,7 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#placementOverlay')).toContainText(/Tap the canvas to place evidence block/i);
     await clickCanvasAt(page, { xRatio: 0.34, yRatio: 0.62 });
     await expect(page.locator('.map-node.type-evidence', { hasText: /Evidence block/i })).toBeVisible();
-    await expect(page.locator('#saveStatus')).toContainText(/Evidence block placed/i);
+    await expect(page.locator('#toast')).toContainText(/Evidence block placed/i);
 
     await reopenWorkbench();
     await page.locator('#workbenchAddDocument').click();
@@ -1115,7 +1126,7 @@ test.describe('current standalone prototypes', () => {
     await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
 
     await expect(page.locator('#workbenchDrawer')).toBeVisible();
-    await expectNoBoxOverlap(page.locator('#workbenchDrawer'), page.locator('#zoomDock .toolbar-group'), 'workbench drawer and zoom dock', 4);
+    await expectWorkbenchControlsClearOfZoom(page, 'workbench drawer and zoom dock');
     await page.locator('#btnZoomIn').click();
     await expect(page.locator('#btnZoomPercent')).not.toHaveText('100%');
 
@@ -1269,7 +1280,6 @@ test.describe('current standalone prototypes', () => {
 
   test('seeded map migrates legacy localStorage into page-owned state without deleting the legacy save', async ({ page }) => {
     await clearWorkspaceDatabase(page);
-    await page.goto(mindmapPath);
 
     const legacyKey = 'simon-dixon-debt-power-learning-workspace-v17';
     await page.evaluate(({ key }) => {
