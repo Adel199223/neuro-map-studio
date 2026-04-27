@@ -307,6 +307,9 @@ async function getSeedMapState(page: Page) {
                     title: string;
                     x: number;
                     y: number;
+                    w?: number;
+                    h?: number;
+                    nodeType?: string;
                     documentId?: string;
                   }>;
                   edges: Array<{
@@ -317,6 +320,8 @@ async function getSeedMapState(page: Page) {
                     label?: string;
                     strength?: number;
                     shape?: string;
+                    fromPort?: string;
+                    toPort?: string;
                   }>;
                 };
               }>;
@@ -331,6 +336,32 @@ async function getSeedMapState(page: Page) {
     const mapPage = workspace?.pages?.find((entry) => entry.id === pageId) || workspace?.pages?.[0];
     return mapPage?.map || null;
   });
+}
+
+async function openPortQuickAddMenu(page: Page, nodeId: string, side: 'top' | 'right' | 'bottom' | 'left' = 'right') {
+  const node = page.locator(`.map-node[data-id="${nodeId}"]`);
+  await syntheticClick(node);
+  const port = node.locator(`.connection-port.port-${side}`);
+  await expect(port).toBeVisible();
+  await syntheticClick(port);
+  await expect(page.locator('#contextMenu')).toHaveAttribute('aria-hidden', 'false');
+  await expect(page.locator('#contextMenu')).toContainText(/Concept block/i);
+  return port;
+}
+
+async function quickAddConceptFromPort(page: Page, nodeId = 'public', side: 'top' | 'right' | 'bottom' | 'left' = 'right') {
+  const beforeCounts = await page.evaluate(() => ({
+    nodes: document.querySelectorAll('.map-node').length,
+    edges: document.querySelectorAll('#edgeLayer g.edge-group').length,
+  }));
+  await openPortQuickAddMenu(page, nodeId, side);
+  await page.locator('#contextMenu').getByRole('button', { name: /Concept block/i }).click();
+  await expect(page.locator('.map-node')).toHaveCount(beforeCounts.nodes + 1);
+  await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(beforeCounts.edges + 1);
+  const selected = await getSelectedMapIds(page);
+  expect(selected.nodes).toHaveLength(1);
+  expect(selected.edges).toHaveLength(0);
+  return selected.nodes[0];
 }
 
 async function expectNoHorizontalOverflow(page: Page) {
@@ -1445,6 +1476,157 @@ test.describe('current standalone prototypes', () => {
     expect(geometry.right!.left).toBeGreaterThanOrEqual(geometry.node.right - 3);
     expect(geometry.bottom!.top).toBeGreaterThanOrEqual(geometry.node.bottom - 3);
     expect(geometry.left!.right).toBeLessThanOrEqual(geometry.node.left + 3);
+  });
+
+  test('selected block connection ports expose accessible quick-add controls', async ({ page }) => {
+    await resetMindmap(page);
+
+    await syntheticClick(page.locator('.map-node[data-id="public"]'));
+
+    const rightPort = page.getByRole('button', {
+      name: /Add linked block from right side of The public pays/i,
+    });
+    await expect(rightPort).toBeVisible();
+    await expect(rightPort).toHaveAttribute('title', /Add linked block from right side of The public pays/i);
+
+    await syntheticClick(rightPort);
+    await expect(page.locator('#contextMenu')).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.locator('#contextMenu')).toContainText(/Concept block/i);
+    await expect(page.locator('#contextMenu')).toContainText(/Question block/i);
+    await expect(page.locator('#contextMenu')).toContainText(/Evidence block/i);
+    await expect(page.locator('#contextMenu')).toContainText(/Document block/i);
+  });
+
+  test('right port quick-add creates a selected persistent concept and supports undo redo', async ({ page }) => {
+    await resetMindmap(page);
+
+    const sourceMap = await getSeedMapState(page);
+    const source = sourceMap!.nodes.find((node) => node.id === 'public');
+    expect(source).toBeTruthy();
+
+    const newNodeId = await quickAddConceptFromPort(page, 'public', 'right');
+    await expect(page.locator('#toast')).toContainText(/Linked concept added\. Ctrl\+Z to undo\./i);
+
+    let mapState = await getSeedMapState(page);
+    let newNode = mapState!.nodes.find((node) => node.id === newNodeId);
+    let newEdge = mapState!.edges.find((edge) => edge.from === 'public' && edge.to === newNodeId);
+    expect(newNode).toBeTruthy();
+    expect(newEdge).toBeTruthy();
+    expect(newNode!.nodeType).toBe('concept');
+    if ((page.viewportSize()?.width ?? 0) >= 720) {
+      expect(newNode!.x).toBeGreaterThan(source!.x + (source!.w ?? 268));
+    } else {
+      expect(newNode!.x).toBeGreaterThan(source!.x);
+    }
+    expect(newEdge!.fromPort).toBe('auto');
+    expect(newEdge!.toPort).toBe('auto');
+
+    await page.locator('#stage').focus();
+    await page.keyboard.press('Control+Z');
+    await expect(page.locator('.map-node')).toHaveCount(13);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(14);
+    mapState = await getSeedMapState(page);
+    expect(mapState!.nodes.some((node) => node.id === newNodeId)).toBe(false);
+    expect(mapState!.edges.some((edge) => edge.id === newEdge!.id)).toBe(false);
+
+    await page.keyboard.press('Control+Shift+Z');
+    await expect(page.locator('.map-node')).toHaveCount(14);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
+    mapState = await getSeedMapState(page);
+    newNode = mapState!.nodes.find((node) => node.id === newNodeId);
+    newEdge = mapState!.edges.find((edge) => edge.from === 'public' && edge.to === newNodeId);
+    expect(newNode).toBeTruthy();
+    expect(newEdge).toBeTruthy();
+
+    await page.reload();
+    await expect(page.locator(`.map-node[data-id="${newNodeId}"]`)).toBeVisible();
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
+  });
+
+  test('port-created relationship dynamically reanchors after moving under zoom', async ({ page }) => {
+    await resetMindmap(page);
+
+    const newNodeId = await quickAddConceptFromPort(page, 'public', 'right');
+    const before = await getEdgeSnapshot(page);
+    if (!before?.endpoint) {
+      throw new Error('Expected a port-created relationship snapshot before moving.');
+    }
+
+    await page.getByRole('button', { name: /zoom in/i }).click();
+    await dragByHandle(page, newNodeId, { pointerType: 'touch', deltaX: -1050, deltaY: 260 });
+
+    const after = await getEdgeSnapshot(page);
+    if (!after?.endpoint) {
+      throw new Error('Expected a port-created relationship snapshot after moving.');
+    }
+    expect(after.d).not.toBe(before.d);
+    expect(after.hitD).toBe(after.d);
+    expect(after.labelLeft).not.toBe(before.labelLeft);
+    expect(after.labelTop).not.toBe(before.labelTop);
+
+    const mapState = await getSeedMapState(page);
+    const source = mapState!.nodes.find((node) => node.id === 'public');
+    const moved = mapState!.nodes.find((node) => node.id === newNodeId);
+    expect(source).toBeTruthy();
+    expect(moved).toBeTruthy();
+    expect(moved!.x + (moved!.w ?? 268) / 2).toBeLessThan(source!.x + (source!.w ?? 268) / 2);
+
+    const attachment = await page.locator(`.map-node[data-id="${newNodeId}"]`).evaluate((node, endpoint) => {
+      if (!endpoint) return null;
+      const left = Number.parseFloat((node as HTMLElement).style.left || '0');
+      const top = Number.parseFloat((node as HTMLElement).style.top || '0');
+      const width = Number.parseFloat((node as HTMLElement).style.width || '268');
+      const height = Number.parseFloat((node as HTMLElement).style.height || '145');
+      const ports = [
+        { x: left + width / 2, y: top - 6 },
+        { x: left + width + 6, y: top + height / 2 },
+        { x: left + width / 2, y: top + height + 6 },
+        { x: left - 6, y: top + height / 2 },
+      ];
+      const distances = ports.map((port) => Math.hypot(port.x - endpoint.x, port.y - endpoint.y));
+      return Math.min(...distances);
+    }, after.endpoint);
+
+    expect(attachment).not.toBeNull();
+    expect(attachment!).toBeLessThan(28);
+  });
+
+  test('port document quick-add preserves documentId and persists after reload', async ({ page }) => {
+    await resetMindmap(page);
+
+    await openPortQuickAddMenu(page, 'public', 'right');
+    await page.locator('#contextMenu').getByRole('button', { name: /Document block/i }).click();
+    await expect(page.locator('#documentPicker')).toBeVisible();
+    await page.locator('#documentPicker').getByRole('button', { name: /Simon Dixon debt-power/i }).click();
+
+    await expect(page.locator('.map-node')).toHaveCount(14);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
+    const selected = await getSelectedMapIds(page);
+    expect(selected.nodes).toHaveLength(1);
+    const documentNodeId = selected.nodes[0];
+    const documentNode = page.locator(`.map-node.type-document[data-id="${documentNodeId}"]`);
+    await expect(documentNode).toBeVisible();
+    await expect(documentNode).toHaveAttribute('data-document-id', 'simon-dixon-debt-power');
+
+    let mapState = await getSeedMapState(page);
+    let persistedDocumentNode = mapState!.nodes.find((node) => node.id === documentNodeId);
+    let documentEdge = mapState!.edges.find((edge) => edge.from === 'public' && edge.to === documentNodeId);
+    expect(persistedDocumentNode?.documentId).toBe('simon-dixon-debt-power');
+    expect(persistedDocumentNode?.nodeType).toBe('document');
+    expect(documentEdge).toBeTruthy();
+    expect(documentEdge!.fromPort).toBe('auto');
+    expect(documentEdge!.toPort).toBe('auto');
+
+    await page.reload();
+    await expect(page.locator(`.map-node.type-document[data-id="${documentNodeId}"]`)).toHaveAttribute(
+      'data-document-id',
+      'simon-dixon-debt-power',
+    );
+    mapState = await getSeedMapState(page);
+    persistedDocumentNode = mapState!.nodes.find((node) => node.id === documentNodeId);
+    documentEdge = mapState!.edges.find((edge) => edge.from === 'public' && edge.to === documentNodeId);
+    expect(persistedDocumentNode?.documentId).toBe('simon-dixon-debt-power');
+    expect(documentEdge).toBeTruthy();
   });
 
   test('learning map recenter and zoom controls do not blank the canvas', async ({ page }) => {

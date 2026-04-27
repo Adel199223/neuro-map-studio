@@ -242,20 +242,41 @@ a{color:inherit}
   position:absolute;
   width:12px;
   height:12px;
+  padding:0;
   border:1.5px solid rgba(92,76,52,.48);
   border-radius:50%;
   background:#fffaf2;
   box-shadow:0 0 0 2px rgba(255,250,242,.78);
   opacity:.42;
   z-index:6;
-  pointer-events:none;
-  transition:opacity .14s ease, transform .14s ease, border-color .14s ease;
+  pointer-events:auto;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+  color:#6a5335;
+  font:inherit;
+  font-size:12px;
+  font-weight:900;
+  line-height:1;
+  appearance:none;
+  -webkit-appearance:none;
+  touch-action:none;
+  -webkit-user-select:none;
+  user-select:none;
+  --port-transform:translate(0,0);
+  transform:var(--port-transform);
+  transition:opacity .14s ease, transform .14s ease, border-color .14s ease, background .14s ease;
 }
-.connection-port.port-top{left:50%;top:-12px;transform:translateX(-50%);}
-.connection-port.port-right{right:-12px;top:50%;transform:translateY(-50%);}
-.connection-port.port-bottom{left:50%;bottom:-12px;transform:translateX(-50%);}
-.connection-port.port-left{left:-12px;top:50%;transform:translateY(-50%);}
-.map-node:hover .connection-port,.map-node.selected .connection-port,.map-node.connect-source .connection-port,.map-node.connect-target .connection-port{opacity:.92;}
+.connection-port::before{content:'';position:absolute;inset:-15px;border-radius:50%;background:rgba(255,255,255,.001);}
+.connection-port::after{content:'+';opacity:0;transform:scale(.72);transition:opacity .14s ease, transform .14s ease;pointer-events:none;}
+.connection-port.port-top{left:50%;top:-12px;--port-transform:translateX(-50%);}
+.connection-port.port-right{right:-12px;top:50%;--port-transform:translateY(-50%);}
+.connection-port.port-bottom{left:50%;bottom:-12px;--port-transform:translateX(-50%);}
+.connection-port.port-left{left:-12px;top:50%;--port-transform:translateY(-50%);}
+.connection-port:hover,.connection-port:focus-visible{opacity:1;border-color:#8b6d42;background:#fff7e3;transform:var(--port-transform) scale(1.08);outline:none;}
+.connection-port:focus-visible{box-shadow:0 0 0 2px rgba(255,250,242,.86),0 0 0 6px rgba(139,109,66,.24);}
+.map-node:hover .connection-port,.map-node:focus-within .connection-port,.map-node.selected .connection-port,.map-node.connect-source .connection-port,.map-node.connect-target .connection-port{opacity:.92;}
+.map-node:hover .connection-port::after,.map-node:focus-within .connection-port::after,.map-node.selected .connection-port::after,.connection-port:hover::after,.connection-port:focus-visible::after{opacity:.82;transform:scale(1);}
 .map-node.selected .connection-port{border-color:#8b6d42;background:#fff7e3;}
 .focus-mode .map-node.dimmed,.focus-mode .edge-label.dimmed{opacity:.17;filter:saturate(.4);}
 .focus-mode .edge.dimmed{opacity:.08;}
@@ -829,6 +850,7 @@ import {
   let dragInteractionState = null;
   let projectDocuments = [];
   let pendingDocumentBlockPoint = null;
+  let pendingDocumentQuickAdd = null;
   let runtimePageRecord = null;
   let runtimeProject = null;
   let runtimeProjectPages = [];
@@ -2577,10 +2599,13 @@ import {
       }
       el.append(content, resize);
       ['top','right','bottom','left'].forEach(side => {
-        const port = document.createElement('span');
+        const port = document.createElement('button');
         port.className = 'connection-port port-' + side;
-        port.title = 'Outside connection point: ' + side;
-        port.setAttribute('aria-hidden','true');
+        port.type = 'button';
+        port.dataset.nodeId = n.id;
+        port.dataset.portSide = side;
+        port.title = `Add linked block from ${side} side of ${documentRecord?.title || n.title || 'this block'}`;
+        port.setAttribute('aria-label', port.title);
         el.appendChild(port);
       });
       nodeLayer.appendChild(el);
@@ -2987,7 +3012,7 @@ import {
     render();
     if(before) commitMapCommand(opts.historyLabel || 'Added block', before, {render:false});
     else if(opts.save !== false) save(opts.historyLabel || 'Added block');
-    showToast(opts.linkFrom ? 'Linked block added' : 'Block added');
+    showToast(opts.toast || (opts.linkFrom ? 'Linked block added' : 'Block added'));
     if(opts.focus !== false) setTimeout(() => nodeLayer.querySelector(`[data-id="${CSS.escape(newNode.id)}"] .node-title`)?.focus(), 30);
     return newNode;
   }
@@ -3156,6 +3181,110 @@ import {
       toPort:usesFixedPorts ? (oppositePort[fromPort] || 'auto') : 'auto'
     });
   }
+  function portSideLabel(side){
+    return portLabels[side] || side || 'auto';
+  }
+  function portLinkedCandidates(source, side, w, h){
+    const r = nodeRect(source);
+    const gap = 132;
+    const wideGap = 236;
+    const fartherGap = 360;
+    const centerY = r.cy - h / 2;
+    const centerX = r.cx - w / 2;
+    const offsets = [0, -(h + 60), h + 60, -(h * 2 + 120), h * 2 + 120];
+    const horizontal = distance => offsets.map(offset => ({
+      x:side === 'left' ? r.x - w - distance : r.x + r.w + distance,
+      y:centerY + offset
+    }));
+    const verticalOffsets = [0, -(w + 70), w + 70, -(w * 2 + 120), w * 2 + 120];
+    const vertical = distance => verticalOffsets.map(offset => ({
+      x:centerX + offset,
+      y:side === 'top' ? r.y - h - distance : r.y + r.h + distance
+    }));
+    const primary = (side === 'left' || side === 'right') ? horizontal(gap) : vertical(gap);
+    const secondary = (side === 'left' || side === 'right') ? horizontal(wideGap) : vertical(wideGap);
+    const tertiary = (side === 'left' || side === 'right') ? horizontal(fartherGap) : vertical(fartherGap);
+    return [...primary, ...secondary, ...tertiary, ...candidatesAroundNode(source, w, h, 220), ...candidatesAroundNode(source, w, h, 380)];
+  }
+  function choosePortLinkedPosition(source, side, w, h){
+    const candidates = portLinkedCandidates(source, side, w, h);
+    return findFreeNodePosition({
+      preferredTopLeft:candidates[0] || null,
+      w,
+      h,
+      candidates:candidates.slice(1),
+      options:{includeShelf:true, includeToast:true, margin:18}
+    });
+  }
+  function createPortLinkedBlock(sourceId, side, type){
+    const source = byId(sourceId);
+    if(!source){ showToast('Source block not found'); return null; }
+    const config = workbenchBlockConfig(type);
+    const position = choosePortLinkedPosition(source, side, config.w || 268, config.h || 145);
+    markStarterMeaningfulAction();
+    const linkedLabel = type === 'question' ? 'question' : (type === 'evidence' ? 'evidence' : 'concept');
+    const node = addNodeAt(position.x, position.y, {
+      ...config,
+      linkFrom:source.id,
+      fromPort:'auto',
+      toPort:'auto',
+      historyLabel:`Linked ${linkedLabel} added`,
+      toast:`Linked ${linkedLabel} added. Ctrl+Z to undo.`,
+      focus:false
+    });
+    temporarilyPassThroughZoomDock();
+    requestAnimationFrame(() => {
+      positionSelectionShelf();
+      updateOverlayOffsets();
+      renderEdges();
+    });
+    return node;
+  }
+  function createPortLinkedDocumentBlock(sourceId, side, documentId){
+    const source = byId(sourceId);
+    if(!source){ showToast('Source block not found'); return null; }
+    const size = documentBlockSize();
+    const position = choosePortLinkedPosition(source, side, size.w, size.h);
+    const node = addDocumentBlock(documentId, position, {
+      topLeft:true,
+      w:size.w,
+      h:size.h,
+      linkFrom:source.id,
+      fromPort:'auto',
+      toPort:'auto',
+      historyLabel:'Linked document added',
+      toast:'Linked document added. Ctrl+Z to undo.',
+      focus:false
+    });
+    return node;
+  }
+  function chooseDocumentFromPicker(documentId){
+    const quickAdd = pendingDocumentQuickAdd;
+    if(quickAdd?.sourceId && quickAdd?.side){
+      createPortLinkedDocumentBlock(quickAdd.sourceId, quickAdd.side, documentId);
+      return;
+    }
+    addDocumentBlock(documentId, pendingDocumentBlockPoint);
+  }
+  function openPortQuickAddMenu(button){
+    const nodeId = button?.dataset?.nodeId;
+    const side = button?.dataset?.portSide;
+    const source = byId(nodeId);
+    if(!source || !ports.includes(side) || side === 'auto') return;
+    cancelPlacementMode('port-quick-add');
+    closeDocumentPicker();
+    closeDocumentDetail();
+    clearEdgeDeleteArm();
+    if(connectFrom) cancelConnect();
+    select(source.id, 'port-quick-add');
+    const rect = button.getBoundingClientRect();
+    showMenu(`Add linked block from ${portSideLabel(side)} side`, [
+      {label:'Concept block', action:'port-add-concept'},
+      {label:'Question block', action:'port-add-question'},
+      {label:'Evidence block', action:'port-add-evidence'},
+      {label:'Document block', action:'port-add-document'}
+    ], rect.left + rect.width / 2, rect.bottom + 10, {type:'port', id:source.id, side, trigger:'port-button', source:{target:button}});
+  }
   function addFreeAtCenter(){ const r = stage.getBoundingClientRect(); const p = screenToWorld(r.left + r.width/2, r.top + r.height/2); addNodeAt(p.x - 130, p.y - 70); }
   function nodeSlotIsOpen(x, y, w, h, margin=36, excludeNodeId=''){
     return !data.nodes.some(node => {
@@ -3191,15 +3320,16 @@ import {
       button.addEventListener('click', e => {
         e.preventDefault();
         e.stopPropagation();
-        addDocumentBlock(doc.id, pendingDocumentBlockPoint);
+        chooseDocumentFromPicker(doc.id);
         closeDocumentPicker();
       });
       documentPickerList.appendChild(button);
     });
   }
-  async function openDocumentPicker(worldPoint=null){
+  async function openDocumentPicker(worldPoint=null, options={}){
     if(!projectDocuments.length) await refreshProjectDocuments();
     pendingDocumentBlockPoint = worldPoint;
+    pendingDocumentQuickAdd = options.quickAdd || null;
     renderDocumentPicker();
     documentDetailCard.hidden = true;
     mapStarterPanel.hidden = true;
@@ -3210,6 +3340,7 @@ import {
   function closeDocumentPicker(){
     documentPicker.hidden = true;
     pendingDocumentBlockPoint = null;
+    pendingDocumentQuickAdd = null;
     renderMapStarter();
   }
   function isFreshStarterMap(){
@@ -3345,7 +3476,7 @@ import {
   }
   function isPlacementControlTarget(target){
     if(!target) return false;
-    return Boolean(target.closest('.toolbar,.zoom-dock,.side-panel,.map-workbench,.selection-shelf,.connect-banner,.input-debug,.menu,.document-picker,.document-detail-card,.placement-overlay,.edge-label,g.edge-group'));
+    return Boolean(target.closest('.connection-port,.toolbar,.zoom-dock,.side-panel,.map-workbench,.selection-shelf,.connect-banner,.input-debug,.menu,.document-picker,.document-detail-card,.placement-overlay,.edge-label,g.edge-group'));
   }
   function placementTopLeftFromClient(clientX, clientY, w, h){
     const worldPoint = screenToWorld(clientX, clientY);
@@ -3566,9 +3697,15 @@ import {
       w:size.w,
       h:size.h,
       nodeType:'document',
-      documentId:documentRecord.id
+      documentId:documentRecord.id,
+      linkFrom:options.linkFrom || '',
+      relation:options.relation || 'causes',
+      fromPort:options.fromPort || 'auto',
+      toPort:options.toPort || 'auto',
+      historyLabel:options.historyLabel || 'Added document block',
+      toast:options.toast || 'Document block added',
+      focus:options.focus !== false
     });
-    showToast('Document block added');
     temporarilyPassThroughZoomDock();
     requestAnimationFrame(() => positionSelectionShelf());
     return node;
@@ -3824,6 +3961,9 @@ import {
       else if(action.startsWith('edge-shape-')) setEdgeShape(edge.id, action.replace('edge-shape-',''));
       else if(action.startsWith('port-from-')) setEdgePort(edge.id, 'from', action.replace('port-from-',''));
       else if(action.startsWith('port-to-')) setEdgePort(edge.id, 'to', action.replace('port-to-',''));
+    }else if(ctx.type === 'port'){
+      if(action === 'port-add-document') openDocumentPicker(null, {quickAdd:{sourceId:ctx.id, side:ctx.side}});
+      else if(action.startsWith('port-add-')) createPortLinkedBlock(ctx.id, ctx.side, action.replace('port-add-',''));
     }else if(ctx.type === 'canvas'){
       const p = ctx.point;
       if(action === 'add-free-here') addNodeAt(p.x, p.y);
@@ -3883,6 +4023,32 @@ import {
   edgeLabelLayer.addEventListener('contextmenu', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; const ed = edgeById(lab.dataset.edgeId); if(suppressGestureContextMenu(e, 'edge', lab, {edgeId:ed?.id, hitKind:'edge-label'})) return; if(suppressRecentContextMenu(e, 'edge', lab, {edgeId:ed?.id, hitKind:'edge-label'})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind:'edge-label'}); });
   edgeLayer.addEventListener('contextmenu', e => { const g = e.target.closest('g.edge-group'); if(!g) return; const ed = edgeById(g.dataset.edgeId); const hitKind = e.target.closest('.edge-hit') ? 'edge-hit-target' : 'edge-group'; if(suppressGestureContextMenu(e, 'edge', g, {edgeId:ed?.id, hitKind})) return; if(suppressRecentContextMenu(e, 'edge', g, {edgeId:ed?.id, hitKind})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind}); });
   stage.addEventListener('contextmenu', e => { if(pendingPlacement){ e.preventDefault(); e.stopPropagation(); return; } if(suppressGestureContextMenu(e, 'canvas', e.target.closest('#stage') || stage)) return; if(suppressRecentContextMenu(e, 'canvas', stage)) return; if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.map-workbench') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.document-picker') || e.target.closest('.document-detail-card') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
+
+  nodeLayer.addEventListener('pointerdown', e => {
+    const port = e.target.closest('.connection-port');
+    if(!port || e.button !== 0) return;
+    e.stopPropagation();
+    closeMenu();
+    cancelLongPress(e.pointerId, 'connection-port', e);
+    if(isTouchLikePointer(e)){
+      e.preventDefault();
+      setPointerGestureOwner(e.pointerId, {owner:'port', nodeId:port.dataset.nodeId, side:port.dataset.portSide});
+    }
+  }, true);
+  nodeLayer.addEventListener('pointerup', e => {
+    const port = e.target.closest('.connection-port');
+    if(!port) return;
+    e.stopPropagation();
+    cancelLongPress(e.pointerId, 'connection-port', e);
+    clearPointerGestureOwner(e.pointerId);
+  }, true);
+  nodeLayer.addEventListener('click', e => {
+    const port = e.target.closest('.connection-port');
+    if(!port) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openPortQuickAddMenu(port);
+  }, true);
 
   nodeLayer.addEventListener('click', e => { const detailButton = e.target.closest('[data-action="document-detail"]'); if(detailButton){ const nodeEl = detailButton.closest('.map-node'); const node = nodeEl ? byId(nodeEl.dataset.id) : null; if(node) openDocumentDetail(node); e.stopPropagation(); return; } const el = e.target.closest('.map-node'); if(!el) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'node', target:el}); if(connectFrom && el.dataset.id !== connectFrom){ addEdge(connectFrom, el.dataset.id); cancelConnect(); return; } if(shouldToggleSelection(e)) toggleNodeSelection(el.dataset.id, 'toggle-node', e); else select(el.dataset.id); });
   edgeLabelLayer.addEventListener('click', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'edge', target:lab}); if(shouldToggleSelection(e)) toggleEdgeSelection(lab.dataset.edgeId, 'toggle-line', e); else selectEdge(lab.dataset.edgeId); });
@@ -4232,7 +4398,7 @@ import {
     if(!button) return;
     e.preventDefault();
     e.stopPropagation();
-    addDocumentBlock(button.dataset.documentId, pendingDocumentBlockPoint);
+    chooseDocumentFromPicker(button.dataset.documentId);
     closeDocumentPicker();
   });
   shelfToggle.addEventListener('click', () => { shelfCollapsed = !shelfCollapsed; updateSelectionUI(); });
