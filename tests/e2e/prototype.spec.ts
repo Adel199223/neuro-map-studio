@@ -352,6 +352,51 @@ async function getSeedMapState(page: Page) {
   });
 }
 
+type SeedMapState = NonNullable<Awaited<ReturnType<typeof getSeedMapState>>>;
+type SeedMapNode = SeedMapState['nodes'][number];
+
+function seedNode(map: SeedMapState | null, nodeId: string): SeedMapNode {
+  const node = map?.nodes.find((entry) => entry.id === nodeId);
+  if (!node) throw new Error(`Expected map block ${nodeId} to exist.`);
+  return node;
+}
+
+function nodeDelta(after: SeedMapNode, before: SeedMapNode) {
+  return {
+    x: Math.round(after.x - before.x),
+    y: Math.round(after.y - before.y),
+  };
+}
+
+function expectSameNodePosition(after: SeedMapNode, before: SeedMapNode) {
+  expect(Math.round(after.x)).toBe(Math.round(before.x));
+  expect(Math.round(after.y)).toBe(Math.round(before.y));
+}
+
+async function getSelectedScreenBounds(page: Page) {
+  return page.evaluate(() => {
+    const selected = Array.from(document.querySelectorAll<HTMLElement>('.map-node.selected'));
+    const stage = document.getElementById('stage')?.getBoundingClientRect();
+    if (!selected.length || !stage) return null;
+    const bounds = selected.reduce(
+      (acc, node) => {
+        const rect = node.getBoundingClientRect();
+        return {
+          left: Math.min(acc.left, rect.left),
+          top: Math.min(acc.top, rect.top),
+          right: Math.max(acc.right, rect.right),
+          bottom: Math.max(acc.bottom, rect.bottom),
+        };
+      },
+      { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity },
+    );
+    return {
+      bounds,
+      stage: { left: stage.left, top: stage.top, right: stage.right, bottom: stage.bottom },
+    };
+  });
+}
+
 async function openPortQuickAddMenu(page: Page, nodeId: string, side: 'top' | 'right' | 'bottom' | 'left' = 'right') {
   const node = page.locator(`.map-node[data-id="${nodeId}"]`);
   await syntheticClick(node);
@@ -2156,6 +2201,172 @@ test.describe('current standalone prototypes', () => {
     await expect(page.getByRole('button', { name: /change selected link target connection side/i })).toBeVisible();
   });
 
+  test('multi-selected block drag moves selected blocks together and stays undoable', async ({ page }) => {
+    await resetMindmap(page);
+
+    await syntheticClick(page.locator('.map-node[data-id="core"]'));
+    await syntheticClick(page.locator('.map-node[data-id="money"]'), { shiftKey: true });
+
+    const beforeMap = await getSeedMapState(page);
+    const beforeCore = seedNode(beforeMap, 'core');
+    const beforeMoney = seedNode(beforeMap, 'money');
+    const beforePublic = seedNode(beforeMap, 'public');
+    const beforeEdge = await getEdgeSnapshot(page, 0);
+
+    await dragByHandle(page, 'core', { pointerType: 'touch', deltaX: 132, deltaY: 72 });
+
+    const afterMap = await getSeedMapState(page);
+    const afterCore = seedNode(afterMap, 'core');
+    const afterMoney = seedNode(afterMap, 'money');
+    const afterPublic = seedNode(afterMap, 'public');
+    const afterEdge = await getEdgeSnapshot(page, 0);
+    const coreDelta = nodeDelta(afterCore, beforeCore);
+    const moneyDelta = nodeDelta(afterMoney, beforeMoney);
+
+    expect(coreDelta).toEqual(moneyDelta);
+    expect(Math.abs(coreDelta.x)).toBeGreaterThan(20);
+    expect(Math.abs(coreDelta.y)).toBeGreaterThan(20);
+    expectSameNodePosition(afterPublic, beforePublic);
+    expect(afterEdge?.d).not.toBe(beforeEdge?.d);
+    expect(await getSelectedMapIds(page)).toEqual({ nodes: ['core', 'money'], edges: [] });
+
+    await page.keyboard.press('Control+Z');
+    const undoMap = await getSeedMapState(page);
+    expectSameNodePosition(seedNode(undoMap, 'core'), beforeCore);
+    expectSameNodePosition(seedNode(undoMap, 'money'), beforeMoney);
+
+    await page.keyboard.press('Control+Shift+Z');
+    const redoMap = await getSeedMapState(page);
+    expectSameNodePosition(seedNode(redoMap, 'core'), afterCore);
+    expectSameNodePosition(seedNode(redoMap, 'money'), afterMoney);
+  });
+
+  test('single-block drag still moves only one selected block and updates connected lines', async ({ page }) => {
+    await resetMindmap(page);
+
+    await syntheticClick(page.locator('.map-node[data-id="core"]'));
+    const beforeMap = await getSeedMapState(page);
+    const beforeCore = seedNode(beforeMap, 'core');
+    const beforeMoney = seedNode(beforeMap, 'money');
+    const beforePublic = seedNode(beforeMap, 'public');
+    const beforeEdge = await getEdgeSnapshot(page, 0);
+
+    await dragByHandle(page, 'core', { pointerType: 'touch', deltaX: 108, deltaY: 58 });
+
+    const afterMap = await getSeedMapState(page);
+    const afterCore = seedNode(afterMap, 'core');
+    expect(Math.abs(nodeDelta(afterCore, beforeCore).x)).toBeGreaterThan(20);
+    expect(Math.abs(nodeDelta(afterCore, beforeCore).y)).toBeGreaterThan(20);
+    expectSameNodePosition(seedNode(afterMap, 'money'), beforeMoney);
+    expectSameNodePosition(seedNode(afterMap, 'public'), beforePublic);
+    expect((await getEdgeSnapshot(page, 0))?.d).not.toBe(beforeEdge?.d);
+  });
+
+  test('mixed selection drag moves selected blocks while keeping selected relationship lines selected', async ({ page }) => {
+    await resetMindmap(page);
+
+    await syntheticClick(page.locator('.map-node[data-id="core"]'));
+    await syntheticClick(page.locator('.map-node[data-id="money"]'), { shiftKey: true });
+    await syntheticClick(page.locator('.edge-label').first(), { shiftKey: true });
+    expect(await getSelectedMapIds(page)).toEqual({ nodes: ['core', 'money'], edges: ['e1'] });
+
+    const beforeMap = await getSeedMapState(page);
+    const beforeCore = seedNode(beforeMap, 'core');
+    const beforeMoney = seedNode(beforeMap, 'money');
+    const beforeEdge = await getEdgeSnapshot(page, 0);
+
+    await dragByHandle(page, 'core', { pointerType: 'touch', deltaX: 96, deltaY: 64 });
+
+    const afterMap = await getSeedMapState(page);
+    expect(nodeDelta(seedNode(afterMap, 'core'), beforeCore)).toEqual(
+      nodeDelta(seedNode(afterMap, 'money'), beforeMoney),
+    );
+    expect((await getEdgeSnapshot(page, 0))?.d).not.toBe(beforeEdge?.d);
+    expect(await getSelectedMapIds(page)).toEqual({ nodes: ['core', 'money'], edges: ['e1'] });
+  });
+
+  test('arrow-key nudge moves selected blocks and preserves undo redo', async ({ page }) => {
+    await resetMindmap(page);
+
+    await syntheticClick(page.locator('.map-node[data-id="core"]'));
+    await syntheticClick(page.locator('.map-node[data-id="money"]'), { shiftKey: true });
+    await page.locator('#stage').focus();
+
+    const beforeMap = await getSeedMapState(page);
+    const beforeEdge = await getEdgeSnapshot(page, 0);
+    await page.keyboard.press('ArrowRight');
+
+    const afterSmallMap = await getSeedMapState(page);
+    expect(nodeDelta(seedNode(afterSmallMap, 'core'), seedNode(beforeMap, 'core'))).toEqual({ x: 12, y: 0 });
+    expect(nodeDelta(seedNode(afterSmallMap, 'money'), seedNode(beforeMap, 'money'))).toEqual({ x: 12, y: 0 });
+
+    await page.keyboard.press('Shift+ArrowDown');
+    const afterLargeMap = await getSeedMapState(page);
+    expect(nodeDelta(seedNode(afterLargeMap, 'core'), seedNode(afterSmallMap, 'core'))).toEqual({ x: 0, y: 48 });
+    expect(nodeDelta(seedNode(afterLargeMap, 'money'), seedNode(afterSmallMap, 'money'))).toEqual({ x: 0, y: 48 });
+    expect((await getEdgeSnapshot(page, 0))?.d).not.toBe(beforeEdge?.d);
+    expect(await getSelectedMapIds(page)).toEqual({ nodes: ['core', 'money'], edges: [] });
+
+    await page.keyboard.press('Control+Z');
+    const undoMap = await getSeedMapState(page);
+    expectSameNodePosition(seedNode(undoMap, 'core'), seedNode(afterSmallMap, 'core'));
+    expectSameNodePosition(seedNode(undoMap, 'money'), seedNode(afterSmallMap, 'money'));
+
+    await page.keyboard.press('Control+Shift+Z');
+    const redoMap = await getSeedMapState(page);
+    expectSameNodePosition(seedNode(redoMap, 'core'), seedNode(afterLargeMap, 'core'));
+    expectSameNodePosition(seedNode(redoMap, 'money'), seedNode(afterLargeMap, 'money'));
+  });
+
+  test('arrow keys are ignored while editing block text', async ({ page }) => {
+    await resetMindmap(page);
+
+    await syntheticClick(page.locator('.map-node[data-id="core"]'));
+    const beforeMap = await getSeedMapState(page);
+    const title = page.locator('.map-node[data-id="core"] .node-title');
+    await title.evaluate((element) => {
+      const target = element as HTMLElement;
+      target.focus();
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(target);
+      range.collapse(false);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    });
+
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Shift+ArrowDown');
+
+    const afterMap = await getSeedMapState(page);
+    expectSameNodePosition(seedNode(afterMap, 'core'), seedNode(beforeMap, 'core'));
+    expect(await getSelectedMapIds(page)).toEqual({ nodes: ['core'], edges: [] });
+  });
+
+  test('zoom to selection frames selected blocks without changing map history or data', async ({ page }) => {
+    await resetMindmap(page);
+
+    await syntheticClick(page.locator('.map-node[data-id="core"]'));
+    const beforeMap = await getSeedMapState(page);
+
+    await page.getByRole('button', { name: /zoom to selection/i }).click();
+    await expect(page.locator('#toast')).toContainText(/Zoomed to selection/i);
+
+    const framed = await getSelectedScreenBounds(page);
+    expect(framed).not.toBeNull();
+    expect(framed!.bounds.left).toBeGreaterThanOrEqual(framed!.stage.left - 2);
+    expect(framed!.bounds.top).toBeGreaterThanOrEqual(framed!.stage.top - 2);
+    expect(framed!.bounds.right).toBeLessThanOrEqual(framed!.stage.right + 2);
+    expect(framed!.bounds.bottom).toBeLessThanOrEqual(framed!.stage.bottom + 2);
+
+    const afterMap = await getSeedMapState(page);
+    expect(afterMap?.nodes).toEqual(beforeMap?.nodes);
+    expect(afterMap?.edges).toEqual(beforeMap?.edges);
+
+    await page.keyboard.press('Control+Z');
+    await expect(page.locator('#toast')).toContainText(/Nothing to undo/i);
+  });
+
   test('map multi-select bulk delete can undo and redo blocks with connected lines', async ({ page }) => {
     await resetMindmap(page);
 
@@ -2586,6 +2797,13 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#legendCard')).toContainText(/quick map tips/i);
     await expect(page.locator('#legendCard')).toContainText(/move blocks to test your understanding/i);
     await expect(page.locator('#legendCard')).toContainText(/focus and recenter when the map feels overwhelming/i);
+    await page.locator('#legendCard details', { hasText: /Shortcuts/i }).evaluate((element) => {
+      if (element instanceof HTMLDetailsElement) element.open = true;
+    });
+    await expect(page.locator('#legendCard')).toContainText(/drag a selected block handle/i);
+    await expect(page.locator('#legendCard')).toContainText(/arrow keys.*nudge selected blocks/i);
+    await expect(page.locator('#legendCard')).toContainText(/shift\+arrow.*nudges farther/i);
+    await expect(page.locator('#legendCard')).toContainText(/zoom to selection/i);
   });
 
   test('input diagnostics can be enabled, expanded, logged, and cleared', async ({ page }) => {

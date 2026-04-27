@@ -517,8 +517,11 @@ a{color:inherit}
             <div class="legend-list">
               <div><strong>Ctrl/Cmd+Z</strong> undo. <strong>Ctrl/Cmd+Shift+Z</strong> redo.</div>
               <div><strong>Shift/Ctrl/Cmd-click</strong> toggles blocks and relationship lines into the selection.</div>
+              <div>Drag a selected block handle to move selected blocks together.</div>
+              <div><strong>Arrow keys</strong> nudge selected blocks. <strong>Shift+Arrow</strong> nudges farther.</div>
               <div><strong>Delete</strong> removes the selected blocks and relationship lines. <strong>Ctrl/Cmd+C/V/D</strong> copy, paste, and duplicate.</div>
               <div><strong>Ctrl/Cmd+A</strong> selects all map blocks and relationship lines when the canvas is active.</div>
+              <div>Use <strong>Zoom to selection</strong> in the selection toolbar to bring selected blocks or relationship lines into view.</div>
             </div>
           </details>
           <details>
@@ -548,7 +551,7 @@ a{color:inherit}
         <button id="shelfDuplicate" class="selection-action" type="button" title="Duplicate selected block" aria-label="Duplicate selected block">⧉</button>
         <button id="shelfConnect" class="selection-action" type="button" title="Connect selected block" aria-label="Start connection from selected block">⛓</button>
         <button id="shelfStyle" class="selection-action" type="button" title="Change block style" aria-label="Change selected block style">◧</button>
-        <button id="shelfCenter" class="selection-action" type="button" title="Center selected item" aria-label="Center selected item">◎</button>
+        <button id="shelfCenter" class="selection-action" type="button" title="Zoom to selection" aria-label="Zoom to selection">◎</button>
         <button id="shelfFocus" class="selection-action" type="button" title="Toggle focus mode" aria-label="Toggle focus mode from selected block">◉</button>
         <button id="shelfLabel" class="selection-action" type="button" title="Edit link label" aria-label="Edit selected link label">✎</button>
         <button id="shelfRelation" class="selection-action" type="button" title="Change relationship type" aria-label="Change selected link relationship type">≋</button>
@@ -783,6 +786,8 @@ import {
   const ports = ['auto','top','right','bottom','left'];
   const portLabels = {auto:'auto', top:'top', right:'right', bottom:'bottom', left:'left'};
   const oppositePort = {top:'bottom', right:'left', bottom:'top', left:'right', auto:'auto'};
+  const NUDGE_STEP = 12;
+  const NUDGE_LARGE_STEP = 48;
 
   const defaultMap = {
     version:20,
@@ -2455,8 +2460,10 @@ import {
     renderEdges();
     updateSelectionUI('node-drag-end');
     logInputDebug('drag-end', source || inputDebugState.lastPointer, {mode:'node', reason:dragReason === 'pointerup' ? '' : dragReason, target:active.handle});
-    commitMapCommand('Moved block', active.beforeCommand, {render:false});
-    if(reason === 'pointerup') showToast('Moved');
+    const movedCount = active.items?.length || 1;
+    const label = movedCount > 1 ? 'Moved blocks' : 'Moved block';
+    const committed = commitMapCommand(label, active.beforeCommand, {render:false});
+    if(reason === 'pointerup' && committed) showToast(movedCount > 1 ? `Moved ${plural(movedCount, 'block')}` : 'Moved');
     return true;
   }
   function armEdgeDelete(edgeId){
@@ -2686,6 +2693,74 @@ import {
     const r = stage.getBoundingClientRect(); const nr = nodeRect(n);
     view.x = r.width/2 - nr.cx*view.scale; view.y = r.height/2 - nr.cy*view.scale;
     applyView(); save('View saved');
+  }
+  function combineWorldRects(rects){
+    if(!rects.length) return null;
+    const bounds = rects.reduce((acc, rect) => {
+      acc.left = Math.min(acc.left, rect.left);
+      acc.top = Math.min(acc.top, rect.top);
+      acc.right = Math.max(acc.right, rect.right);
+      acc.bottom = Math.max(acc.bottom, rect.bottom);
+      return acc;
+    }, {left:Infinity, top:Infinity, right:-Infinity, bottom:-Infinity});
+    bounds.width = bounds.right - bounds.left;
+    bounds.height = bounds.bottom - bounds.top;
+    bounds.cx = (bounds.left + bounds.right) / 2;
+    bounds.cy = (bounds.top + bounds.bottom) / 2;
+    return bounds;
+  }
+  function getSelectionWorldBounds(){
+    syncSelectionAliases();
+    const rects = [];
+    selectedNodeIds.forEach(nodeId => {
+      const node = byId(nodeId);
+      if(!node) return;
+      const rect = nodeRect(node);
+      rects.push({left:rect.x, top:rect.y, right:rect.x + rect.w, bottom:rect.y + rect.h});
+    });
+    selectedEdgeIds.forEach(edgeId => {
+      const edge = edgeById(edgeId);
+      if(!edge) return;
+      [byId(edge.from), byId(edge.to)].filter(Boolean).forEach(node => {
+        const rect = nodeRect(node);
+        rects.push({left:rect.x, top:rect.y, right:rect.x + rect.w, bottom:rect.y + rect.h});
+      });
+      const layout = getEdgeLayout(edge);
+      if(layout){
+        rects.push({left:layout.mid.x - 24, top:layout.mid.y - 20, right:layout.mid.x + 24, bottom:layout.mid.y + 20});
+      }
+    });
+    return combineWorldRects(rects);
+  }
+  function zoomToSelection(){
+    const bounds = getSelectionWorldBounds();
+    if(!bounds){
+      showToast('Select a block to zoom to selection.');
+      return false;
+    }
+    const safe = getCanvasSafeArea({
+      includeShelf:true,
+      includeToast:false,
+      nodeWidth:bounds.width,
+      nodeHeight:bounds.height,
+      margin:28
+    });
+    const padding = clamp(Math.min(safe.width, safe.height) * .12, 42, 96);
+    const availableWidth = Math.max(90, safe.width - padding * 2);
+    const availableHeight = Math.max(90, safe.height - padding * 2);
+    const fitScale = Math.min(
+      availableWidth / Math.max(1, bounds.width),
+      availableHeight / Math.max(1, bounds.height)
+    );
+    view.scale = clamp(Math.min(fitScale, 1.6), .18, 2.6);
+    view.x = safe.left + safe.width / 2 - bounds.cx * view.scale;
+    view.y = safe.top + safe.height / 2 - bounds.cy * view.scale;
+    applyView();
+    renderEdges();
+    save('View saved');
+    showToast('Zoomed to selection');
+    requestAnimationFrame(positionSelectionShelf);
+    return true;
   }
 
   function nodeIsVisible(node, margin=24){
@@ -3071,6 +3146,8 @@ import {
     shelfToggle.textContent = shelfCollapsed ? '▸' : '▾';
     shelfToggle.title = shelfCollapsed ? 'Expand selected item toolbar' : 'Collapse selected item toolbar';
     shelfToggle.setAttribute('aria-label', shelfToggle.title);
+    shelfCenter.title = 'Zoom to selection';
+    shelfCenter.setAttribute('aria-label', 'Zoom to selection');
     if(node){
       pendingEdgeDeleteId = null;
       selectionLabel.textContent = 'Selection:';
@@ -3114,7 +3191,7 @@ import {
       setButtonVisible(shelfDuplicate, true);
       setButtonVisible(shelfConnect, false);
       setButtonVisible(shelfStyle, false);
-      setButtonVisible(shelfCenter, false);
+      setButtonVisible(shelfCenter, true);
       setButtonVisible(shelfFocus, false);
       setButtonVisible(shelfLabel, true);
       setButtonVisible(shelfRelation, true);
@@ -3144,7 +3221,7 @@ import {
       setButtonVisible(shelfDuplicate, true);
       setButtonVisible(shelfConnect, false);
       setButtonVisible(shelfStyle, false);
-      setButtonVisible(shelfCenter, false);
+      setButtonVisible(shelfCenter, true);
       setButtonVisible(shelfFocus, false);
       setButtonVisible(shelfLabel, false);
       setButtonVisible(shelfRelation, false);
@@ -3165,6 +3242,7 @@ import {
       pendingEdgeDeleteId = null;
       setButtonVisible(shelfCopy, false);
       setButtonVisible(shelfPaste, hasClipboard);
+      setButtonVisible(shelfCenter, false);
       setButtonVisible(shelfClear, false);
       shelfDuplicate.disabled = false;
       shelfCopy.disabled = false;
@@ -3194,6 +3272,23 @@ import {
       return;
     }
     promptText.textContent = 'Move one block or change one link, then say aloud: “This belongs here because…”';
+  }
+  function selectedMovableNodes(){
+    syncSelectionAliases();
+    return Array.from(selectedNodeIds).map(nodeId => byId(nodeId)).filter(Boolean);
+  }
+  function nudgeSelectedBlocks(dx, dy){
+    const nodes = selectedMovableNodes();
+    if(!nodes.length) return false;
+    const before = beginMapCommand();
+    nodes.forEach(node => {
+      node.x = Math.round(Number(node.x || 0) + dx);
+      node.y = Math.round(Number(node.y || 0) + dy);
+    });
+    render();
+    commitMapCommand(nodes.length === 1 ? 'Nudged block' : 'Nudged blocks', before, {render:false});
+    updateSelectionUI('nudge-selection');
+    return true;
   }
 
   function addNodeAt(x,y, opts={}){
@@ -4476,7 +4571,26 @@ import {
     if(handle){
       const el = handle.closest('.map-node'), n = byId(el.dataset.id); if(!n) return;
       cancelLongPress(e.pointerId, 'drag-start', e);
-      e.preventDefault(); e.stopPropagation(); closeMenu(); clearEdgeDeleteArm(); suppressSelectionShelf = true; select(n.id, 'drag-start'); dragNode = {id:n.id, pointerId:e.pointerId, sx:e.clientX, sy:e.clientY, x:n.x, y:n.y, handle, captureTarget:nodeLayer, captureAcquired:false, beforeCommand:beginMapCommand()}; noteDragInteraction('drag-handle', e.pointerId, handle); setGestureLock('node-drag', true);
+      e.preventDefault(); e.stopPropagation(); closeMenu(); clearEdgeDeleteArm(); suppressSelectionShelf = true;
+      const preserveSelectionForDrag = selectedNodeIds.has(n.id) && (selectedNodeIds.size > 1 || selectedEdgeIds.size > 0);
+      if(preserveSelectionForDrag) syncSelectionAliases();
+      else select(n.id, 'drag-start');
+      const dragItems = Array.from(selectedNodeIds).map(nodeId => byId(nodeId)).filter(Boolean).map(node => ({id:node.id, x:node.x, y:node.y}));
+      if(!dragItems.some(item => item.id === n.id)) dragItems.push({id:n.id, x:n.x, y:n.y});
+      dragNode = {
+        id:n.id,
+        pointerId:e.pointerId,
+        sx:e.clientX,
+        sy:e.clientY,
+        x:n.x,
+        y:n.y,
+        items:dragItems,
+        handle,
+        captureTarget:nodeLayer,
+        captureAcquired:false,
+        beforeCommand:beginMapCommand()
+      };
+      noteDragInteraction('drag-handle', e.pointerId, handle); setGestureLock('node-drag', true);
       logInputDebug('drag-start', e, {mode:'node', target:handle});
       dragNode.captureAcquired = requestPointerCapture(nodeLayer, e.pointerId, e, 'node');
       return;
@@ -4498,7 +4612,22 @@ import {
   });
   nodeLayer.addEventListener('pointermove', e => {
     if(resizeNode){ const n = byId(resizeNode.id); if(!n) return; n.w = clamp(Math.round(resizeNode.w + (e.clientX - resizeNode.sx)/view.scale), 160, 640); n.h = clamp(Math.round(resizeNode.h + (e.clientY - resizeNode.sy)/view.scale), 95, 520); const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`); if(el){ el.style.width = n.w + 'px'; el.style.height = n.h + 'px'; } renderEdges(); return; }
-    if(!dragNode || dragNode.pointerId !== e.pointerId) return; e.preventDefault(); const n = byId(dragNode.id); if(!n) return; n.x = Math.round(dragNode.x + (e.clientX - dragNode.sx)/view.scale); n.y = Math.round(dragNode.y + (e.clientY - dragNode.sy)/view.scale); const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`); if(el){ el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; } renderEdges();
+    if(!dragNode || dragNode.pointerId !== e.pointerId) return;
+    e.preventDefault();
+    const dx = (e.clientX - dragNode.sx) / view.scale;
+    const dy = (e.clientY - dragNode.sy) / view.scale;
+    (dragNode.items || [{id:dragNode.id, x:dragNode.x, y:dragNode.y}]).forEach(item => {
+      const n = byId(item.id);
+      if(!n) return;
+      n.x = Math.round(item.x + dx);
+      n.y = Math.round(item.y + dy);
+      const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`);
+      if(el){
+        el.style.left = n.x + 'px';
+        el.style.top = n.y + 'px';
+      }
+    });
+    renderEdges();
   });
   nodeLayer.addEventListener('pointerup', e => { cancelLongPress(e.pointerId, 'pointerup', e); if(resizeNode && resizeNode.pointerId === e.pointerId){ const activeResize = resizeNode; setGestureLock('node-resize', false); finishDragInteraction(e.pointerId, 'pointerup', activeResize.handle); logInputDebug('resize-end', e, {mode:'node'}); resizeNode=null; suppressSelectionShelf = false; renderEdges(); updateSelectionUI('resize-end'); commitMapCommand('Resized block', activeResize.beforeCommand, {render:false}); showToast('Resized'); } finishNodeDrag(e, 'pointerup'); });
   nodeLayer.addEventListener('pointercancel', e => { cancelLongPress(e.pointerId, 'pointercancel', e); if(resizeNode && resizeNode.pointerId === e.pointerId){ const activeResize = resizeNode; setGestureLock('node-resize', false); finishDragInteraction(e.pointerId, 'pointercancel', activeResize.handle); logInputDebug('resize-end', e, {mode:'node', reason:'pointercancel'}); resizeNode=null; suppressSelectionShelf = false; renderEdges(); updateSelectionUI('resize-cancel'); commitMapCommand('Resized block', activeResize.beforeCommand, {render:false}); } finishNodeDrag(e, 'pointercancel'); });
@@ -4732,6 +4861,14 @@ import {
       showToast(`Selected ${selectionSummary()}`);
       return;
     }
+    if(!commandKey && !e.altKey && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key) && selectedMovableNodes().length){
+      e.preventDefault();
+      const step = e.shiftKey ? NUDGE_LARGE_STEP : NUDGE_STEP;
+      const dx = e.key === 'ArrowLeft' ? -step : (e.key === 'ArrowRight' ? step : 0);
+      const dy = e.key === 'ArrowUp' ? -step : (e.key === 'ArrowDown' ? step : 0);
+      nudgeSelectedBlocks(dx, dy);
+      return;
+    }
     if(e.key === 'Home'){ e.preventDefault(); recenter(); }
     else if(e.key === '+' || e.key === '='){ e.preventDefault(); zoomCenter(1.25); }
     else if(e.key === '-' || e.key === '_'){ e.preventDefault(); zoomCenter(.80); }
@@ -4827,7 +4964,7 @@ import {
       {type:'section', label:'Importance'}, {type:'importance'}
     ], {type:'node', id:selectedId});
   });
-  shelfCenter.addEventListener('click', () => selectedId && centerOnNode(selectedId));
+  shelfCenter.addEventListener('click', zoomToSelection);
   shelfFocus.addEventListener('click', toggleFocus);
   shelfLabel.addEventListener('click', () => selectedEdgeId && setEdgeLabel(selectedEdgeId));
   shelfRelation.addEventListener('click', () => {
