@@ -188,6 +188,87 @@ async function pointerTap(
   });
 }
 
+async function marqueePointsForNodes(page: Page, nodeIds: string[], padding = 18) {
+  return page.evaluate(
+    ({ ids, pad }) => {
+      const stage = document.getElementById('stage')?.getBoundingClientRect();
+      if (!stage) throw new Error('Missing map stage.');
+      const rects = ids.map((id) => {
+        const node = document.querySelector(`.map-node[data-id="${CSS.escape(id)}"]`);
+        if (!node) throw new Error(`Missing map block ${id}.`);
+        return node.getBoundingClientRect();
+      });
+      const union = rects.reduce(
+        (bounds, rect) => ({
+          left: Math.min(bounds.left, rect.left),
+          top: Math.min(bounds.top, rect.top),
+          right: Math.max(bounds.right, rect.right),
+          bottom: Math.max(bounds.bottom, rect.bottom),
+        }),
+        { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity },
+      );
+      const clampPoint = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+      return {
+        start: {
+          x: clampPoint(union.left - pad, stage.left + 8, stage.right - 8),
+          y: clampPoint(union.top - pad, stage.top + 8, stage.bottom - 8),
+        },
+        end: {
+          x: clampPoint(union.right + pad, stage.left + 8, stage.right - 8),
+          y: clampPoint(union.bottom + pad, stage.top + 8, stage.bottom - 8),
+        },
+      };
+    },
+    { ids: nodeIds, pad: padding },
+  );
+}
+
+async function dragStagePointer(
+  page: Page,
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  options: { pointerId?: number; shiftKey?: boolean; pointerType?: 'mouse' | 'touch' | 'pen'; finish?: boolean } = {},
+) {
+  const stage = page.locator('#stage');
+  const payload = {
+    pointerId: options.pointerId ?? 311,
+    pointerType: options.pointerType ?? 'mouse',
+    button: 0,
+    buttons: 1,
+    isPrimary: true,
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    shiftKey: options.shiftKey ?? false,
+    clientX: start.x,
+    clientY: start.y,
+  };
+  await stage.dispatchEvent('pointerdown', payload);
+  await stage.dispatchEvent('pointermove', {
+    ...payload,
+    clientX: start.x + (end.x - start.x) / 2,
+    clientY: start.y + (end.y - start.y) / 2,
+  });
+  await stage.dispatchEvent('pointermove', { ...payload, clientX: end.x, clientY: end.y });
+  if (options.finish ?? true) {
+    await stage.dispatchEvent('pointerup', { ...payload, buttons: 0, clientX: end.x, clientY: end.y });
+  }
+}
+
+async function dragMarqueeOverNodes(
+  page: Page,
+  nodeIds: string[],
+  options: { pointerId?: number; shiftKey?: boolean; finish?: boolean } = {},
+) {
+  const points = await marqueePointsForNodes(page, nodeIds);
+  await dragStagePointer(page, points.start, points.end, {
+    pointerId: options.pointerId,
+    shiftKey: options.shiftKey ?? true,
+    finish: options.finish,
+  });
+  return points;
+}
+
 async function dragByHandle(
   page: Page,
   nodeId: string,
@@ -497,6 +578,84 @@ async function loadOpenSpacePortFixture(
   });
   await expect(page.locator('#toast')).toContainText(/Import complete/i);
   await expect(page.locator('.map-node[data-id="source"]')).toBeVisible();
+}
+
+async function loadMarqueeFixture(page: Page) {
+  await resetMindmap(page);
+  const mapPayload = {
+    version: 20,
+    view: { x: 20, y: 30, scale: 1 },
+    nodes: [
+      {
+        id: 'box-a',
+        title: 'Box alpha',
+        body: 'First box selection test block.',
+        group: 'blue',
+        shape: 'card',
+        importance: 2,
+        x: 40,
+        y: 70,
+        w: 150,
+        h: 110,
+        tag: 'box',
+        nodeType: 'concept',
+        documentId: '',
+      },
+      {
+        id: 'box-b',
+        title: 'Box beta',
+        body: 'Second box selection test block.',
+        group: 'green',
+        shape: 'card',
+        importance: 2,
+        x: 220,
+        y: 90,
+        w: 150,
+        h: 110,
+        tag: 'box',
+        nodeType: 'concept',
+        documentId: '',
+      },
+      {
+        id: 'box-c',
+        title: 'Box gamma',
+        body: 'Third box selection test block.',
+        group: 'amber',
+        shape: 'card',
+        importance: 2,
+        x: 40,
+        y: 270,
+        w: 150,
+        h: 110,
+        tag: 'box',
+        nodeType: 'concept',
+        documentId: '',
+      },
+      {
+        id: 'box-d',
+        title: 'Box delta',
+        body: 'Existing selected block outside the marquee.',
+        group: 'rose',
+        shape: 'card',
+        importance: 2,
+        x: 230,
+        y: 290,
+        w: 150,
+        h: 110,
+        tag: 'box',
+        nodeType: 'concept',
+        documentId: '',
+      },
+    ],
+    edges: [{ id: 'box-edge', from: 'box-a', to: 'box-b', relation: 'causes', strength: 3, shape: 'curve', label: 'relates' }],
+  };
+  await page.locator('#importFile').setInputFiles({
+    name: `marquee-fixture-${Date.now()}-${Math.random().toString(36).slice(2)}.json`,
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(mapPayload)),
+  });
+  await expect(page.locator('#toast')).toContainText(/Import complete/i);
+  await expect(page.locator('.map-node[data-id="box-a"]')).toBeVisible();
 }
 
 async function expectNodeClearOfOtherBlocks(page: Page, nodeId: string, margin = 8) {
@@ -2367,6 +2526,87 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#toast')).toContainText(/Nothing to undo/i);
   });
 
+  test('desktop box select adds multiple blocks without creating map history', async ({ page }) => {
+    await loadMarqueeFixture(page);
+
+    await syntheticClick(page.locator('.map-node[data-id="box-d"]'));
+    const beforeMap = await getSeedMapState(page);
+
+    await dragMarqueeOverNodes(page, ['box-a', 'box-b']);
+
+    await expect(page.locator('#selectionMarquee')).toBeHidden();
+    await expect(page.locator('#selectionShelf')).toBeVisible();
+    await expect(page.locator('#selectedTitle')).toContainText('3 blocks');
+    expect(await getSelectedMapIds(page)).toEqual({ nodes: ['box-a', 'box-b', 'box-d'], edges: [] });
+
+    await page.locator('#stage').focus();
+    await page.keyboard.press('Control+Z');
+    await expect(page.locator('#toast')).toContainText(/Nothing to undo/i);
+    const afterUndoAttempt = await getSeedMapState(page);
+    expect(afterUndoAttempt?.nodes).toEqual(beforeMap?.nodes);
+    expect(afterUndoAttempt?.edges).toEqual(beforeMap?.edges);
+
+    await page.getByRole('button', { name: /zoom to selection/i }).click();
+    await expect(page.locator('#toast')).toContainText(/Zoomed to selection/i);
+    const countBeforeDuplicate = await page.locator('.map-node').count();
+    await page.locator('#shelfDuplicate').click();
+    await expect(page.locator('.map-node')).toHaveCount(countBeforeDuplicate + 3);
+  });
+
+  test('box select respects zoom, stays additive, and cancels cleanly', async ({ page }) => {
+    await loadMarqueeFixture(page);
+
+    await page.getByRole('button', { name: /zoom in/i }).click();
+    await page.waitForTimeout(120);
+    await syntheticClick(page.locator('.map-node[data-id="box-d"]'));
+
+    await dragMarqueeOverNodes(page, ['box-a'], { finish: false });
+    await expect(page.locator('#selectionMarquee')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#selectionMarquee')).toBeHidden();
+    expect(await getSelectedMapIds(page)).toEqual({ nodes: ['box-d'], edges: [] });
+
+    await dragMarqueeOverNodes(page, ['box-a', 'box-c'], { pointerId: 312 });
+    expect(await getSelectedMapIds(page)).toEqual({ nodes: ['box-a', 'box-c', 'box-d'], edges: [] });
+  });
+
+  test('plain canvas pan and block drag do not start box select', async ({ page }) => {
+    await loadMarqueeFixture(page);
+
+    const stageBox = await visibleBoundingBox(page.locator('#stage'), 'pan stage');
+    const beforeTransform = await page.locator('#world').evaluate((element) => getComputedStyle(element).transform);
+    await dragStagePointer(
+      page,
+      { x: stageBox.x + 80, y: stageBox.y + 120 },
+      { x: stageBox.x + 170, y: stageBox.y + 180 },
+      { pointerId: 313 },
+    );
+    await expect(page.locator('#selectionMarquee')).toBeHidden();
+    const afterTransform = await page.locator('#world').evaluate((element) => getComputedStyle(element).transform);
+    expect(afterTransform).not.toBe(beforeTransform);
+
+    await loadMarqueeFixture(page);
+    await dragMarqueeOverNodes(page, ['box-a', 'box-b'], { pointerId: 314 });
+    const beforeMap = await getSeedMapState(page);
+    await dragByHandle(page, 'box-a', { pointerType: 'touch', deltaX: 84, deltaY: 56 });
+    await expect(page.locator('#selectionMarquee')).toBeHidden();
+    const afterMap = await getSeedMapState(page);
+    expect(nodeDelta(seedNode(afterMap, 'box-a'), seedNode(beforeMap, 'box-a'))).toEqual(
+      nodeDelta(seedNode(afterMap, 'box-b'), seedNode(beforeMap, 'box-b')),
+    );
+  });
+
+  test('box select does not interfere with port quick-add', async ({ page }) => {
+    await resetMindmap(page);
+
+    await dragMarqueeOverNodes(page, ['public'], { pointerId: 315 });
+    const newNodeId = await quickAddConceptFromPort(page, 'public', 'right');
+
+    await expect(page.locator('#selectionMarquee')).toBeHidden();
+    await expect(page.locator(`.map-node[data-id="${newNodeId}"]`)).toBeVisible();
+    expect(await getSelectedMapIds(page)).toEqual({ nodes: [newNodeId], edges: [] });
+  });
+
   test('map multi-select bulk delete can undo and redo blocks with connected lines', async ({ page }) => {
     await resetMindmap(page);
 
@@ -2801,6 +3041,8 @@ test.describe('current standalone prototypes', () => {
       if (element instanceof HTMLDetailsElement) element.open = true;
     });
     await expect(page.locator('#legendCard')).toContainText(/drag a selected block handle/i);
+    await expect(page.locator('#legendCard')).toContainText(/desktop\/trackpad box select/i);
+    await expect(page.locator('#legendCard')).toContainText(/shift-drag on empty canvas/i);
     await expect(page.locator('#legendCard')).toContainText(/arrow keys.*nudge selected blocks/i);
     await expect(page.locator('#legendCard')).toContainText(/shift\+arrow.*nudges farther/i);
     await expect(page.locator('#legendCard')).toContainText(/zoom to selection/i);

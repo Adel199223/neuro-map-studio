@@ -130,6 +130,7 @@ a{color:inherit}
   cursor:grab;
 }
 .stage.is-panning{cursor:grabbing}
+.stage.marquee-selecting{cursor:crosshair}
 .world{position:absolute;left:0;top:0;width:1px;height:1px;transform-origin:0 0;will-change:transform;transform:translate(0,0);}
 .world-scale{position:absolute;left:0;top:0;width:1px;height:1px;transform-origin:0 0;will-change:transform;zoom:1;
   text-rendering:geometricPrecision;backface-visibility:hidden;}
@@ -156,6 +157,8 @@ a{color:inherit}
   box-shadow:0 6px 14px rgba(72,54,31,.08);
 }
 .edge-label.selected{outline:3px solid rgba(139,109,66,.28);background:#fff7e3;}
+.selection-marquee{position:absolute;left:0;top:0;width:0;height:0;z-index:8;pointer-events:none;border:2px solid rgba(79,121,138,.86);background:rgba(159,216,227,.18);box-shadow:0 0 0 1px rgba(255,255,255,.72) inset,0 8px 24px rgba(47,79,88,.1);border-radius:10px;}
+.selection-marquee[hidden]{display:none!important}
 .node-layer{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;z-index:2;touch-action:none;}
 .map-node,.edge-label,.topbar,.menu{text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;}
 .map-node{
@@ -405,7 +408,7 @@ a{color:inherit}
 @media(max-width:720px){.topbar{grid-template-columns:minmax(0,1fr);grid-template-areas:"title" "nav" "pagebar" "status";gap:.32rem;padding:.45rem .55rem}.title-wrap h1{max-width:100%}.project-kicker{max-width:100%}.nav-links,.pagebar{justify-content:flex-start}.pagebar{display:grid;grid-template-columns:auto minmax(0,1fr) repeat(4,auto);width:100%;gap:.28rem}.pagebar select{width:100%;max-width:100%;min-width:0}.side-panel{right:.45rem;top:.45rem}.side-tab{min-width:2.25rem;min-height:2.25rem;padding:.2rem}.panel-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem)}.map-workbench{right:.45rem;top:.45rem;max-width:calc(100vw - 5.4rem)}.workbench-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem);padding:.68rem}.workbench-actions{grid-template-columns:1fr}.toolbar{left:.45rem;top:.45rem}.toolbar button,.file-label{width:2.2rem;height:2.2rem;min-height:2.2rem}.zoom-dock{right:calc(max(.5rem, env(safe-area-inset-right)) + var(--zoom-dock-right-offset, 0px));bottom:calc(max(.5rem, env(safe-area-inset-bottom)) + var(--zoom-dock-lift, 0px))}.zoom-dock button{width:2.85rem;height:2.85rem;min-height:2.85rem}.zoom-dock button.zoom-readout{width:3.85rem}.map-node{width:235px;min-height:120px}.map-node .node-content{padding:.78rem .75rem 1.2rem}.node-title{font-size:.96rem}.node-body{font-size:.84rem}.selection-shelf{top:auto;bottom:.85rem;max-width:calc(100vw - 1rem)}.selection-shelf.docked{top:auto;bottom:.85rem}.selection-meta strong{max-width:36vw}.selection-toggle,.selection-action{width:2.75rem;height:2.75rem;min-height:2.75rem}.connect-banner{bottom:4.2rem;max-width:calc(100vw - 1rem);border-radius:16px}.input-debug{left:.5rem;bottom:.5rem;width:calc(100vw - 1rem);max-width:calc(100vw - 1rem)}}
 @media(max-width:520px){.project-kicker{display:none}.pagebar{grid-template-columns:1fr repeat(4,auto)}.pagebar label{grid-column:1/-1}.back-link{max-width:100%}.pagebar button{padding:.24rem .52rem}.map-workbench{left:.5rem;right:.5rem;top:auto;bottom:5rem;max-width:none;justify-items:stretch}.map-workbench.open{bottom:.75rem}.workbench-toggle{justify-self:start;max-width:calc(100vw - 7rem)}.map-workbench.open .workbench-toggle{display:none}.workbench-drawer{width:100%;max-height:min(18dvh,170px)}.toast{left:.6rem;right:auto;bottom:calc(5.1rem + var(--toast-bottom-offset, 0px));max-width:calc(100vw - 1.2rem);text-align:center}.placement-overlay{left:.6rem;right:5.8rem;bottom:calc(4.75rem + var(--placement-bottom-offset, 0px));max-width:calc(100vw - 6.4rem);border-radius:18px}.placement-overlay span{white-space:normal;line-height:1.2}}
 @media (pointer:coarse){.menu button{min-height:2.75rem;padding:.46rem .62rem}.menu-row button{min-width:2.75rem;height:2.75rem;min-height:2.75rem}.selection-toggle,.selection-action{width:2.95rem;height:2.95rem;min-height:2.95rem}.input-debug button{min-height:2.75rem}.drag-handle{width:3rem;height:3rem;min-height:3rem}.drag-handle-icon{width:2.1rem;height:2.1rem;min-height:2.1rem}.map-node.shape-oval .drag-handle{width:2.65rem;height:2.65rem;min-height:2.65rem}.map-node.shape-oval .drag-handle-icon{width:1.85rem;height:1.85rem;min-height:1.85rem}.zoom-dock button{width:3rem;height:3rem;min-height:3rem}.zoom-dock button.zoom-readout{width:4rem}}
-@media print{.topbar,.pagebar,.toolbar,.zoom-dock,.side-panel,.menu,.toast,.placement-overlay,.placement-ghost,.connect-banner,.selection-shelf,.input-debug,.document-picker,.document-detail-card,.map-workbench{display:none!important}body{overflow:visible;background:white}.stage{overflow:visible}.map-node{break-inside:avoid}}
+@media print{.topbar,.pagebar,.toolbar,.zoom-dock,.side-panel,.menu,.toast,.placement-overlay,.placement-ghost,.connect-banner,.selection-shelf,.selection-marquee,.input-debug,.document-picker,.document-detail-card,.map-workbench{display:none!important}body{overflow:visible;background:white}.stage{overflow:visible}.map-node{break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -440,6 +443,7 @@ a{color:inherit}
         <div class="node-layer" id="nodeLayer"></div>
       </div>
     </div>
+    <div class="selection-marquee" id="selectionMarquee" aria-hidden="true" hidden></div>
 
     <div class="toolbar no-print" aria-label="Learning map controls">
       <div class="toolbar-group">
@@ -517,6 +521,7 @@ a{color:inherit}
             <div class="legend-list">
               <div><strong>Ctrl/Cmd+Z</strong> undo. <strong>Ctrl/Cmd+Shift+Z</strong> redo.</div>
               <div><strong>Shift/Ctrl/Cmd-click</strong> toggles blocks and relationship lines into the selection.</div>
+              <div><strong>Desktop/trackpad box select:</strong> Shift-drag on empty canvas. Adds blocks to the current selection.</div>
               <div>Drag a selected block handle to move selected blocks together.</div>
               <div><strong>Arrow keys</strong> nudge selected blocks. <strong>Shift+Arrow</strong> nudges farther.</div>
               <div><strong>Delete</strong> removes the selected blocks and relationship lines. <strong>Ctrl/Cmd+C/V/D</strong> copy, paste, and duplicate.</div>
@@ -675,6 +680,7 @@ import {
   const edgeLayer = document.getElementById('edgeLayer');
   const edgeDefs = document.getElementById('edgeDefs');
   const edgeLabelLayer = document.getElementById('edgeLabelLayer');
+  const selectionMarquee = document.getElementById('selectionMarquee');
   const menu = document.getElementById('contextMenu');
   const saveStatus = document.getElementById('saveStatus');
   const toast = document.getElementById('toast');
@@ -835,6 +841,7 @@ import {
   let dragNode = null;
   let resizeNode = null;
   let panDrag = null;
+  let marqueeSelection = null;
   let saveTimer = null;
   let menuContext = null;
   let connectFrom = null;
@@ -877,6 +884,7 @@ import {
   const MAP_HISTORY_LIMIT = 100;
   const LONG_PRESS_DELAY = 450;
   const LONG_PRESS_MOVE = 10;
+  const MARQUEE_MIN_SIZE = 8;
   const PORT_TAP_MOVE = 14;
   const EDGE_HIT_WIDTH = 32;
   const EDGE_HIT_WIDTH_COARSE = 40;
@@ -1477,6 +1485,114 @@ import {
     if(!active || active === document.body || active === stage) return true;
     if(active.closest?.('#stage') && !active.closest?.('input,textarea,select,[contenteditable]')) return true;
     return hasMapSelection();
+  }
+  function isCanvasGestureBlockedTarget(target){
+    return !!target?.closest?.('.map-node,.toolbar,.zoom-dock,.side-panel,.map-workbench,.selection-shelf,.connect-banner,.input-debug,.menu,.document-picker,.document-detail-card,.placement-overlay,.placement-ghost,.edge-label,g.edge-group');
+  }
+  function marqueeRectFromPoints(start, current){
+    const left = Math.min(start.x, current.x);
+    const top = Math.min(start.y, current.y);
+    const right = Math.max(start.x, current.x);
+    const bottom = Math.max(start.y, current.y);
+    return {left, top, right, bottom, width:right - left, height:bottom - top};
+  }
+  function updateMarqueeBox(rect){
+    if(!selectionMarquee || !rect) return;
+    selectionMarquee.hidden = false;
+    selectionMarquee.style.left = rect.left + 'px';
+    selectionMarquee.style.top = rect.top + 'px';
+    selectionMarquee.style.width = rect.width + 'px';
+    selectionMarquee.style.height = rect.height + 'px';
+  }
+  function hideMarqueeBox(){
+    if(!selectionMarquee) return;
+    selectionMarquee.hidden = true;
+    selectionMarquee.style.left = '';
+    selectionMarquee.style.top = '';
+    selectionMarquee.style.width = '';
+    selectionMarquee.style.height = '';
+  }
+  function canStartMarqueeSelection(event, target){
+    if(!selectionMarquee || dragNode || resizeNode || panDrag || pendingPlacement || connectFrom || touchGesture) return false;
+    if(event.button !== 0 || isTouchLikePointer(event)) return false;
+    if(getPointerGestureOwner(event.pointerId)) return false;
+    if(isCanvasGestureBlockedTarget(target)) return false;
+    const menuOpen = menu && menu.getAttribute('aria-hidden') !== 'true';
+    if(menuOpen) return false;
+    return !!(event.shiftKey || multiSelectMode);
+  }
+  function beginMarqueeSelection(event){
+    const point = stageCoords(event.clientX, event.clientY);
+    marqueeSelection = {
+      pointerId:event.pointerId,
+      start:point,
+      current:point,
+      moved:false
+    };
+    event.preventDefault();
+    event.stopPropagation();
+    closeMenu();
+    clearEdgeDeleteArm();
+    cancelLongPress(event.pointerId, 'box-select-start', event);
+    setGestureLock('marquee-select', true);
+    stage.classList.add('marquee-selecting');
+    requestPointerCapture(stage, event.pointerId, event, 'selection');
+    updateMarqueeBox(marqueeRectFromPoints(point, point));
+    logInputDebug('box-select-start', event, {mode:'selection', target:stage});
+  }
+  function updateMarqueeSelection(event){
+    if(!marqueeSelection || marqueeSelection.pointerId !== event.pointerId) return false;
+    event.preventDefault();
+    const point = stageCoords(event.clientX, event.clientY);
+    marqueeSelection.current = point;
+    const rect = marqueeRectFromPoints(marqueeSelection.start, point);
+    marqueeSelection.moved = rect.width >= MARQUEE_MIN_SIZE || rect.height >= MARQUEE_MIN_SIZE;
+    updateMarqueeBox(rect);
+    return true;
+  }
+  function nodeIdsInMarquee(rect){
+    if(!rect || rect.width < MARQUEE_MIN_SIZE || rect.height < MARQUEE_MIN_SIZE) return [];
+    const stageRect = stage.getBoundingClientRect();
+    return data.nodes.flatMap(node => {
+      const el = nodeLayer.querySelector(`.map-node[data-id="${CSS.escape(node.id)}"]`);
+      if(!el) return [];
+      const nodeRect = rectToStage(el.getBoundingClientRect(), stageRect);
+      return rectsOverlap(rect, nodeRect) ? [node.id] : [];
+    });
+  }
+  function finishMarqueeSelection(event, reason='pointerup'){
+    if(!marqueeSelection || marqueeSelection.pointerId !== event.pointerId) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    const rect = marqueeRectFromPoints(marqueeSelection.start, stageCoords(event.clientX, event.clientY));
+    const nodeIds = nodeIdsInMarquee(rect);
+    marqueeSelection = null;
+    hideMarqueeBox();
+    stage.classList.remove('marquee-selecting');
+    setGestureLock('marquee-select', false);
+    releasePointerCapture(stage, event.pointerId);
+    if(nodeIds.length){
+      nodeIds.forEach(nodeId => selectedNodeIds.add(nodeId));
+      pendingEdgeDeleteId = null;
+      syncSelectionAliases();
+      refreshSelectionUI('box-select', event);
+      showToast(`Selected ${selectionSummary()}`);
+    }else{
+      updateSelectionUI('box-select-empty');
+    }
+    logInputDebug('box-select-end', event, {mode:'selection', reason, target:stage});
+    return true;
+  }
+  function cancelMarqueeSelection(reason='cancel', source=inputDebugState.lastPointer){
+    if(!marqueeSelection) return false;
+    const pointerId = marqueeSelection.pointerId;
+    marqueeSelection = null;
+    hideMarqueeBox();
+    stage.classList.remove('marquee-selecting');
+    setGestureLock('marquee-select', false);
+    releasePointerCapture(stage, pointerId);
+    logInputDebug('box-select-cancel', source, {mode:'selection', reason, target:stage});
+    return true;
   }
   function syncSelectionAliases(){
     const nodes = Array.from(selectedNodeIds).filter(nodeId => !!byId(nodeId));
@@ -4672,7 +4788,7 @@ import {
   });
 
   stage.addEventListener('pointerdown', e => {
-    if(dragNode) return;
+    if(dragNode || marqueeSelection) return;
     if(getPointerGestureOwner(e.pointerId)) return;
     if(isTouchGesturePointer(e)){
       activeTouchPoints.set(e.pointerId, stageCoords(e.clientX, e.clientY));
@@ -4685,7 +4801,12 @@ import {
       }
     }
     if(e.button !== 0) return;
-    if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.map-workbench') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return;
+    const target = e.target instanceof Element ? e.target : null;
+    if(isCanvasGestureBlockedTarget(target)) return;
+    if(canStartMarqueeSelection(e, target)){
+      beginMarqueeSelection(e);
+      return;
+    }
     e.preventDefault();
     closeMenu();
     if(multiSelectMode) return;
@@ -4697,6 +4818,7 @@ import {
     beginCanvasPan(e);
   });
   stage.addEventListener('pointermove', e => {
+    if(updateMarqueeSelection(e)) return;
     if(isTouchGesturePointer(e) && activeTouchPoints.has(e.pointerId)){
       activeTouchPoints.set(e.pointerId, stageCoords(e.clientX, e.clientY));
       if(activeTouchPoints.size >= 2){
@@ -4721,6 +4843,7 @@ import {
   });
   stage.addEventListener('pointerup', e => {
     cancelLongPress(e.pointerId, 'pointerup', e);
+    if(finishMarqueeSelection(e, 'pointerup')) return;
     if(isTouchGesturePointer(e)){
       activeTouchPoints.delete(e.pointerId);
       if(touchGesture && activeTouchPoints.size < 2){
@@ -4734,6 +4857,10 @@ import {
   });
   stage.addEventListener('pointercancel', e => {
     cancelLongPress(e.pointerId, 'pointercancel', e);
+    if(marqueeSelection?.pointerId === e.pointerId){
+      cancelMarqueeSelection('pointercancel', e);
+      return;
+    }
     if(isTouchGesturePointer(e)){
       activeTouchPoints.delete(e.pointerId);
       if(touchGesture && activeTouchPoints.size < 2){
@@ -4744,6 +4871,9 @@ import {
       }
     }
     stopCanvasPan(true, e.pointerId);
+  });
+  stage.addEventListener('lostpointercapture', e => {
+    if(marqueeSelection?.pointerId === e.pointerId) cancelMarqueeSelection('lostpointercapture', e);
   });
   stage.addEventListener('wheel', e => {
     if(e.target.closest('.menu') || e.target.closest('.map-workbench')) return;
@@ -4784,22 +4914,13 @@ import {
   function toggleRemember(){ toggleSidePanel('remember'); }
 
   document.addEventListener('pointerdown', e => {
+    if(marqueeSelection) return;
     if(hasMapSelection() && !multiSelectMode && e.button === 0){
       const target = e.target instanceof Element ? e.target : null;
       if(!target) return;
       if(
         target.closest('#stage') &&
-        !target.closest('.map-node') &&
-        !target.closest('.toolbar') &&
-        !target.closest('.zoom-dock') &&
-        !target.closest('.side-panel') &&
-        !target.closest('.map-workbench') &&
-        !target.closest('.selection-shelf') &&
-        !target.closest('.connect-banner') &&
-        !target.closest('.input-debug') &&
-        !target.closest('.menu') &&
-        !target.closest('.edge-label') &&
-        !target.closest('g.edge-group') &&
+        !isCanvasGestureBlockedTarget(target) &&
         !isTextEditingActive()
       ){
         clearSelection('canvas-deselect', e);
@@ -4810,6 +4931,11 @@ import {
   document.addEventListener('selectionchange', () => { if(gestureLockReasons.size > 0 || !!connectFrom) clearGestureSelection(); });
   document.addEventListener('keydown', e => {
     if(e.key === 'Escape'){
+      if(marqueeSelection){
+        e.preventDefault();
+        cancelMarqueeSelection('escape', e);
+        return;
+      }
       if(pendingPlacement){
         e.preventDefault();
         cancelPlacementMode('escape');
