@@ -860,6 +860,8 @@ import {
   let workbenchUserToggled = false;
   let pendingPlacement = null;
   let suppressNextPlacementClick = false;
+  let activePortTap = null;
+  let suppressedPortClick = null;
   let multiSelectMode = false;
   let mapClipboard = null;
   let textEditState = null;
@@ -869,6 +871,7 @@ import {
   const MAP_HISTORY_LIMIT = 100;
   const LONG_PRESS_DELAY = 450;
   const LONG_PRESS_MOVE = 10;
+  const PORT_TAP_MOVE = 14;
   const EDGE_HIT_WIDTH = 32;
   const EDGE_HIT_WIDTH_COARSE = 40;
   const RECENT_LONG_PRESS_MENU_MS = 900;
@@ -3285,6 +3288,49 @@ import {
       {label:'Document block', action:'port-add-document'}
     ], rect.left + rect.width / 2, rect.bottom + 10, {type:'port', id:source.id, side, trigger:'port-button', source:{target:button}});
   }
+  function portTapKey(port){
+    return `${port?.dataset?.nodeId || ''}:${port?.dataset?.portSide || ''}`;
+  }
+  function startPortTap(port, event){
+    activePortTap = {
+      pointerId:event.pointerId,
+      port,
+      key:portTapKey(port),
+      sx:event.clientX,
+      sy:event.clientY
+    };
+  }
+  function clearPortTap(pointerId=null){
+    if(pointerId !== null && activePortTap?.pointerId !== pointerId) return;
+    activePortTap = null;
+  }
+  function portTapMoved(event){
+    if(!activePortTap || activePortTap.pointerId !== event.pointerId) return false;
+    return Math.hypot(event.clientX - activePortTap.sx, event.clientY - activePortTap.sy) > PORT_TAP_MOVE;
+  }
+  function portTapCanOpen(port, event){
+    return activePortTap
+      && activePortTap.pointerId === event.pointerId
+      && activePortTap.port === port
+      && activePortTap.key === portTapKey(port)
+      && !portTapMoved(event);
+  }
+  function suppressNextPortClick(port){
+    suppressedPortClick = {
+      key:portTapKey(port),
+      until:Date.now() + 700
+    };
+  }
+  function consumeSuppressedPortClick(port){
+    if(!suppressedPortClick) return false;
+    if(Date.now() > suppressedPortClick.until){
+      suppressedPortClick = null;
+      return false;
+    }
+    if(suppressedPortClick.key !== portTapKey(port)) return false;
+    suppressedPortClick = null;
+    return true;
+  }
   function addFreeAtCenter(){ const r = stage.getBoundingClientRect(); const p = screenToWorld(r.left + r.width/2, r.top + r.height/2); addNodeAt(p.x - 130, p.y - 70); }
   function nodeSlotIsOpen(x, y, w, h, margin=36, excludeNodeId=''){
     return !data.nodes.some(node => {
@@ -4032,14 +4078,41 @@ import {
     cancelLongPress(e.pointerId, 'connection-port', e);
     if(isTouchLikePointer(e)){
       e.preventDefault();
+      startPortTap(port, e);
       setPointerGestureOwner(e.pointerId, {owner:'port', nodeId:port.dataset.nodeId, side:port.dataset.portSide});
+    }
+  }, true);
+  nodeLayer.addEventListener('pointermove', e => {
+    if(!activePortTap || activePortTap.pointerId !== e.pointerId) return;
+    e.stopPropagation();
+    if(isTouchLikePointer(e)) e.preventDefault();
+    if(portTapMoved(e)){
+      clearPortTap(e.pointerId);
+      clearPointerGestureOwner(e.pointerId);
     }
   }, true);
   nodeLayer.addEventListener('pointerup', e => {
     const port = e.target.closest('.connection-port');
-    if(!port) return;
+    if(!port){
+      clearPortTap(e.pointerId);
+      return;
+    }
     e.stopPropagation();
     cancelLongPress(e.pointerId, 'connection-port', e);
+    if(portTapCanOpen(port, e)){
+      e.preventDefault();
+      suppressNextPortClick(port);
+      clearPortTap(e.pointerId);
+      clearPointerGestureOwner(e.pointerId);
+      openPortQuickAddMenu(port);
+      return;
+    }
+    clearPortTap(e.pointerId);
+    clearPointerGestureOwner(e.pointerId);
+  }, true);
+  nodeLayer.addEventListener('pointercancel', e => {
+    if(!activePortTap || activePortTap.pointerId !== e.pointerId) return;
+    clearPortTap(e.pointerId);
     clearPointerGestureOwner(e.pointerId);
   }, true);
   nodeLayer.addEventListener('click', e => {
@@ -4047,6 +4120,7 @@ import {
     if(!port) return;
     e.preventDefault();
     e.stopPropagation();
+    if(consumeSuppressedPortClick(port)) return;
     openPortQuickAddMenu(port);
   }, true);
 

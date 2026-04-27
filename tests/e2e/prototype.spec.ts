@@ -364,6 +364,45 @@ async function quickAddConceptFromPort(page: Page, nodeId = 'public', side: 'top
   return selected.nodes[0];
 }
 
+async function loadOpenSpacePortFixture(page: Page, side: 'top' | 'left' | 'bottom') {
+  await resetMindmap(page);
+  const sourcePositions = {
+    top: { x: 450, y: 560, view: { x: 170, y: 20, scale: 1 } },
+    left: { x: 720, y: 340, view: { x: 60, y: 40, scale: 1 } },
+    bottom: { x: 450, y: 70, view: { x: 170, y: 40, scale: 1 } },
+  };
+  const sourcePosition = sourcePositions[side];
+  const mapPayload = {
+    version: 19,
+    view: sourcePosition.view,
+    nodes: [
+      {
+        id: 'source',
+        title: 'Open source',
+        body: 'Use this block to test clear port placement.',
+        group: 'blue',
+        shape: 'card',
+        importance: 2,
+        x: sourcePosition.x,
+        y: sourcePosition.y,
+        w: 268,
+        h: 145,
+        tag: 'custom',
+        nodeType: 'concept',
+        documentId: '',
+      },
+    ],
+    edges: [],
+  };
+  await page.locator('#importFile').setInputFiles({
+    name: 'port-placement-map.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(mapPayload)),
+  });
+  await expect(page.locator('#toast')).toContainText(/Import complete/i);
+  await expect(page.locator('.map-node[data-id="source"]')).toBeVisible();
+}
+
 async function expectNoHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(() => {
     const root = document.documentElement;
@@ -1497,6 +1536,71 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#contextMenu')).toContainText(/Document block/i);
   });
 
+  test('native touch tap on a connection port opens one quick-add menu', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile-chrome', 'Native touchscreen tap is covered in the touch project.');
+    await resetMindmap(page);
+
+    await page.evaluate(() => {
+      const runtime = window as Window & {
+        __portHardeningContextMenus?: number;
+        __portHardeningMenuEvents?: string[];
+      };
+      runtime.__portHardeningContextMenus = 0;
+      runtime.__portHardeningMenuEvents = [];
+      const originalSetAttribute = Element.prototype.setAttribute;
+      Element.prototype.setAttribute = function patchedSetAttribute(this: Element, name: string, value: string) {
+        if (
+          this instanceof HTMLElement &&
+          this.id === 'contextMenu' &&
+          name === 'aria-hidden' &&
+          value === 'false'
+        ) {
+          runtime.__portHardeningMenuEvents?.push(this.textContent || '');
+        }
+        return originalSetAttribute.call(this, name, value);
+      };
+      document.addEventListener(
+        'contextmenu',
+        () => {
+          runtime.__portHardeningContextMenus = (runtime.__portHardeningContextMenus || 0) + 1;
+        },
+        true,
+      );
+    });
+
+    const coreBlock = page.locator('.map-node[data-id="core"]');
+    const coreBox = await visibleBoundingBox(coreBlock, 'native touch source block tap test');
+    await page.touchscreen.tap(coreBox.x + coreBox.width / 2, coreBox.y + coreBox.height / 2);
+    const rightPort = coreBlock.locator('.connection-port.port-right');
+    await expect(rightPort).toBeVisible();
+    const portBox = await visibleBoundingBox(rightPort, 'native touch port tap test');
+
+    await page.touchscreen.tap(portBox.x + portBox.width / 2, portBox.y + portBox.height / 2);
+
+    const menu = page.locator('#contextMenu');
+    await expect(menu).toHaveAttribute('aria-hidden', 'false');
+    await expect(menu).toContainText(/Concept block/i);
+    await expect(menu).toContainText(/Question block/i);
+    await expect(menu).toContainText(/Evidence block/i);
+    await expect(menu).toContainText(/Document block/i);
+    await expect(menu).not.toContainText(/Edit title/i);
+    await expect(menu).not.toContainText(/Start connection/i);
+
+    const instrumentation = await page.evaluate(() => {
+      const runtime = window as Window & {
+        __portHardeningContextMenus?: number;
+        __portHardeningMenuEvents?: string[];
+      };
+      return {
+        contextMenus: runtime.__portHardeningContextMenus || 0,
+        menuEvents: runtime.__portHardeningMenuEvents || [],
+      };
+    });
+    expect(instrumentation.contextMenus).toBe(0);
+    expect(instrumentation.menuEvents).toHaveLength(1);
+    expect(instrumentation.menuEvents[0]).toMatch(/Add linked block from right side/i);
+  });
+
   test('right port quick-add creates a selected persistent concept and supports undo redo', async ({ page }) => {
     await resetMindmap(page);
 
@@ -1541,6 +1645,38 @@ test.describe('current standalone prototypes', () => {
     await page.reload();
     await expect(page.locator(`.map-node[data-id="${newNodeId}"]`)).toBeVisible();
     await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
+  });
+
+  test('top left and bottom port quick-add placement respects the clicked side in open space', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'Open-space side placement is covered on desktop.');
+    await page.setViewportSize({ width: 1400, height: 1000 });
+
+    const sides = ['top', 'left', 'bottom'] as const;
+    for (const side of sides) {
+      await loadOpenSpacePortFixture(page, side);
+      const sourceMap = await getSeedMapState(page);
+      const source = sourceMap!.nodes.find((node) => node.id === 'source');
+      expect(source).toBeTruthy();
+
+      const newNodeId = await quickAddConceptFromPort(page, 'source', side);
+      const mapState = await getSeedMapState(page);
+      const newNode = mapState!.nodes.find((node) => node.id === newNodeId);
+      const newEdge = mapState!.edges.find((edge) => edge.from === 'source' && edge.to === newNodeId);
+      expect(newNode).toBeTruthy();
+      expect(newEdge).toBeTruthy();
+      expect(newEdge!.fromPort).toBe('auto');
+      expect(newEdge!.toPort).toBe('auto');
+
+      if (side === 'top') {
+        expect(newNode!.y + (newNode!.h ?? 145)).toBeLessThanOrEqual(source!.y);
+      } else if (side === 'left') {
+        expect(newNode!.x + (newNode!.w ?? 268)).toBeLessThanOrEqual(source!.x);
+      } else {
+        expect(newNode!.y).toBeGreaterThanOrEqual(source!.y + (source!.h ?? 145));
+      }
+    }
   });
 
   test('port-created relationship dynamically reanchors after moving under zoom', async ({ page }) => {
