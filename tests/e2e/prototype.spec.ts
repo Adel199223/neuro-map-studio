@@ -364,6 +364,35 @@ async function quickAddConceptFromPort(page: Page, nodeId = 'public', side: 'top
   return selected.nodes[0];
 }
 
+async function getPortAffordanceState(page: Page, nodeId: string) {
+  return page.evaluate((targetNodeId) => {
+    const node = document.querySelector(`.map-node[data-id="${CSS.escape(targetNodeId)}"]`);
+    if (!node) throw new Error(`Missing map block ${targetNodeId}`);
+    const sides = ['top', 'right', 'bottom', 'left'] as const;
+    return Object.fromEntries(
+      sides.map((side) => {
+        const port = node.querySelector(`.connection-port.port-${side}`);
+        if (!(port instanceof HTMLElement)) throw new Error(`Missing ${side} connection port`);
+        const portStyle = window.getComputedStyle(port);
+        const markStyle = window.getComputedStyle(port, '::after');
+        return [
+          side,
+          {
+            markBackground: markStyle.backgroundImage,
+            markContent: markStyle.content,
+            markHeight: markStyle.height,
+            markOpacity: Number.parseFloat(markStyle.opacity || '0'),
+            markTransform: markStyle.transform,
+            markWidth: markStyle.width,
+            menuOpen: port.classList.contains('port-menu-open'),
+            portOpacity: Number.parseFloat(portStyle.opacity || '0'),
+          },
+        ];
+      }),
+    );
+  }, nodeId);
+}
+
 async function loadOpenSpacePortFixture(page: Page, side: 'top' | 'left' | 'bottom') {
   await resetMindmap(page);
   const sourcePositions = {
@@ -1534,6 +1563,60 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#contextMenu')).toContainText(/Question block/i);
     await expect(page.locator('#contextMenu')).toContainText(/Evidence block/i);
     await expect(page.locator('#contextMenu')).toContainText(/Document block/i);
+  });
+
+  test('connection port plus appears only on the active port affordance', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'Desktop hover and focus affordance is covered in Chromium.');
+    await resetMindmap(page);
+
+    const coreNode = page.locator('.map-node[data-id="core"]');
+    await expect(coreNode).toHaveClass(/selected/);
+
+    const ports = {
+      top: coreNode.locator('.connection-port.port-top'),
+      right: coreNode.locator('.connection-port.port-right'),
+      bottom: coreNode.locator('.connection-port.port-bottom'),
+      left: coreNode.locator('.connection-port.port-left'),
+    };
+    await expect(ports.right).toBeVisible();
+
+    let state = await getPortAffordanceState(page, 'core');
+    for (const side of ['top', 'right', 'bottom', 'left'] as const) {
+      expect(state[side].portOpacity).toBeGreaterThan(0.8);
+      expect(state[side].markOpacity).toBeLessThan(0.1);
+      expect(state[side].markContent).not.toContain('+');
+    }
+    expect(state.right.markBackground).toContain('linear-gradient');
+    expect(state.right.markWidth).toBe('7px');
+    expect(state.right.markHeight).toBe('7px');
+
+    await coreNode.hover();
+    await expect.poll(async () => (await getPortAffordanceState(page, 'core')).right.markOpacity).toBeLessThan(0.1);
+
+    await ports.right.hover();
+    await expect.poll(async () => (await getPortAffordanceState(page, 'core')).right.markOpacity).toBeGreaterThan(0.7);
+    state = await getPortAffordanceState(page, 'core');
+    expect(state.top.markOpacity).toBeLessThan(0.1);
+    expect(state.bottom.markOpacity).toBeLessThan(0.1);
+    expect(state.left.markOpacity).toBeLessThan(0.1);
+
+    await page.mouse.move(24, 24);
+    await expect.poll(async () => (await getPortAffordanceState(page, 'core')).right.markOpacity).toBeLessThan(0.1);
+    state = await getPortAffordanceState(page, 'core');
+    expect(state.right.portOpacity).toBeGreaterThan(0.8);
+
+    await ports.right.focus();
+    await expect.poll(async () => (await getPortAffordanceState(page, 'core')).right.markOpacity).toBeGreaterThan(0.7);
+
+    await syntheticClick(ports.right);
+    await expect(page.locator('#contextMenu')).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.locator('#contextMenu')).toContainText(/Concept block/i);
+    state = await getPortAffordanceState(page, 'core');
+    expect(state.right.menuOpen).toBe(true);
+    expect(state.right.markOpacity).toBeGreaterThan(0.7);
+    await page.locator('#contextMenu').getByRole('button', { name: /Concept block/i }).click();
+    await expect(page.locator('.map-node')).toHaveCount(14);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
   });
 
   test('native touch tap on a connection port opens one quick-add menu', async ({ page }, testInfo) => {

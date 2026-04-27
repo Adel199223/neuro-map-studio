@@ -268,7 +268,7 @@ a{color:inherit}
   transition:opacity .14s ease, transform .14s ease, border-color .14s ease, background .14s ease;
 }
 .connection-port::before{content:'';position:absolute;inset:-15px;border-radius:50%;background:rgba(255,255,255,.001);}
-.connection-port::after{content:'+';opacity:0;transform:scale(.72);transition:opacity .14s ease, transform .14s ease;pointer-events:none;}
+.connection-port::after{content:'';position:absolute;left:50%;top:50%;width:7px;height:7px;background:linear-gradient(#6a5335,#6a5335) center/7px 1.5px no-repeat,linear-gradient(#6a5335,#6a5335) center/1.5px 7px no-repeat;opacity:0;transform:translate(-50%,-50%) scale(.72);transform-origin:center;transition:opacity .14s ease, transform .14s ease;pointer-events:none;}
 .connection-port.port-top{left:50%;top:-12px;--port-transform:translateX(-50%);}
 .connection-port.port-right{right:-12px;top:50%;--port-transform:translateY(-50%);}
 .connection-port.port-bottom{left:50%;bottom:-12px;--port-transform:translateX(-50%);}
@@ -276,7 +276,7 @@ a{color:inherit}
 .connection-port:hover,.connection-port:focus-visible{opacity:1;border-color:#8b6d42;background:#fff7e3;transform:var(--port-transform) scale(1.08);outline:none;}
 .connection-port:focus-visible{box-shadow:0 0 0 2px rgba(255,250,242,.86),0 0 0 6px rgba(139,109,66,.24);}
 .map-node:hover .connection-port,.map-node:focus-within .connection-port,.map-node.selected .connection-port,.map-node.connect-source .connection-port,.map-node.connect-target .connection-port{opacity:.92;}
-.map-node:hover .connection-port::after,.map-node:focus-within .connection-port::after,.map-node.selected .connection-port::after,.connection-port:hover::after,.connection-port:focus-visible::after{opacity:.82;transform:scale(1);}
+.connection-port:hover::after,.connection-port:focus::after,.connection-port:focus-visible::after,.connection-port:active::after,.connection-port.port-menu-open::after{opacity:.82;transform:translate(-50%,-50%) scale(1);}
 .map-node.selected .connection-port{border-color:#8b6d42;background:#fff7e3;}
 .focus-mode .map-node.dimmed,.focus-mode .edge-label.dimmed{opacity:.17;filter:saturate(.4);}
 .focus-mode .edge.dimmed{opacity:.08;}
@@ -862,6 +862,7 @@ import {
   let suppressNextPlacementClick = false;
   let activePortTap = null;
   let suppressedPortClick = null;
+  let activePortMenuButton = null;
   let multiSelectMode = false;
   let mapClipboard = null;
   let textEditState = null;
@@ -3280,13 +3281,24 @@ import {
     clearEdgeDeleteArm();
     if(connectFrom) cancelConnect();
     select(source.id, 'port-quick-add');
-    const rect = button.getBoundingClientRect();
+    const menuButton = nodeLayer.querySelector(`.map-node[data-id="${CSS.escape(source.id)}"] .connection-port.port-${CSS.escape(side)}`) || button;
+    const rect = menuButton.getBoundingClientRect();
     showMenu(`Add linked block from ${portSideLabel(side)} side`, [
       {label:'Concept block', action:'port-add-concept'},
       {label:'Question block', action:'port-add-question'},
       {label:'Evidence block', action:'port-add-evidence'},
       {label:'Document block', action:'port-add-document'}
-    ], rect.left + rect.width / 2, rect.bottom + 10, {type:'port', id:source.id, side, trigger:'port-button', source:{target:button}});
+    ], rect.left + rect.width / 2, rect.bottom + 10, {type:'port', id:source.id, side, trigger:'port-button', source:{target:menuButton}});
+    setActivePortMenuButton(menuButton);
+  }
+  function clearActivePortMenuButton(){
+    if(activePortMenuButton) activePortMenuButton.classList.remove('port-menu-open');
+    activePortMenuButton = null;
+  }
+  function setActivePortMenuButton(button){
+    clearActivePortMenuButton();
+    activePortMenuButton = button;
+    if(activePortMenuButton) activePortMenuButton.classList.add('port-menu-open');
   }
   function portTapKey(port){
     return `${port?.dataset?.nodeId || ''}:${port?.dataset?.portSide || ''}`;
@@ -3881,6 +3893,7 @@ import {
   }
 
   function showMenu(title, items, clientX, clientY, context){
+    clearActivePortMenuButton();
     if(context?.type === 'canvas' || context?.type === 'page-menu'){
       clearSelection('menu-open', context?.source || inputDebugState.lastPointer);
     }
@@ -3916,7 +3929,7 @@ import {
     if(y + rect.height > window.innerHeight - pad) y = window.innerHeight - rect.height - pad;
     menu.style.left = Math.max(pad,x) + 'px'; menu.style.top = Math.max(pad,y) + 'px';
   }
-  function closeMenu(){ menu.classList.remove('show'); menu.setAttribute('aria-hidden','true'); menuContext = null; }
+  function closeMenu(){ clearActivePortMenuButton(); menu.classList.remove('show'); menu.setAttribute('aria-hidden','true'); menuContext = null; }
   function nodeMenu(node, clientX, clientY, extraContext={}){
     const isTarget = connectFrom && connectFrom !== node.id;
     const documentActions = node.nodeType === 'document' ? [{label:'▣ Open document details', action:'document-details'}] : [];
