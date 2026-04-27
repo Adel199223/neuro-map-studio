@@ -77,6 +77,20 @@ async function expectNoBoxOverlap(first: Locator, second: Locator, description: 
   return { firstBox, secondBox };
 }
 
+async function waitForNoBoxOverlap(first: Locator, second: Locator, description: string, margin = 0) {
+  await expect(first, `${description} first`).toBeVisible();
+  await expect(second, `${description} second`).toBeVisible();
+  await expect
+    .poll(async () => {
+      const firstBox = await first.boundingBox();
+      const secondBox = await second.boundingBox();
+      if (!firstBox || !secondBox) return true;
+      return boxesOverlap(firstBox, secondBox, margin);
+    })
+    .toBe(false);
+  return expectNoBoxOverlap(first, second, description, margin);
+}
+
 async function expectWorkbenchControlsClearOfZoom(page: Page, description: string) {
   const zoomControls = page.locator('#zoomDock .toolbar-group');
   await expectNoBoxOverlap(page.locator('#btnWorkbenchClose'), zoomControls, `${description} close control`, 4);
@@ -393,10 +407,17 @@ async function getPortAffordanceState(page: Page, nodeId: string) {
   }, nodeId);
 }
 
-async function loadOpenSpacePortFixture(page: Page, side: 'top' | 'left' | 'bottom') {
+type PortSide = 'top' | 'right' | 'bottom' | 'left';
+
+async function loadOpenSpacePortFixture(
+  page: Page,
+  side: PortSide,
+  extraNodes: Array<Record<string, string | number>> = [],
+) {
   await resetMindmap(page);
   const sourcePositions = {
     top: { x: 450, y: 560, view: { x: 170, y: 20, scale: 1 } },
+    right: { x: 220, y: 340, view: { x: 220, y: 40, scale: 1 } },
     left: { x: 720, y: 340, view: { x: 60, y: 40, scale: 1 } },
     bottom: { x: 450, y: 70, view: { x: 170, y: 40, scale: 1 } },
   };
@@ -420,16 +441,87 @@ async function loadOpenSpacePortFixture(page: Page, side: 'top' | 'left' | 'bott
         nodeType: 'concept',
         documentId: '',
       },
+      ...extraNodes,
     ],
     edges: [],
   };
   await page.locator('#importFile').setInputFiles({
-    name: 'port-placement-map.json',
+    name: `port-placement-${side}-${Date.now()}-${Math.random().toString(36).slice(2)}.json`,
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify(mapPayload)),
   });
   await expect(page.locator('#toast')).toContainText(/Import complete/i);
   await expect(page.locator('.map-node[data-id="source"]')).toBeVisible();
+}
+
+async function expectNodeClearOfOtherBlocks(page: Page, nodeId: string, margin = 8) {
+  const overlaps = await page.evaluate(
+    ({ targetNodeId, gap }) => {
+      const rectOf = (element: Element) => {
+        const rect = element.getBoundingClientRect();
+        return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
+      };
+      const target = document.querySelector(`.map-node[data-id="${CSS.escape(targetNodeId)}"]`);
+      if (!target) throw new Error(`Missing target block ${targetNodeId}`);
+      const targetRect = rectOf(target);
+      return Array.from(document.querySelectorAll('.map-node'))
+        .filter((element) => element !== target)
+        .filter((element) => {
+          const rect = rectOf(element);
+          return (
+            targetRect.left < rect.right + gap &&
+            targetRect.right > rect.left - gap &&
+            targetRect.top < rect.bottom + gap &&
+            targetRect.bottom > rect.top - gap
+          );
+        })
+        .map((element) => (element as HTMLElement).dataset.id || '');
+    },
+    { targetNodeId: nodeId, gap: margin },
+  );
+  expect(overlaps).toEqual([]);
+}
+
+function mapNodeRect(node: { x: number; y: number; w?: number; h?: number }) {
+  const width = node.w ?? 268;
+  const height = node.h ?? 145;
+  return { left: node.x, top: node.y, right: node.x + width, bottom: node.y + height, width, height };
+}
+
+function mapRectsOverlap(
+  a: { left: number; top: number; right: number; bottom: number },
+  b: { left: number; top: number; right: number; bottom: number },
+  margin = 24,
+) {
+  return a.left < b.right + margin && a.right > b.left - margin && a.top < b.bottom + margin && a.bottom > b.top - margin;
+}
+
+function mapGroupBounds(nodes: Array<{ x: number; y: number; w?: number; h?: number }>) {
+  return nodes.reduce(
+    (bounds, node) => {
+      const rect = mapNodeRect(node);
+      return {
+        left: Math.min(bounds.left, rect.left),
+        top: Math.min(bounds.top, rect.top),
+        right: Math.max(bounds.right, rect.right),
+        bottom: Math.max(bounds.bottom, rect.bottom),
+      };
+    },
+    { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity },
+  );
+}
+
+function expectNodeOnPortSide(
+  newNode: { x: number; y: number; w?: number; h?: number },
+  source: { x: number; y: number; w?: number; h?: number },
+  side: PortSide,
+) {
+  const newRect = mapNodeRect(newNode);
+  const sourceRect = mapNodeRect(source);
+  if (side === 'top') expect(newRect.bottom).toBeLessThanOrEqual(sourceRect.top);
+  else if (side === 'right') expect(newRect.left).toBeGreaterThanOrEqual(sourceRect.right);
+  else if (side === 'bottom') expect(newRect.top).toBeGreaterThanOrEqual(sourceRect.bottom);
+  else expect(newRect.right).toBeLessThanOrEqual(sourceRect.left);
 }
 
 async function expectNoHorizontalOverflow(page: Page) {
@@ -1297,10 +1389,10 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#toast')).toContainText(/Document block added/i);
     await expect(page.locator('#selectionShelf')).toBeVisible();
 
-    await expectNoBoxOverlap(documentNode, page.locator('#workbenchDrawer'), 'document block and workbench drawer', 4);
-    await expectNoBoxOverlap(documentNode, page.locator('.toolbar'), 'document block and toolbar', 4);
-    await expectNoBoxOverlap(documentNode, page.locator('#zoomDock .toolbar-group'), 'document block and zoom dock', 4);
-    await expectNoBoxOverlap(documentNode, page.locator('#selectionShelf'), 'document block and selected shelf', 4);
+    await waitForNoBoxOverlap(documentNode, page.locator('#workbenchDrawer'), 'document block and workbench drawer', 4);
+    await waitForNoBoxOverlap(documentNode, page.locator('.toolbar'), 'document block and toolbar', 4);
+    await waitForNoBoxOverlap(documentNode, page.locator('#zoomDock .toolbar-group'), 'document block and zoom dock', 4);
+    await waitForNoBoxOverlap(documentNode, page.locator('#selectionShelf'), 'document block and selected shelf', 4);
     await expectNoBoxOverlap(page.locator('#toast'), page.locator('#workbenchDrawer'), 'document toast and workbench drawer', 4);
     await expectNoBoxOverlap(page.locator('#toast'), page.locator('#zoomDock .toolbar-group'), 'document toast and zoom dock', 4);
     await expectNoHorizontalOverflow(page);
@@ -1692,7 +1784,9 @@ test.describe('current standalone prototypes', () => {
     expect(source).toBeTruthy();
 
     const newNodeId = await quickAddConceptFromPort(page, 'public', 'right');
-    await expect(page.locator('#toast')).toContainText(/Linked concept added\. Ctrl\+Z to undo\./i);
+    await expect(page.locator('#toast')).toContainText(
+      /Linked concept (?:added|placed in nearest open space)\. Ctrl\+Z to undo\./i,
+    );
 
     let mapState = await getSeedMapState(page);
     let newNode = mapState!.nodes.find((node) => node.id === newNodeId);
@@ -1730,13 +1824,63 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
   });
 
+  test('port quick-add chooses clear directional placement and avoids blocked preferred slots', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'Collision placement geometry is covered on desktop.');
+    await page.setViewportSize({ width: 1400, height: 1000 });
+
+    await loadOpenSpacePortFixture(page, 'right');
+    let newNodeId = await quickAddConceptFromPort(page, 'source', 'right');
+    let mapState = await getSeedMapState(page);
+    let source = mapState!.nodes.find((node) => node.id === 'source');
+    let newNode = mapState!.nodes.find((node) => node.id === newNodeId);
+    let newEdge = mapState!.edges.find((edge) => edge.from === 'source' && edge.to === newNodeId);
+    expect(source).toBeTruthy();
+    expect(newNode).toBeTruthy();
+    expect(newEdge).toBeTruthy();
+    expectNodeOnPortSide(newNode!, source!, 'right');
+    await expectNodeClearOfOtherBlocks(page, newNodeId, 10);
+
+    await loadOpenSpacePortFixture(page, 'right', [
+      {
+        id: 'blocker',
+        title: 'Right-side blocker',
+        body: 'This block occupies the first right-side slot.',
+        group: 'amber',
+        shape: 'card',
+        importance: 2,
+        x: 636,
+        y: 340,
+        w: 268,
+        h: 145,
+        tag: 'custom',
+        nodeType: 'concept',
+        documentId: '',
+      },
+    ]);
+    newNodeId = await quickAddConceptFromPort(page, 'source', 'right');
+    mapState = await getSeedMapState(page);
+    source = mapState!.nodes.find((node) => node.id === 'source');
+    newNode = mapState!.nodes.find((node) => node.id === newNodeId);
+    const blocker = mapState!.nodes.find((node) => node.id === 'blocker');
+    newEdge = mapState!.edges.find((edge) => edge.from === 'source' && edge.to === newNodeId);
+    expect(source).toBeTruthy();
+    expect(blocker).toBeTruthy();
+    expect(newNode).toBeTruthy();
+    expect(newEdge).toBeTruthy();
+    expect(mapRectsOverlap(mapNodeRect(newNode!), mapNodeRect(source!), 24)).toBe(false);
+    expect(mapRectsOverlap(mapNodeRect(newNode!), mapNodeRect(blocker!), 24)).toBe(false);
+    await expectNodeClearOfOtherBlocks(page, newNodeId, 10);
+  });
+
   test('top left and bottom port quick-add placement respects the clicked side in open space', async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium', 'Open-space side placement is covered on desktop.');
     await page.setViewportSize({ width: 1400, height: 1000 });
 
-    const sides = ['top', 'left', 'bottom'] as const;
+    const sides = ['top', 'right', 'left', 'bottom'] as const;
     for (const side of sides) {
       await loadOpenSpacePortFixture(page, side);
       const sourceMap = await getSeedMapState(page);
@@ -1751,14 +1895,8 @@ test.describe('current standalone prototypes', () => {
       expect(newEdge).toBeTruthy();
       expect(newEdge!.fromPort).toBe('auto');
       expect(newEdge!.toPort).toBe('auto');
-
-      if (side === 'top') {
-        expect(newNode!.y + (newNode!.h ?? 145)).toBeLessThanOrEqual(source!.y);
-      } else if (side === 'left') {
-        expect(newNode!.x + (newNode!.w ?? 268)).toBeLessThanOrEqual(source!.x);
-      } else {
-        expect(newNode!.y).toBeGreaterThanOrEqual(source!.y + (source!.h ?? 145));
-      }
+      expectNodeOnPortSide(newNode!, source!, side);
+      await expectNodeClearOfOtherBlocks(page, newNodeId, 10);
     }
   });
 
@@ -1826,6 +1964,7 @@ test.describe('current standalone prototypes', () => {
     const documentNode = page.locator(`.map-node.type-document[data-id="${documentNodeId}"]`);
     await expect(documentNode).toBeVisible();
     await expect(documentNode).toHaveAttribute('data-document-id', 'simon-dixon-debt-power');
+    await expectNodeClearOfOtherBlocks(page, documentNodeId, 8);
 
     let mapState = await getSeedMapState(page);
     let persistedDocumentNode = mapState!.nodes.find((node) => node.id === documentNodeId);
@@ -1846,6 +1985,29 @@ test.describe('current standalone prototypes', () => {
     documentEdge = mapState!.edges.find((edge) => edge.from === 'public' && edge.to === documentNodeId);
     expect(persistedDocumentNode?.documentId).toBe('simon-dixon-debt-power');
     expect(documentEdge).toBeTruthy();
+  });
+
+  test('high zoom port quick-add finds a clear visible slot away from overlays', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'High-zoom placement geometry is covered on desktop.');
+    await page.setViewportSize({ width: 1180, height: 820 });
+    await resetMindmap(page, debugMindmapPath);
+
+    await page.locator('#btnWorkbenchToggle').click();
+    await expect(page.locator('#workbenchDrawer')).toBeVisible();
+    await page.getByRole('button', { name: /zoom in/i }).click();
+    await page.getByRole('button', { name: /zoom in/i }).click();
+    await page.getByRole('button', { name: /zoom in/i }).click();
+    await page.getByRole('button', { name: /zoom in/i }).click();
+
+    const newNodeId = await quickAddConceptFromPort(page, 'core', 'right');
+    const newNode = page.locator(`.map-node[data-id="${newNodeId}"]`);
+    await expect(newNode).toBeVisible();
+    await expectNodeClearOfOtherBlocks(page, newNodeId, 8);
+    await expectNoBoxOverlap(newNode, page.locator('.toolbar'), 'high zoom quick-add and toolbar', 4);
+    await expectNoBoxOverlap(newNode, page.locator('#zoomDock .toolbar-group'), 'high zoom quick-add and zoom controls', 4);
+    await expectNoBoxOverlap(newNode, page.locator('#selectionShelf'), 'high zoom quick-add and selection toolbar', 4);
+    await expectNoBoxOverlap(newNode, page.locator('#workbenchDrawer'), 'high zoom quick-add and Sources & blocks panel', 4);
+    await expectNoBoxOverlap(newNode, page.locator('#inputDebugPanel'), 'high zoom quick-add and input diagnostics', 4);
   });
 
   test('learning map recenter and zoom controls do not blank the canvas', async ({ page }) => {
@@ -2027,6 +2189,36 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(11);
   });
 
+  test('duplicating one block chooses a clear offset and remains undoable', async ({ page }) => {
+    await resetMindmap(page);
+
+    await syntheticClick(page.locator('.map-node[data-id="public"]'));
+    await page.locator('#stage').focus();
+    await page.keyboard.press('Control+D');
+    await expect(page.locator('.map-node')).toHaveCount(14);
+
+    let selected = await getSelectedMapIds(page);
+    expect(selected.nodes).toHaveLength(1);
+    expect(selected.nodes[0]).not.toBe('public');
+    expect(selected.edges).toHaveLength(0);
+    const duplicateId = selected.nodes[0];
+    await expectNoBoxOverlap(
+      page.locator(`.map-node[data-id="${duplicateId}"]`),
+      page.locator('.map-node[data-id="public"]'),
+      'single duplicate and original public block',
+      8,
+    );
+    await expectNodeClearOfOtherBlocks(page, duplicateId, 8);
+
+    await page.keyboard.press('Control+Z');
+    await expect(page.locator('.map-node')).toHaveCount(13);
+    await expect(page.locator(`.map-node[data-id="${duplicateId}"]`)).toHaveCount(0);
+    await page.keyboard.press('Control+Shift+Z');
+    await expect(page.locator('.map-node')).toHaveCount(14);
+    selected = await getSelectedMapIds(page);
+    expect(selected.nodes).toEqual([duplicateId]);
+  });
+
   test('map copy paste and duplicate remap selected blocks with internal relationship lines', async ({ page }) => {
     await resetMindmap(page);
 
@@ -2069,7 +2261,26 @@ test.describe('current standalone prototypes', () => {
       dx: Math.round(originalMoney!.x - originalCore!.x),
       dy: Math.round(originalMoney!.y - originalCore!.y),
     });
+    expect(mapRectsOverlap(mapGroupBounds(pastedNodes), mapGroupBounds([originalCore!, originalMoney!]), 24)).toBe(false);
+    for (const nodeId of selected.nodes) await expectNodeClearOfOtherBlocks(page, nodeId, 8);
 
+    const firstPasteIds = selected.nodes;
+    await page.keyboard.press('Control+V');
+    await expect(page.locator('.map-node')).toHaveCount(17);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(16);
+    selected = await getSelectedMapIds(page);
+    expect(selected.nodes).toHaveLength(2);
+    expect(selected.edges).toHaveLength(1);
+    const secondPasteMap = await getSeedMapState(page);
+    const firstPasteNodes = secondPasteMap!.nodes.filter((node) => firstPasteIds.includes(node.id));
+    const secondPasteNodes = secondPasteMap!.nodes.filter((node) => selected.nodes.includes(node.id));
+    expect(mapRectsOverlap(mapGroupBounds(secondPasteNodes), mapGroupBounds([originalCore!, originalMoney!]), 24)).toBe(false);
+    expect(mapRectsOverlap(mapGroupBounds(secondPasteNodes), mapGroupBounds(firstPasteNodes), 24)).toBe(false);
+    for (const nodeId of selected.nodes) await expectNodeClearOfOtherBlocks(page, nodeId, 8);
+
+    await page.keyboard.press('Control+Z');
+    await expect(page.locator('.map-node')).toHaveCount(15);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
     await page.keyboard.press('Control+Z');
     await expect(page.locator('.map-node')).toHaveCount(13);
     await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(14);
@@ -2082,6 +2293,31 @@ test.describe('current standalone prototypes', () => {
     selected = await getSelectedMapIds(page);
     expect(selected.nodes).toHaveLength(2);
     expect(selected.edges).toHaveLength(1);
+    const duplicatedMap = await getSeedMapState(page);
+    const duplicatedNodes = duplicatedMap!.nodes.filter((node) => selected.nodes.includes(node.id));
+    const duplicatedEdge = duplicatedMap!.edges.find((edge) => selected.edges.includes(edge.id));
+    const duplicatedCore = duplicatedNodes.find((node) => node.title === originalCore?.title);
+    const duplicatedMoney = duplicatedNodes.find((node) => node.title === originalMoney?.title);
+    expect(duplicatedCore).toBeTruthy();
+    expect(duplicatedMoney).toBeTruthy();
+    expect(duplicatedEdge).toBeTruthy();
+    expect(new Set([duplicatedEdge!.from, duplicatedEdge!.to])).toEqual(new Set(selected.nodes));
+    expect({
+      dx: Math.round(duplicatedMoney!.x - duplicatedCore!.x),
+      dy: Math.round(duplicatedMoney!.y - duplicatedCore!.y),
+    }).toEqual({
+      dx: Math.round(originalMoney!.x - originalCore!.x),
+      dy: Math.round(originalMoney!.y - originalCore!.y),
+    });
+    expect(mapRectsOverlap(mapGroupBounds(duplicatedNodes), mapGroupBounds([originalCore!, originalMoney!]), 24)).toBe(false);
+    for (const nodeId of selected.nodes) await expectNodeClearOfOtherBlocks(page, nodeId, 8);
+
+    await page.keyboard.press('Control+Z');
+    await expect(page.locator('.map-node')).toHaveCount(13);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(14);
+    await page.keyboard.press('Control+Shift+Z');
+    await expect(page.locator('.map-node')).toHaveCount(15);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
   });
 
   test('map keyboard shortcuts do not run while editing block text', async ({ page }) => {
@@ -2089,7 +2325,20 @@ test.describe('current standalone prototypes', () => {
 
     await syntheticClick(page.locator('.map-node[data-id="core"]'));
     const title = page.locator('.map-node[data-id="core"] .node-title');
-    await title.evaluate((element) => (element as HTMLElement).focus());
+    await expect
+      .poll(async () =>
+        title.evaluate((element) => {
+          const target = element as HTMLElement;
+          target.focus();
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+          return document.activeElement === target;
+        }),
+      )
+      .toBe(true);
     await page.keyboard.press('Control+A');
     await expect(page.locator('.map-node.selected')).toHaveCount(1);
     await expect(page.locator('#edgeLayer .edge.selected')).toHaveCount(0);

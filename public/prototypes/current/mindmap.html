@@ -1722,7 +1722,8 @@ import {
       placement:placementOverlay && !placementOverlay.hidden ? rectFromElement(placementOverlay) : null,
       starter:mapStarterPanel && !mapStarterPanel.hidden ? rectFromElement(mapStarterPanel) : null,
       documentPicker:documentPicker && !documentPicker.hidden ? rectFromElement(documentPicker) : null,
-      documentDetail:documentDetailCard && !documentDetailCard.hidden ? rectFromElement(documentDetailCard) : null
+      documentDetail:documentDetailCard && !documentDetailCard.hidden ? rectFromElement(documentDetailCard) : null,
+      inputDebug:inputDebugState.enabled && inputDebugPanel && !inputDebugPanel.hidden ? rectFromElement(inputDebugPanel) : null
     };
   }
   function getOverlayLanes(options={}){
@@ -1819,6 +1820,20 @@ import {
     const height = h * view.scale;
     return {left, top, right:left + width, bottom:top + height, width, height};
   }
+  function worldRect(x, y, w, h){
+    return {x, y, w, h, left:x, top:y, right:x + w, bottom:y + h, width:w, height:h};
+  }
+  function worldRectsOverlap(a, b, margin=0){
+    if(!a || !b) return false;
+    return a.left < b.right + margin && a.right > b.left - margin && a.top < b.bottom + margin && a.bottom > b.top - margin;
+  }
+  function screenMarginForWorld(worldMargin=28){
+    return clamp(worldMargin * Math.max(view.scale || 1, .18), 12, 38);
+  }
+  function nodeWorldRect(node){
+    const dims = renderedNodeDims(node);
+    return worldRect(Number(node.x) || 0, Number(node.y) || 0, dims.w, dims.h);
+  }
   function nodeAtClientPoint(clientX, clientY){
     const stageRect = stage.getBoundingClientRect();
     const localX = clientX - stageRect.left;
@@ -1869,17 +1884,18 @@ import {
       overlays.starter,
       overlays.documentPicker,
       overlays.documentDetail,
+      overlays.inputDebug,
       overlays.rightUtility,
       overlays.bottomUtility
     ].map(rect => rectToStage(rect, stageRect)).filter(Boolean);
     if(options.includeNodes !== false) rects.push(...getNodeAvoidRects(options));
     return rects;
   }
-  function candidateIsClear(candidate, w, h, safe, avoidRects, margin=16, excludeNodeId=''){
+  function candidateIsClear(candidate, w, h, safe, avoidRects, margin=28, excludeNodeId=''){
     if(!nodeFitsSafeArea(candidate, w, h, safe)) return false;
     if(!nodeSlotIsOpen(candidate.x, candidate.y, w, h, margin, excludeNodeId)) return false;
     const candidateRect = nodeScreenRectFromWorld(candidate.x, candidate.y, w, h);
-    return !avoidRects.some(rect => rectsOverlap(candidateRect, rect, margin));
+    return !avoidRects.some(rect => rectsOverlap(candidateRect, rect, screenMarginForWorld(margin)));
   }
   function safeAreaFallbackPosition(w, h, safe){
     const screenWidth = w * view.scale;
@@ -1888,7 +1904,7 @@ import {
     const localY = clamp(safe.top + Math.min(28, safe.height * .12), safe.top, Math.max(safe.top, safe.bottom - screenHeight));
     return {x:(localX - view.x) / view.scale, y:(localY - view.y) / view.scale};
   }
-  function scanSafeNodePosition(w, h, safe, avoidRects=[], excludeNodeId=''){
+  function scanSafeNodePosition(w, h, safe, avoidRects=[], excludeNodeId='', margin=28){
     const screenWidth = w * view.scale;
     const screenHeight = h * view.scale;
     const stepX = Math.max(70, Math.min(145, screenWidth * .5));
@@ -1896,12 +1912,12 @@ import {
     for(let localY = safe.top; localY <= Math.max(safe.top, safe.bottom - screenHeight); localY += stepY){
       for(let localX = safe.left; localX <= Math.max(safe.left, safe.right - screenWidth); localX += stepX){
         const candidate = {x:(localX - view.x) / view.scale, y:(localY - view.y) / view.scale};
-        if(candidateIsClear(candidate, w, h, safe, avoidRects, 16, excludeNodeId)) return candidate;
+        if(candidateIsClear(candidate, w, h, safe, avoidRects, margin, excludeNodeId)) return candidate;
       }
     }
     return null;
   }
-  function radialSafeNodePosition(w, h, safe, avoidRects=[], origin=null, excludeNodeId=''){
+  function radialSafeNodePosition(w, h, safe, avoidRects=[], origin=null, excludeNodeId='', margin=28){
     const start = origin || safeAreaFallbackPosition(w, h, safe);
     const angles = [0, Math.PI / 2, -Math.PI / 2, Math.PI, Math.PI / 4, -Math.PI / 4, Math.PI * 3 / 4, -Math.PI * 3 / 4];
     for(let radius = 130; radius <= 980; radius += 90){
@@ -1910,7 +1926,31 @@ import {
           x:start.x + Math.cos(angle) * radius,
           y:start.y + Math.sin(angle) * radius
         };
-        if(candidateIsClear(candidate, w, h, safe, avoidRects, 16, excludeNodeId)) return candidate;
+        if(candidateIsClear(candidate, w, h, safe, avoidRects, margin, excludeNodeId)) return candidate;
+      }
+    }
+    return null;
+  }
+  function nodeVisibleEnough(candidate, w, h){
+    const stageRect = stage.getBoundingClientRect();
+    const rect = nodeScreenRectFromWorld(candidate.x, candidate.y, w, h);
+    const visibleWidth = Math.min(rect.right, stageRect.width) - Math.max(rect.left, 0);
+    const visibleHeight = Math.min(rect.bottom, stageRect.height) - Math.max(rect.top, 0);
+    return visibleWidth >= Math.min(rect.width, 150) && visibleHeight >= Math.min(rect.height, 110);
+  }
+  function visibleCandidateIsClear(candidate, w, h, avoidRects, margin=28, excludeNodeId=''){
+    if(!nodeVisibleEnough(candidate, w, h)) return false;
+    if(!nodeSlotIsOpen(candidate.x, candidate.y, w, h, margin, excludeNodeId)) return false;
+    const candidateRect = nodeScreenRectFromWorld(candidate.x, candidate.y, w, h);
+    return !avoidRects.some(rect => rectsOverlap(candidateRect, rect, screenMarginForWorld(margin)));
+  }
+  function visibleClearNodePosition(w, h, origin=null, avoidRects=[], excludeNodeId='', margin=28){
+    const start = origin || {x:0, y:0};
+    const angles = [0, Math.PI / 2, -Math.PI / 2, Math.PI, Math.PI / 4, -Math.PI / 4, Math.PI * 3 / 4, -Math.PI * 3 / 4];
+    for(let radius = 120; radius <= 2800; radius += 90){
+      for(const angle of angles){
+        const candidate = {x:start.x + Math.cos(angle) * radius, y:start.y + Math.sin(angle) * radius};
+        if(visibleCandidateIsClear(candidate, w, h, avoidRects, margin, excludeNodeId)) return candidate;
       }
     }
     return null;
@@ -1925,7 +1965,18 @@ import {
         y:start.y + Math.sin(angle) * radius
       }));
     }
-    return candidates.find(candidate => nodeFitsSafeArea(candidate, w, h, safe) && nodeSlotIsOpen(candidate.x, candidate.y, w, h, 20)) || null;
+    return candidates.find(candidate => nodeFitsSafeArea(candidate, w, h, safe) && nodeSlotIsOpen(candidate.x, candidate.y, w, h, 28)) || null;
+  }
+  function worldClearNodePosition(w, h, origin=null, excludeNodeId='', margin=28){
+    const start = origin || {x:0, y:0};
+    const angles = [0, Math.PI / 2, -Math.PI / 2, Math.PI, Math.PI / 4, -Math.PI / 4, Math.PI * 3 / 4, -Math.PI * 3 / 4];
+    for(let radius = 160; radius <= 3600; radius += 120){
+      for(const angle of angles){
+        const candidate = {x:start.x + Math.cos(angle) * radius, y:start.y + Math.sin(angle) * radius};
+        if(nodeSlotIsOpen(candidate.x, candidate.y, w, h, margin, excludeNodeId)) return candidate;
+      }
+    }
+    return null;
   }
   function avoidVisibleWorkbenchOverlap(position, w, h){
     const workbenchRect = overlayVisible(workbenchDrawer) ? rectFromElement(workbenchDrawer) : null;
@@ -1944,18 +1995,15 @@ import {
         const localY = clamp(preferredRect.top + offset, broadSafe.top, Math.max(broadSafe.top, broadSafe.bottom - screenHeight));
         const candidate = {x:(localX - view.x) / view.scale, y:(localY - view.y) / view.scale};
         const candidateRect = nodeScreenRectFromWorld(candidate.x, candidate.y, w, h);
-        if(nodeFitsSafeArea(candidate, w, h, broadSafe) && nodeSlotIsOpen(candidate.x, candidate.y, w, h, 20) && !rectsOverlap(candidateRect, workbenchStageRect, 12)){
+        if(nodeFitsSafeArea(candidate, w, h, broadSafe) && nodeSlotIsOpen(candidate.x, candidate.y, w, h, 28) && !rectsOverlap(candidateRect, workbenchStageRect, 12)){
           return candidate;
         }
       }
     }
-    if(workbenchOpen){
-      setWorkbenchOpen(false, {user:false});
-      showToast('Workbench hidden for placement');
-    }
     return position;
   }
-  function findFreeNodePosition({preferredTopLeft=null, w=268, h=145, candidates=[], options={}}={}){
+  function findFreeNodePlacement({preferredTopLeft=null, w=268, h=145, candidates=[], options={}}={}){
+    const collisionMargin = Number(options.collisionMargin) || 28;
     const safe = getCanvasSafeArea({nodeWidth:w, nodeHeight:h, includeShelf:options.includeShelf, includeToast:options.includeToast, margin:options.margin});
     const avoidRects = getPlacementAvoidRects({includeShelf:options.includeShelf, includeToast:options.includeToast, excludeNodeId:options.excludeNodeId});
     const broadSafe = getBroadCanvasSafeArea({includeShelf:false, includeToast:false, margin:options.margin});
@@ -1967,22 +2015,52 @@ import {
     addCandidate(preferredTopLeft);
     candidates.forEach(addCandidate);
     addCandidate(safeAreaFallbackPosition(w, h, safe));
-    const position = allCandidates.find(candidate => candidateIsClear(candidate, w, h, safe, avoidRects, 16, options.excludeNodeId))
-      || scanSafeNodePosition(w, h, safe, avoidRects, options.excludeNodeId)
-      || radialSafeNodePosition(w, h, safe, avoidRects, preferredTopLeft || allCandidates[0], options.excludeNodeId)
-      || allCandidates.find(candidate => nodeFitsSafeArea(candidate, w, h, safe) && nodeSlotIsOpen(candidate.x, candidate.y, w, h, 8, options.excludeNodeId))
-      || scanSafeNodePosition(w, h, broadSafe, broadAvoidRects, options.excludeNodeId)
-      || radialSafeNodePosition(w, h, broadSafe, broadAvoidRects, preferredTopLeft || allCandidates[0], options.excludeNodeId)
-      || findNodeClearPosition(w, h, broadSafe, preferredTopLeft || allCandidates[0])
-      || safeAreaFallbackPosition(w, h, safe);
-    return avoidVisibleWorkbenchOverlap(position, w, h);
+    let reason = 'candidate';
+    let position = allCandidates.find(candidate => candidateIsClear(candidate, w, h, safe, avoidRects, collisionMargin, options.excludeNodeId));
+    if(!position){ reason = 'safe-scan'; position = scanSafeNodePosition(w, h, safe, avoidRects, options.excludeNodeId, collisionMargin); }
+    if(!position){ reason = 'radial'; position = radialSafeNodePosition(w, h, safe, avoidRects, preferredTopLeft || allCandidates[0], options.excludeNodeId, collisionMargin); }
+    if(!position){ reason = 'broad-scan'; position = scanSafeNodePosition(w, h, broadSafe, broadAvoidRects, options.excludeNodeId, collisionMargin); }
+    if(!position){ reason = 'broad-radial'; position = radialSafeNodePosition(w, h, broadSafe, broadAvoidRects, preferredTopLeft || allCandidates[0], options.excludeNodeId, collisionMargin); }
+    if(!position){ reason = 'visible-clear'; position = visibleClearNodePosition(w, h, preferredTopLeft || allCandidates[0], broadAvoidRects, options.excludeNodeId, collisionMargin); }
+    if(!position){ reason = 'clear-fallback'; position = findNodeClearPosition(w, h, broadSafe, preferredTopLeft || allCandidates[0]); }
+    if(!position){ reason = 'world-clear'; position = worldClearNodePosition(w, h, preferredTopLeft || allCandidates[0], options.excludeNodeId, collisionMargin); }
+    if(!position){ reason = 'safe-fallback'; position = safeAreaFallbackPosition(w, h, safe); }
+    const adjusted = avoidVisibleWorkbenchOverlap(position, w, h);
+    if(adjusted !== position) reason = 'workbench-adjusted';
+    return {position:adjusted, reason, preferred:preferredTopLeft || null};
+  }
+  function findFreeNodePosition(args={}){
+    return findFreeNodePlacement(args).position;
+  }
+  function panNodeIntoSafeArea(node, w, h, options={}){
+    if(!node) return false;
+    const safe = getCanvasSafeArea({nodeWidth:w, nodeHeight:h, includeShelf:options.includeShelf, includeToast:options.includeToast, margin:options.margin});
+    const rect = nodeScreenRectFromWorld(node.x, node.y, w, h);
+    let dx = 0, dy = 0;
+    if(rect.width <= safe.width){
+      if(rect.left < safe.left) dx = safe.left - rect.left;
+      else if(rect.right > safe.right) dx = safe.right - rect.right;
+    }else{
+      dx = safe.left - rect.left;
+    }
+    if(rect.height <= safe.height){
+      if(rect.top < safe.top) dy = safe.top - rect.top;
+      else if(rect.bottom > safe.bottom) dy = safe.bottom - rect.bottom;
+    }else{
+      dy = safe.top - rect.top;
+    }
+    if(Math.abs(dx) < 1 && Math.abs(dy) < 1) return false;
+    view.x += dx;
+    view.y += dy;
+    applyView();
+    renderEdges();
+    return true;
   }
   function nodeOverlapsExisting(node, w, h, margin=20){
-    const candidate = {x:node.x, y:node.y};
+    const candidate = worldRect(node.x, node.y, w, h);
     return data.nodes.some(other => {
       if(other.id === node.id) return false;
-      const r = nodeRect(other);
-      return candidate.x < r.x + r.w + margin && candidate.x + w + margin > r.x && candidate.y < r.y + r.h + margin && candidate.y + h + margin > r.y;
+      return worldRectsOverlap(candidate, nodeWorldRect(other), margin);
     });
   }
   function nodeOverlapsVisibleWorkbench(node, w, h, margin=12){
@@ -1999,6 +2077,40 @@ import {
       excludeNodeId:node.id
     });
     return avoidRects.some(avoidRect => rectsOverlap(rect, avoidRect, margin));
+  }
+  function nudgeNodeLeftOfOverlay(node, overlayElement, gap=14){
+    if(!node || !overlayElement || overlayElement.hidden) return false;
+    const overlayRect = rectFromElement(overlayElement);
+    const nodeElement = nodeLayer.querySelector(`[data-id="${CSS.escape(node.id)}"]`);
+    const nodeRect = rectFromElement(nodeElement);
+    if(!overlayRect || !nodeRect || !rectsOverlap(nodeRect, overlayRect, gap)) return false;
+    const stageRect = stage.getBoundingClientRect();
+    const toolbarRect = rectFromElement(document.querySelector('.toolbar'));
+    const minLeft = toolbarRect ? toolbarRect.right - stageRect.left + gap : gap;
+    const currentLeft = nodeRect.left - stageRect.left;
+    const currentTop = nodeRect.top - stageRect.top;
+    const targetLeft = Math.max(minLeft, overlayRect.left - stageRect.left - nodeRect.width - gap);
+    const targetTop = clamp(currentTop, gap, Math.max(gap, stageRect.height - nodeRect.height - gap));
+    const dx = targetLeft - currentLeft;
+    const dy = targetTop - currentTop;
+    if(Math.abs(dx) < 1 && Math.abs(dy) < 1) return false;
+    node.x += dx / view.scale;
+    node.y += dy / view.scale;
+    return true;
+  }
+  function nudgeNodeRightOfOverlay(node, overlayElement, gap=14){
+    if(!node || !overlayElement || overlayElement.hidden) return false;
+    const overlayRect = rectFromElement(overlayElement);
+    const nodeElement = nodeLayer.querySelector(`[data-id="${CSS.escape(node.id)}"]`);
+    const nodeRect = rectFromElement(nodeElement);
+    if(!overlayRect || !nodeRect || !rectsOverlap(nodeRect, overlayRect, gap)) return false;
+    const stageRect = stage.getBoundingClientRect();
+    const targetLeft = overlayRect.right - stageRect.left + gap;
+    const currentLeft = nodeRect.left - stageRect.left;
+    const dx = targetLeft - currentLeft;
+    if(Math.abs(dx) < 1) return false;
+    node.x += dx / view.scale;
+    return true;
   }
   function renderedNodeDims(node){
     const fallback = nodeDims(node);
@@ -2039,25 +2151,59 @@ import {
     });
     const broadSafe = getBroadCanvasSafeArea({includeShelf:false, includeToast:false, margin:18});
     const avoidRects = getPlacementAvoidRects({includeShelf:false, includeToast:false, excludeNodeId:node.id});
-    let next = candidates.find(candidate => candidateIsClear(candidate, dims.w, dims.h, broadSafe, avoidRects, 14, node.id))
-      || scanSafeNodePosition(dims.w, dims.h, broadSafe, avoidRects, node.id)
-      || radialSafeNodePosition(dims.w, dims.h, broadSafe, avoidRects, {x:node.x, y:node.y}, node.id);
-    if(!next && node.nodeType === 'document'){
-      const anchor = byId('core') || data.nodes.find(candidate => candidate.id !== node.id);
-      if(anchor){
-        const r = nodeRect(anchor);
-        const fallbackCandidates = [
-          {x:r.x, y:r.y + r.h + 160},
-          {x:r.x + r.w + 140, y:r.y + 20},
-          {x:r.x, y:r.y + r.h + 340}
-        ];
-        next = fallbackCandidates.find(candidate => nodeSlotIsOpen(candidate.x, candidate.y, dims.w, dims.h, 20, node.id)) || null;
-      }
+    const stageRect = stage.getBoundingClientRect();
+    const currentRect = nodeScreenRectFromWorld(node.x, node.y, dims.w, dims.h);
+    const screenWidth = dims.w * view.scale;
+    const screenHeight = dims.h * view.scale;
+    const addScreenCandidate = (localX, localY) => {
+      if(!Number.isFinite(localX) || !Number.isFinite(localY)) return;
+      addCandidate({x:(localX - view.x) / view.scale, y:(localY - view.y) / view.scale});
+    };
+    const addLeftOfOverlayCandidates = (rect, gap=28) => {
+      if(!rect || !rectsOverlap(rect, stageRect)) return;
+      const maxLeft = rect.left - stageRect.left - screenWidth - gap;
+      const localX = clamp(maxLeft, broadSafe.left, Math.max(broadSafe.left, broadSafe.right - screenWidth));
+      const maxY = Math.max(broadSafe.top, broadSafe.bottom - screenHeight);
+      [currentRect.top, broadSafe.top + 20, maxY - 20, broadSafe.top + Math.max(40, broadSafe.height * .34)].forEach(localY => {
+        addScreenCandidate(localX, clamp(localY, broadSafe.top, maxY));
+      });
+    };
+    [workbenchDrawer, documentPicker, documentDetailCard].forEach(element => {
+      if(element && !element.hidden) addLeftOfOverlayCandidates(rectFromElement(element));
+    });
+    if(zoomDock && !zoomDock.hidden) addLeftOfOverlayCandidates(rectFromElement(zoomDock), 8);
+    let next = candidates.find(candidate => candidateIsClear(candidate, dims.w, dims.h, broadSafe, avoidRects, 28, node.id))
+      || scanSafeNodePosition(dims.w, dims.h, broadSafe, avoidRects, node.id, 28)
+      || radialSafeNodePosition(dims.w, dims.h, broadSafe, avoidRects, {x:node.x, y:node.y}, node.id, 28);
+    if(!next){
+      next = findFreeNodePlacement({
+        preferredTopLeft:{x:node.x, y:node.y},
+        w:dims.w,
+        h:dims.h,
+        candidates,
+        options:{includeShelf:true, includeToast:true, excludeNodeId:node.id, margin:18, collisionMargin:28}
+      }).position;
     }
     if(!next) return false;
     node.x = Math.round(next.x);
     node.y = Math.round(next.y);
     render();
+    let nudgedAfterRender = false;
+    if(node.nodeType === 'document'){
+      for(let pass = 0; pass < 2; pass++){
+        [workbenchDrawer, documentPicker, documentDetailCard, zoomDock].forEach(element => {
+          if(nudgeNodeLeftOfOverlay(node, element, 14)) nudgedAfterRender = true;
+        });
+        if(nudgeNodeRightOfOverlay(node, document.querySelector('.toolbar'), 14)) nudgedAfterRender = true;
+        if(nudgedAfterRender) render();
+      }
+    }
+    const latest = mapHistory.undo[mapHistory.undo.length - 1];
+    if(latest?.after?.nodes?.some(snapshotNode => snapshotNode.id === node.id)){
+      latest.after = captureMapSnapshot();
+      latest.afterSelection = getSelectionSnapshot();
+      updateHistoryControls();
+    }
     save('Placement adjusted');
     return true;
   }
@@ -2084,6 +2230,21 @@ import {
       candidates,
       options
     });
+  }
+  function narrowDocumentPreferredPosition(w, h, fallback){
+    const stageRect = stage.getBoundingClientRect();
+    const toolbarRect = rectFromElement(document.querySelector('.toolbar'));
+    const zoomRect = rectFromElement(zoomDock);
+    const margin = 12;
+    const screenWidth = w * view.scale;
+    const screenHeight = h * view.scale;
+    const fallbackRect = nodeScreenRectFromWorld(fallback.x, fallback.y, w, h);
+    const minLeft = toolbarRect ? toolbarRect.right - stageRect.left + margin : margin;
+    const maxLeft = Math.max(minLeft, stageRect.width - screenWidth - margin);
+    const preferredLeft = zoomRect ? zoomRect.left - stageRect.left - screenWidth - margin : fallbackRect.left;
+    const localX = clamp(preferredLeft, minLeft, maxLeft);
+    const localY = clamp(fallbackRect.top, margin, Math.max(margin, stageRect.height - screenHeight - margin));
+    return {x:(localX - view.x) / view.scale, y:(localY - view.y) / view.scale};
   }
   function updateOverlayOffsets(){
     const narrow = window.innerWidth <= 860;
@@ -2753,8 +2914,12 @@ import {
       if(node) rects.push(nodeScreenRectFromWorld(node.x, node.y, nodeDims(node).w, nodeDims(node).h));
     });
     selectedEdgeIds.forEach(edgeId => {
-      const layout = getEdgeLayout(edgeById(edgeId));
+      const edge = edgeById(edgeId);
+      const layout = getEdgeLayout(edge);
       if(layout) rects.push({left:layout.mid.x * view.scale + view.x - 22, top:layout.mid.y * view.scale + view.y - 18, right:layout.mid.x * view.scale + view.x + 22, bottom:layout.mid.y * view.scale + view.y + 18, width:44, height:36});
+      [byId(edge?.from), byId(edge?.to)].filter(Boolean).forEach(node => {
+        rects.push(nodeScreenRectFromWorld(node.x, node.y, nodeDims(node).w, nodeDims(node).h));
+      });
     });
     if(!rects.length) return null;
     const bounds = rects.reduce((acc, rect) => {
@@ -2791,6 +2956,7 @@ import {
       height = selectionShelf.offsetHeight || height;
     }
     const gap = workbenchOpen ? 44 : 30;
+    const compactGap = Math.min(gap, 20);
     let selectedRect = getSelectionScreenRect();
     let effectiveAnchor = anchor;
     if(selectedNode && selectedNodeIds.size === 1 && selectedEdgeIds.size === 0){
@@ -2811,11 +2977,14 @@ import {
     }
     const shelfRect = (left, top) => ({left, top, right:left + width, bottom:top + height, width, height});
     const insideSafe = rect => rect.left >= safe.left && rect.right <= safe.right && rect.top >= safe.top && rect.bottom <= safe.bottom;
+    const insideStage = rect => rect.left >= 8 && rect.right <= safe.stageRect.width - 8 && rect.top >= 8 && rect.bottom <= safe.stageRect.height - 8;
+    const overlayRects = getPlacementAvoidRects({includeShelf:false, includeToast:true, includeNodes:false});
+    const clearOverlays = rect => !overlayRects.some(overlayRect => rectsOverlap(rect, overlayRect, 8));
     const clearNode = rect => !selectedRect || !rectsOverlap(rect, selectedRect, 16);
     const place = rect => {
       selectionShelf.classList.add('anchored');
-      selectionShelf.style.left = Math.round(rect.left) + 'px';
-      selectionShelf.style.top = Math.round(rect.top) + 'px';
+      selectionShelf.style.left = Math.round(rect.left + (stage.scrollLeft || 0)) + 'px';
+      selectionShelf.style.top = Math.round(rect.top + (stage.scrollTop || 0)) + 'px';
       selectionShelf.style.bottom = 'auto';
     };
     const fallbackLeft = clamp((effectiveAnchor?.x ?? safe.left + safe.width / 2) - width / 2, safe.left, Math.max(safe.left, safe.right - width));
@@ -2823,13 +2992,34 @@ import {
     if(effectiveAnchor && selectedRect){
       candidates.push(shelfRect(clamp(effectiveAnchor.x - width / 2, safe.left, Math.max(safe.left, safe.right - width)), selectedRect.top - height - gap));
       candidates.push(shelfRect(clamp(effectiveAnchor.x - width / 2, safe.left, Math.max(safe.left, safe.right - width)), selectedRect.bottom + gap));
+      if(compactGap < gap){
+        candidates.push(shelfRect(clamp(effectiveAnchor.x - width / 2, safe.left, Math.max(safe.left, safe.right - width)), selectedRect.top - height - compactGap));
+        candidates.push(shelfRect(clamp(effectiveAnchor.x - width / 2, safe.left, Math.max(safe.left, safe.right - width)), selectedRect.bottom + compactGap));
+      }
+      const sideTop = clamp(selectedRect.top + selectedRect.height / 2 - height / 2, safe.top, Math.max(safe.top, safe.bottom - height));
+      candidates.push(shelfRect(selectedRect.left - width - gap, sideTop));
+      candidates.push(shelfRect(selectedRect.right + gap, sideTop));
+      if(compactGap < gap){
+        candidates.push(shelfRect(selectedRect.left - width - compactGap, sideTop));
+        candidates.push(shelfRect(selectedRect.right + compactGap, sideTop));
+      }
     }else if(effectiveAnchor){
       candidates.push(shelfRect(clamp(effectiveAnchor.x - width / 2, safe.left, Math.max(safe.left, safe.right - width)), effectiveAnchor.y - height - gap));
       candidates.push(shelfRect(clamp(effectiveAnchor.x - width / 2, safe.left, Math.max(safe.left, safe.right - width)), effectiveAnchor.y + gap));
+      if(compactGap < gap){
+        candidates.push(shelfRect(clamp(effectiveAnchor.x - width / 2, safe.left, Math.max(safe.left, safe.right - width)), effectiveAnchor.y - height - compactGap));
+        candidates.push(shelfRect(clamp(effectiveAnchor.x - width / 2, safe.left, Math.max(safe.left, safe.right - width)), effectiveAnchor.y + compactGap));
+      }
     }
     candidates.push(shelfRect(fallbackLeft, safe.top));
     candidates.push(shelfRect(fallbackLeft, Math.max(safe.top, safe.bottom - height)));
-    const chosen = candidates.find(rect => insideSafe(rect) && clearNode(rect)) || (!selectedRect ? candidates.find(insideSafe) : null);
+    candidates.push(shelfRect(safe.left, safe.top));
+    candidates.push(shelfRect(Math.max(safe.left, safe.right - width), safe.top));
+    candidates.push(shelfRect(safe.left, Math.max(safe.top, safe.bottom - height)));
+    candidates.push(shelfRect(Math.max(safe.left, safe.right - width), Math.max(safe.top, safe.bottom - height)));
+    const chosen = candidates.find(rect => insideSafe(rect) && clearNode(rect))
+      || candidates.find(rect => insideStage(rect) && clearNode(rect) && clearOverlays(rect))
+      || (!selectedRect ? candidates.find(insideSafe) : null);
     if(chosen){
       place(chosen);
       return;
@@ -3058,6 +3248,112 @@ import {
     if(payload.edges?.length) parts.push(plural(payload.edges.length, 'line'));
     return parts.join(' and ') || 'nothing';
   }
+  function groupScreenRectFromWorld(target, bounds){
+    const left = view.x + target.x * view.scale;
+    const top = view.y + target.y * view.scale;
+    const width = bounds.width * view.scale;
+    const height = bounds.height * view.scale;
+    return {left, top, right:left + width, bottom:top + height, width, height};
+  }
+  function groupFitsSafeArea(target, bounds, safe){
+    const rect = groupScreenRectFromWorld(target, bounds);
+    return rect.left >= safe.left && rect.top >= safe.top && rect.right <= safe.right && rect.bottom <= safe.bottom;
+  }
+  function groupNodeWorldRects(nodes, target, bounds){
+    return nodes.map(node => {
+      const dims = nodeDims(node);
+      return worldRect(
+        target.x + ((Number(node.x) || 0) - bounds.left),
+        target.y + ((Number(node.y) || 0) - bounds.top),
+        dims.w,
+        dims.h
+      );
+    });
+  }
+  function groupAvoidsExistingNodes(nodes, target, bounds, margin=28){
+    const nextRects = groupNodeWorldRects(nodes, target, bounds);
+    return !nextRects.some(nextRect => data.nodes.some(existing => worldRectsOverlap(nextRect, nodeWorldRect(existing), margin)));
+  }
+  function groupCandidateIsClear(nodes, target, bounds, safe, avoidRects, margin=28){
+    if(!groupFitsSafeArea(target, bounds, safe)) return false;
+    const groupRect = groupScreenRectFromWorld(target, bounds);
+    if(avoidRects.some(rect => rectsOverlap(groupRect, rect, screenMarginForWorld(margin)))) return false;
+    return groupAvoidsExistingNodes(nodes, target, bounds, margin);
+  }
+  function scanSafeGroupPosition(nodes, bounds, safe, avoidRects, margin=28){
+    const screenWidth = bounds.width * view.scale;
+    const screenHeight = bounds.height * view.scale;
+    const stepX = Math.max(88, Math.min(220, screenWidth * .42));
+    const stepY = Math.max(82, Math.min(190, screenHeight * .48));
+    for(let localY = safe.top; localY <= Math.max(safe.top, safe.bottom - screenHeight); localY += stepY){
+      for(let localX = safe.left; localX <= Math.max(safe.left, safe.right - screenWidth); localX += stepX){
+        const target = {x:(localX - view.x) / view.scale, y:(localY - view.y) / view.scale};
+        if(groupCandidateIsClear(nodes, target, bounds, safe, avoidRects, margin)) return target;
+      }
+    }
+    return null;
+  }
+  function radialSafeGroupPosition(nodes, bounds, safe, avoidRects, origin=null, margin=28){
+    const start = origin || safeAreaFallbackPosition(bounds.width, bounds.height, safe);
+    const radiusStep = Math.max(110, Math.min(240, Math.max(bounds.width, bounds.height) * .32));
+    const angles = [Math.PI / 4, 0, Math.PI / 2, -Math.PI / 2, Math.PI, -Math.PI / 4, Math.PI * 3 / 4, -Math.PI * 3 / 4];
+    for(let radius = radiusStep; radius <= 1600; radius += radiusStep){
+      for(const angle of angles){
+        const target = {x:start.x + Math.cos(angle) * radius, y:start.y + Math.sin(angle) * radius};
+        if(groupCandidateIsClear(nodes, target, bounds, safe, avoidRects, margin)) return target;
+      }
+    }
+    return null;
+  }
+  function worldClearGroupPosition(nodes, bounds, origin=null, margin=28){
+    const start = origin || {x:bounds.left, y:bounds.top};
+    const radiusStep = Math.max(140, Math.min(300, Math.max(bounds.width, bounds.height) * .34));
+    const angles = [Math.PI / 4, 0, Math.PI / 2, -Math.PI / 2, Math.PI, -Math.PI / 4, Math.PI * 3 / 4, -Math.PI * 3 / 4];
+    for(let radius = radiusStep; radius <= 3600; radius += radiusStep){
+      for(const angle of angles){
+        const target = {x:start.x + Math.cos(angle) * radius, y:start.y + Math.sin(angle) * radius};
+        if(groupAvoidsExistingNodes(nodes, target, bounds, margin)) return target;
+      }
+    }
+    return null;
+  }
+  function groupPlacementCandidates(bounds, pasteCount){
+    const step = Math.max(bounds.height + 64, Math.min(360, Math.max(180, Math.max(bounds.width, bounds.height) * .28))) * Math.max(1, pasteCount);
+    const half = step * .58;
+    return [
+      {x:bounds.left + step, y:bounds.top + step},
+      {x:bounds.left + step, y:bounds.top},
+      {x:bounds.left, y:bounds.top + step},
+      {x:bounds.left + step, y:bounds.top - half},
+      {x:bounds.left - half, y:bounds.top + step},
+      {x:bounds.left + step * 1.45, y:bounds.top + half},
+      {x:bounds.left + half, y:bounds.top + step * 1.45},
+      {x:bounds.left - step, y:bounds.top + step},
+      {x:bounds.left + step, y:bounds.top - step}
+    ];
+  }
+  function findFreeGroupPosition(payload, bounds, pasteCount, options={}){
+    const nodes = payload.nodes || [];
+    const collisionMargin = Number(options.collisionMargin) || 28;
+    const safe = getCanvasSafeArea({nodeWidth:bounds.width, nodeHeight:bounds.height, includeShelf:options.includeShelf, includeToast:options.includeToast, margin:options.margin});
+    const avoidRects = getPlacementAvoidRects({includeShelf:options.includeShelf, includeToast:options.includeToast, includeNodes:false});
+    const broadSafe = getBroadCanvasSafeArea({includeShelf:false, includeToast:false, margin:options.margin});
+    const broadAvoidRects = getPlacementAvoidRects({includeShelf:false, includeToast:false, includeNodes:false});
+    const stageBox = stage.getBoundingClientRect();
+    const safeCenter = screenToWorld(stageBox.left + safe.left + safe.width * .46, stageBox.top + safe.top + safe.height * .38);
+    const candidates = [
+      ...groupPlacementCandidates(bounds, pasteCount),
+      {x:safeCenter.x - bounds.width / 2, y:safeCenter.y - bounds.height / 2},
+      safeAreaFallbackPosition(bounds.width, bounds.height, safe)
+    ];
+    return candidates.find(target => groupCandidateIsClear(nodes, target, bounds, safe, avoidRects, collisionMargin))
+      || scanSafeGroupPosition(nodes, bounds, safe, avoidRects, collisionMargin)
+      || radialSafeGroupPosition(nodes, bounds, safe, avoidRects, candidates[0], collisionMargin)
+      || scanSafeGroupPosition(nodes, bounds, broadSafe, broadAvoidRects, collisionMargin)
+      || radialSafeGroupPosition(nodes, bounds, broadSafe, broadAvoidRects, candidates[0], collisionMargin)
+      || worldClearGroupPosition(nodes, bounds, candidates[0], collisionMargin)
+      || safeAreaFallbackPosition(bounds.width, bounds.height, safe);
+  }
   function copySelectionToClipboard(options={}){
     const payload = selectedClipboardPayload();
     if(!payload.nodes.length){
@@ -3086,17 +3382,7 @@ import {
   }
   function pasteTargetForPayload(payload, pasteCount){
     const bounds = clipboardBounds(payload.nodes);
-    const offset = 42 * Math.max(1, pasteCount);
-    let target = {x:bounds.left + offset, y:bounds.top + offset};
-    if(!groupWouldBeVisible(target.x, target.y, bounds)){
-      const safe = getBroadCanvasSafeArea({includeShelf:false, includeToast:true, margin:42});
-      const stageBox = stage.getBoundingClientRect();
-      const worldPoint = screenToWorld(
-        stageBox.left + safe.left + safe.width * .45,
-        stageBox.top + safe.top + safe.height * .38
-      );
-      target = {x:worldPoint.x - bounds.width / 2, y:worldPoint.y - bounds.height / 2};
-    }
+    const target = findFreeGroupPosition(payload, bounds, pasteCount, {includeShelf:true, includeToast:true, margin:34, collisionMargin:28});
     return {target, bounds};
   }
   function pasteClipboardPayload(payload, options={}){
@@ -3169,13 +3455,30 @@ import {
   }
   function addLinkedFrom(nodeId, x, y, fromPort='auto'){
     const source = byId(nodeId); if(!source) return;
-    const sr = nodeRect(source);
+    const w = 268;
+    const h = 145;
     if(typeof x !== 'number' || typeof y !== 'number'){
-      const gap = 120;
-      if(fromPort === 'left'){ x = source.x - 268 - gap; y = source.y + 20; }
-      else if(fromPort === 'top'){ x = source.x + sr.w/2 - 134; y = source.y - 145 - gap; }
-      else if(fromPort === 'bottom'){ x = source.x + sr.w/2 - 134; y = source.y + sr.h + gap; }
-      else { x = source.x + sr.w + gap; y = source.y + 20; fromPort = 'auto'; }
+      if(ports.includes(fromPort) && fromPort !== 'auto'){
+        const placement = choosePortLinkedPlacement(source, fromPort, w, h);
+        x = placement.position.x;
+        y = placement.position.y;
+      }else{
+        const p = chooseSafeNodePosition(w, h, {preferredNearNodeId:source.id, gap:132, includeShelf:true, includeToast:true, collisionMargin:28});
+        x = p.x;
+        y = p.y;
+        fromPort = 'auto';
+      }
+    }else{
+      const preferredTopLeft = {x, y};
+      const p = findFreeNodePosition({
+        preferredTopLeft,
+        w,
+        h,
+        candidates:[...candidatesAroundNode(source, w, h, 96), ...candidatesAroundNode(source, w, h, 220)],
+        options:{includeShelf:true, includeToast:true, margin:18, collisionMargin:28}
+      });
+      x = p.x;
+      y = p.y;
     }
     const usesFixedPorts = ports.includes(fromPort) && fromPort !== 'auto';
     return addNodeAt(x,y,{
@@ -3190,17 +3493,17 @@ import {
   }
   function portLinkedCandidates(source, side, w, h){
     const r = nodeRect(source);
-    const gap = 132;
-    const wideGap = 236;
-    const fartherGap = 360;
+    const gap = 148;
+    const wideGap = 256;
+    const fartherGap = 390;
     const centerY = r.cy - h / 2;
     const centerX = r.cx - w / 2;
-    const offsets = [0, -(h + 60), h + 60, -(h * 2 + 120), h * 2 + 120];
+    const offsets = [0, -(h + 72), h + 72, -(h * 2 + 140), h * 2 + 140];
     const horizontal = distance => offsets.map(offset => ({
       x:side === 'left' ? r.x - w - distance : r.x + r.w + distance,
       y:centerY + offset
     }));
-    const verticalOffsets = [0, -(w + 70), w + 70, -(w * 2 + 120), w * 2 + 120];
+    const verticalOffsets = [0, -(w + 82), w + 82, -(w * 2 + 150), w * 2 + 150];
     const vertical = distance => verticalOffsets.map(offset => ({
       x:centerX + offset,
       y:side === 'top' ? r.y - h - distance : r.y + r.h + distance
@@ -3210,32 +3513,50 @@ import {
     const tertiary = (side === 'left' || side === 'right') ? horizontal(fartherGap) : vertical(fartherGap);
     return [...primary, ...secondary, ...tertiary, ...candidatesAroundNode(source, w, h, 220), ...candidatesAroundNode(source, w, h, 380)];
   }
-  function choosePortLinkedPosition(source, side, w, h){
+  function positionOnPortSide(source, side, position, w, h){
+    const r = nodeRect(source);
+    if(side === 'right') return position.x >= r.x + r.w + 12;
+    if(side === 'left') return position.x + w <= r.x - 12;
+    if(side === 'top') return position.y + h <= r.y - 12;
+    if(side === 'bottom') return position.y >= r.y + r.h + 12;
+    return false;
+  }
+  function choosePortLinkedPlacement(source, side, w, h){
     const candidates = portLinkedCandidates(source, side, w, h);
-    return findFreeNodePosition({
+    const placement = findFreeNodePlacement({
       preferredTopLeft:candidates[0] || null,
       w,
       h,
       candidates:candidates.slice(1),
-      options:{includeShelf:true, includeToast:true, margin:18}
+      options:{includeShelf:true, includeToast:true, margin:18, collisionMargin:28}
     });
+    placement.sameSide = positionOnPortSide(source, side, placement.position, w, h);
+    return placement;
+  }
+  function choosePortLinkedPosition(source, side, w, h){
+    return choosePortLinkedPlacement(source, side, w, h).position;
   }
   function createPortLinkedBlock(sourceId, side, type){
     const source = byId(sourceId);
     if(!source){ showToast('Source block not found'); return null; }
     const config = workbenchBlockConfig(type);
-    const position = choosePortLinkedPosition(source, side, config.w || 268, config.h || 145);
+    const placement = choosePortLinkedPlacement(source, side, config.w || 268, config.h || 145);
+    const position = placement.position;
     markStarterMeaningfulAction();
     const linkedLabel = type === 'question' ? 'question' : (type === 'evidence' ? 'evidence' : 'concept');
+    const toastText = placement.sameSide
+      ? `Linked ${linkedLabel} added. Ctrl+Z to undo.`
+      : `Linked ${linkedLabel} placed in nearest open space. Ctrl+Z to undo.`;
     const node = addNodeAt(position.x, position.y, {
       ...config,
       linkFrom:source.id,
       fromPort:'auto',
       toPort:'auto',
       historyLabel:`Linked ${linkedLabel} added`,
-      toast:`Linked ${linkedLabel} added. Ctrl+Z to undo.`,
+      toast:toastText,
       focus:false
     });
+    if(placement.reason === 'world-clear') panNodeIntoSafeArea(node, config.w || 268, config.h || 145, {includeShelf:true, includeToast:true, margin:18});
     temporarilyPassThroughZoomDock();
     requestAnimationFrame(() => {
       positionSelectionShelf();
@@ -3248,7 +3569,8 @@ import {
     const source = byId(sourceId);
     if(!source){ showToast('Source block not found'); return null; }
     const size = documentBlockSize();
-    const position = choosePortLinkedPosition(source, side, size.w, size.h);
+    const placement = choosePortLinkedPlacement(source, side, size.w, size.h);
+    const position = placement.position;
     const node = addDocumentBlock(documentId, position, {
       topLeft:true,
       w:size.w,
@@ -3257,9 +3579,10 @@ import {
       fromPort:'auto',
       toPort:'auto',
       historyLabel:'Linked document added',
-      toast:'Linked document added. Ctrl+Z to undo.',
+      toast:placement.sameSide ? 'Linked document added. Ctrl+Z to undo.' : 'Linked document placed in nearest open space. Ctrl+Z to undo.',
       focus:false
     });
+    if(placement.reason === 'world-clear') panNodeIntoSafeArea(node, size.w, size.h, {includeShelf:true, includeToast:true, margin:18});
     return node;
   }
   function chooseDocumentFromPicker(documentId){
@@ -3345,10 +3668,10 @@ import {
   }
   function addFreeAtCenter(){ const r = stage.getBoundingClientRect(); const p = screenToWorld(r.left + r.width/2, r.top + r.height/2); addNodeAt(p.x - 130, p.y - 70); }
   function nodeSlotIsOpen(x, y, w, h, margin=36, excludeNodeId=''){
+    const candidate = worldRect(x, y, w, h);
     return !data.nodes.some(node => {
       if(excludeNodeId && node.id === excludeNodeId) return false;
-      const r = nodeRect(node);
-      return x < r.x + r.w + margin && x + w + margin > r.x && y < r.y + r.h + margin && y + h + margin > r.y;
+      return worldRectsOverlap(candidate, nodeWorldRect(node), margin);
     });
   }
   function chooseDocumentBlockPosition(worldPoint=null, w=300, h=170){
@@ -3608,7 +3931,7 @@ import {
     let node = null;
     if(pending.kind === 'document'){
       const documentPoint = window.innerWidth <= 640
-        ? chooseSafeNodePosition(w, h, {preferredNearNodeId:'core', gap:180})
+        ? chooseSafeNodePosition(w, h, {preferredTopLeft:narrowDocumentPreferredPosition(w, h, p), preferredNearNodeId:'core', gap:180, margin:14, collisionMargin:20})
         : p;
       node = addDocumentBlock(pending.documentId, documentPoint, {topLeft:true, w, h});
     }else{
@@ -3616,10 +3939,10 @@ import {
       showToast(pending.toast || pending.config?.toast || 'Block placed');
     }
     if(node){
+      clearInsertedNodePlacement(node);
       temporarilyPassThroughZoomDock();
       renderMapStarter();
       requestAnimationFrame(() => {
-        clearInsertedNodePlacement(node);
         positionSelectionShelf();
         updateOverlayOffsets();
         renderEdges();
