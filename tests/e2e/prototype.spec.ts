@@ -825,7 +825,24 @@ async function loadShortReviewFixture(page: Page) {
 async function openReviewPanel(page: Page) {
   await page.getByRole('button', { name: /Review this map/i }).click();
   await expect(page.locator('#reviewPanel')).toBeVisible();
+  await expect(page.locator('#reviewLauncher')).toBeVisible();
+}
+
+async function startNormalReview(page: Page) {
+  if (!(await page.locator('#reviewPanel').isVisible())) {
+    await openReviewPanel(page);
+  }
+  await page.locator('#reviewStart').click();
   await expect(page.locator('#reviewCard')).toBeVisible();
+}
+
+async function startWeakReview(page: Page) {
+  if (!(await page.locator('#reviewPanel').isVisible())) {
+    await openReviewPanel(page);
+  }
+  await page.locator('#reviewStartWeak').click();
+  await expect(page.locator('#reviewCard')).toBeVisible();
+  await expect(page.locator('#reviewCard')).toHaveAttribute('data-session-mode', 'weak');
 }
 
 async function revealAndRate(page: Page, rating: 'got-it' | 'almost' | 'missed') {
@@ -1945,7 +1962,7 @@ test.describe('current standalone prototypes', () => {
   test('map review opens block recall, hides the answer before reveal, and persists a rating', async ({ page }) => {
     await loadReviewFixture(page);
 
-    await openReviewPanel(page);
+    await startNormalReview(page);
     await expect(page.locator('#reviewProgress')).toContainText(/1 of/i);
     await expect(page.locator('#reviewCard')).toHaveAttribute('data-card-type', 'block');
     await expect(page.locator('#reviewPrompt')).toContainText(/Explain: Debt pressure/i);
@@ -1968,13 +1985,104 @@ test.describe('current standalone prototypes', () => {
 
     await page.reload();
     await page.getByRole('button', { name: /Review this map/i }).click();
-    await expect(page.locator('#reviewHistory')).toContainText(/Previous attempts: 1/i);
-    await expect(page.locator('#reviewHistory')).toContainText(/Got it 1/i);
+    await expect(page.locator('#reviewHistory')).toContainText(/9 cards · 1 reviewed · 0 weak/i);
+    await expect(page.locator('#reviewHistory')).toContainText(/Latest rating: Got it/i);
+  });
+
+  test('map review launcher shows weak-card empty state before attempts', async ({ page }) => {
+    await loadShortReviewFixture(page);
+
+    await openReviewPanel(page);
+    await expect(page.locator('#reviewHistory')).toContainText(/3 cards · 0 reviewed · 0 weak/i);
+    await expect(page.locator('#reviewStart')).toBeEnabled();
+    await expect(page.locator('#reviewStartWeak')).toBeDisabled();
+    await expect(page.locator('#reviewWeakState')).toContainText(/No weak cards yet\. Review this map first\./i);
+  });
+
+  test('map review weak-card queue uses latest ratings, orders missed first, graduates got it, and persists', async ({
+    page,
+  }) => {
+    await loadShortReviewFixture(page);
+    await startNormalReview(page);
+
+    await expect(page.locator('#reviewPrompt')).toContainText(/Explain: First idea/i);
+    await revealAndRate(page, 'missed');
+    await expect(page.locator('#reviewPrompt')).toContainText(/Explain: Second idea/i);
+    await revealAndRate(page, 'almost');
+    await expect(page.locator('#reviewCard')).toHaveAttribute('data-card-type', 'relationship');
+    await revealAndRate(page, 'got-it');
+
+    await expect(page.locator('#reviewSummary')).toBeVisible();
+    await expect(page.locator('#reviewSummaryReviewed')).toHaveText('3');
+    await expect(page.locator('#reviewSummaryGotIt')).toHaveText('1');
+    await expect(page.locator('#reviewSummaryAlmost')).toHaveText('1');
+    await expect(page.locator('#reviewSummaryMissed')).toHaveText('1');
+    await page.locator('#reviewExitSummary').click();
+
+    await openReviewPanel(page);
+    await expect(page.locator('#reviewHistory')).toContainText(/3 cards · 3 reviewed · 2 weak/i);
+    await expect(page.locator('#reviewStartWeak')).toHaveText(/Review weak cards \(2\)/i);
+    await startWeakReview(page);
+    await expect(page.locator('#reviewProgress')).toContainText(/Weak cards · 1 of 2/i);
+    await expect(page.locator('#reviewPrompt')).toContainText(/Explain: First idea/i);
+    await revealAndRate(page, 'got-it');
+    await expect(page.locator('#saveStatus')).toContainText(/Review saved locally/i);
+    await expect(page.locator('#reviewPrompt')).toContainText(/Explain: Second idea/i);
+    await page.locator('#reviewExit').click();
+
+    await openReviewPanel(page);
+    await expect(page.locator('#reviewHistory')).toContainText(/3 cards · 3 reviewed · 1 weak/i);
+    await expect(page.locator('#reviewStartWeak')).toHaveText(/Review weak cards \(1\)/i);
+    await startWeakReview(page);
+    await expect(page.locator('#reviewProgress')).toContainText(/Weak cards · 1 of 1/i);
+    await expect(page.locator('#reviewPrompt')).toContainText(/Explain: Second idea/i);
+    await page.locator('#reviewExit').click();
+
+    await page.reload();
+    await openReviewPanel(page);
+    await expect(page.locator('#reviewHistory')).toContainText(/3 cards · 3 reviewed · 1 weak/i);
+    await startWeakReview(page);
+    await expect(page.locator('#reviewPrompt')).toContainText(/Explain: Second idea/i);
+  });
+
+  test('map review card type filters select matching cards and show empty filter states', async ({ page }) => {
+    await loadReviewFixture(page);
+
+    await openReviewPanel(page);
+    const filterExpectations: Array<{ filter: string; type: string; prompt: RegExp }> = [
+      { filter: 'all', type: 'block', prompt: /Explain: Debt pressure/i },
+      { filter: 'block', type: 'block', prompt: /Explain: Debt pressure/i },
+      { filter: 'relationship', type: 'relationship', prompt: /What connects Debt pressure to Policy response/i },
+      { filter: 'neighbor', type: 'neighbor', prompt: /What is connected to Debt pressure/i },
+      { filter: 'source', type: 'source', prompt: /What source or evidence supports Debt pressure/i },
+    ];
+
+    for (const expectation of filterExpectations) {
+      await page.locator(`#reviewFilterOptions button[data-review-filter="${expectation.filter}"]`).click();
+      await expect(page.locator(`#reviewFilterOptions button[data-review-filter="${expectation.filter}"]`)).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+      await page.locator('#reviewStart').click();
+      await expect(page.locator('#reviewCard')).toHaveAttribute('data-card-type', expectation.type);
+      await expect(page.locator('#reviewPrompt')).toContainText(expectation.prompt);
+      await page.locator('#reviewExit').click();
+      await openReviewPanel(page);
+    }
+
+    await page.locator('#reviewExit').click();
+    await loadShortReviewFixture(page);
+    await openReviewPanel(page);
+    await page.locator('#reviewFilterOptions button[data-review-filter="source"]').click();
+    await expect(page.locator('#reviewFilterState')).toContainText(/0 cards for Sources\/evidence/i);
+    await expect(page.locator('#reviewEmpty')).toContainText(/No cards match this filter yet/i);
+    await expect(page.locator('#reviewStart')).toBeDisabled();
+    await expect(page.locator('#reviewStartWeak')).toBeDisabled();
   });
 
   test('map review creates relationship, neighbor, and source cards with highlights', async ({ page }) => {
     await loadReviewFixture(page);
-    await openReviewPanel(page);
+    await startNormalReview(page);
 
     await advanceToReviewCardType(page, 'relationship');
     await expect(page.locator('#reviewPrompt')).toContainText(/What connects Debt pressure to Policy response/i);
@@ -2061,7 +2169,7 @@ test.describe('current standalone prototypes', () => {
 
   test('map review session summary counts got it almost and missed ratings', async ({ page }) => {
     await loadShortReviewFixture(page);
-    await openReviewPanel(page);
+    await startNormalReview(page);
 
     await revealAndRate(page, 'got-it');
     await revealAndRate(page, 'almost');
@@ -2082,7 +2190,7 @@ test.describe('current standalone prototypes', () => {
     await loadShortReviewFixture(page);
     const beforeMap = await getSeedMapState(page);
 
-    await openReviewPanel(page);
+    await startNormalReview(page);
     await revealAndRate(page, 'got-it');
     await expect(page.locator('.map-node.review-answer-hidden')).toHaveCount(1);
     await page.locator('#reviewExit').click();
@@ -2195,6 +2303,13 @@ test.describe('current standalone prototypes', () => {
     }, exported);
 
     expect(importedReview?.data?.review?.attempts?.[0]?.rating).toBe('missed');
+
+    await page.goto(`${mindmapPath}?pageId=${exported.pageId}`);
+    await expect(page.locator('.map-node[data-id="backup-node"]')).toBeVisible();
+    await openReviewPanel(page);
+    await expect(page.locator('#reviewHistory')).toContainText(/1 card · 1 reviewed · 1 weak/i);
+    await startWeakReview(page);
+    await expect(page.locator('#reviewPrompt')).toContainText(/Explain: Backup card/i);
   });
 
   test('seeded map migrates legacy localStorage into page-owned state without deleting the legacy save', async ({ page }) => {

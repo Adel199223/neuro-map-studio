@@ -69,6 +69,27 @@ The Sources & blocks panel supports:
 
 Document blocks preserve `documentId`, can be dragged, can be linked, and persist after reload.
 
+## Map Review Mode
+
+The map editor includes a local-first `Review this map` mode for active recall.
+
+Review cards are generated from the current map without AI:
+
+- block recall
+- relationship line recall
+- connected-block neighbor recall
+- aggregate source/evidence recall
+
+Answers remain hidden until Reveal, including map canvas text that could leak the answer. Weak cards are derived from the latest local rating per card: `Missed` and `Almost` stay weak, and `Got it` graduates a card out of the weak queue.
+
+The review panel supports:
+
+- normal review sessions
+- focused `Review weak cards` sessions
+- card-type filters for All, Blocks, Relationships, Connected blocks, and Sources/evidence
+- lightweight history counts for total, reviewed, and weak cards
+- local review attempts and session summaries preserved in page state and workspace backup/export/import
+
 ## Backup And Restore
 
 Workspace backup/export/import uses JSON from the local IndexedDB model. Import merges valid records and rejects invalid backup JSON without replacing existing data.
@@ -91,4 +112,5 @@ Galaxy Tab and S Pen support includes:
 - No PDF/DOCX parsing or binary file storage.
 - Some runtime surfaces remain prototype HTML while the root dashboard is React.
 - Operation-log architecture is a future direction, not implemented yet.
+- Review Mode does not yet include spaced-repetition scheduling, due dates, or a project-wide review dashboard.
 - Relationship endpoint reconnect, edge midpoint insert, relationship-line box selection, tablet/touch marquee, and group resize remain future map-editor polish.

@@ -10,8 +10,9 @@ These are small, high-leverage directions to consider after the current main bra
 
 ## Review And Retrieval Pages
 
-- Improve review pages for recall practice.
-- Add lightweight prompts that help learners answer from memory.
+- Add spaced-repetition scheduling only after the local weak-card queue has settled.
+- Consider a project-wide review dashboard later.
+- Keep review surfaces short and focused for recall practice.
 - Keep forms short and ADHD-friendly.
 
 ## Relationship Editing

@@ -321,15 +321,23 @@ a{color:inherit}
 .review-title h2{margin:0;font-size:1.08rem;line-height:1.12;}
 .review-progress{margin:0;color:var(--muted);font-size:.84rem;font-weight:900;line-height:1.25;}
 .review-close{border:1px solid var(--border);border-radius:999px;background:#fffaf4;min-width:2.15rem;min-height:2.15rem;padding:.1rem .56rem;font:inherit;font-weight:900;cursor:pointer;flex:0 0 auto;}
-.review-card,.review-empty,.review-summary{border:1px solid rgba(217,199,170,.82);border-radius:18px;background:rgba(255,255,255,.62);padding:.78rem;display:grid;gap:.62rem;}
+.review-launcher,.review-card,.review-empty,.review-summary{border:1px solid rgba(217,199,170,.82);border-radius:18px;background:rgba(255,255,255,.62);padding:.78rem;display:grid;gap:.62rem;}
 .review-card-type{justify-self:start;margin:0;border:1px solid var(--blue-border);border-radius:999px;background:var(--blue);padding:.14rem .5rem;color:#365862;font-size:.75rem;font-weight:900;line-height:1.18;}
 .review-prompt{margin:0;font-size:1.02rem;line-height:1.25;}
 .review-answer{margin:0;border-left:5px solid var(--green-border);border-radius:12px;background:rgba(238,246,229,.72);padding:.6rem .68rem;color:#3f4c36;font-size:.9rem;line-height:1.38;white-space:pre-line;}
 .review-leak-hint{margin:0;border:1px solid var(--amber-border);border-radius:12px;background:rgba(255,244,213,.72);padding:.42rem .52rem;color:#5b4b1f;font-size:.82rem;font-weight:900;line-height:1.24;}
-.review-answer[hidden],.review-ratings[hidden],.review-card[hidden],.review-empty[hidden],.review-summary[hidden],.review-leak-hint[hidden]{display:none!important;}
-.review-actions,.review-ratings,.review-summary-actions{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;}
-.review-actions button,.review-ratings button,.review-summary-actions button{border:1px solid var(--border);border-radius:999px;background:#fffaf4;min-height:2.45rem;padding:.4rem .72rem;font:inherit;font-weight:900;cursor:pointer;}
-.review-actions button.primary,.review-ratings button.primary,.review-summary-actions button.primary{border-color:var(--green-border);background:var(--green);}
+.review-launcher-title{margin:0;font-size:.94rem;line-height:1.25;font-weight:900;color:#3f463b;}
+.review-filter-group{display:grid;gap:.34rem;}
+.review-filter-label{margin:0;color:var(--muted);font-size:.78rem;font-weight:900;line-height:1.22;}
+.review-filter-options{display:flex;flex-wrap:wrap;gap:.34rem;}
+.review-filter-options button{border:1px solid var(--border);border-radius:999px;background:#fffaf4;min-height:2.1rem;padding:.28rem .54rem;font:inherit;font-size:.78rem;font-weight:900;cursor:pointer;}
+.review-filter-options button[aria-pressed="true"]{border-color:var(--blue-border);background:var(--blue);color:#365862;}
+.review-filter-state,.review-weak-state{margin:0;color:var(--muted);font-size:.82rem;font-weight:900;line-height:1.28;}
+.review-answer[hidden],.review-ratings[hidden],.review-card[hidden],.review-empty[hidden],.review-summary[hidden],.review-leak-hint[hidden],.review-launcher[hidden],.review-weak-state[hidden]{display:none!important;}
+.review-actions,.review-ratings,.review-summary-actions,.review-option-actions{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;}
+.review-actions button,.review-ratings button,.review-summary-actions button,.review-option-actions button{border:1px solid var(--border);border-radius:999px;background:#fffaf4;min-height:2.45rem;padding:.4rem .72rem;font:inherit;font-weight:900;cursor:pointer;}
+.review-actions button.primary,.review-ratings button.primary,.review-summary-actions button.primary,.review-option-actions button.primary{border-color:var(--green-border);background:var(--green);}
+.review-actions button:disabled,.review-ratings button:disabled,.review-summary-actions button:disabled,.review-option-actions button:disabled,.review-filter-options button:disabled{opacity:.48;cursor:not-allowed;}
 .review-ratings button[data-rating="almost"]{border-color:var(--amber-border);background:var(--amber);}
 .review-ratings button[data-rating="missed"]{border-color:var(--rose-border);background:var(--rose);}
 .review-mini{margin:0;color:var(--muted);font-size:.84rem;line-height:1.32;}
@@ -594,8 +602,27 @@ a{color:inherit}
         <button class="review-close" id="reviewExit" type="button" title="Exit review" aria-label="Exit review">×</button>
       </div>
       <p class="review-mini" id="reviewHistory">No review attempts yet.</p>
+      <article class="review-launcher" id="reviewLauncher">
+        <p class="review-launcher-title" id="reviewLauncherTitle">Choose a review session.</p>
+        <div class="review-filter-group" aria-label="Review card type filter">
+          <p class="review-filter-label">Card type</p>
+          <div class="review-filter-options" id="reviewFilterOptions" role="group" aria-label="Review card type filter">
+            <button type="button" data-review-filter="all" aria-pressed="true" title="Review all card types">All</button>
+            <button type="button" data-review-filter="block" aria-pressed="false" title="Review block cards">Blocks</button>
+            <button type="button" data-review-filter="relationship" aria-pressed="false" title="Review relationship line cards">Relationships</button>
+            <button type="button" data-review-filter="neighbor" aria-pressed="false" title="Review connected block cards">Connected blocks</button>
+            <button type="button" data-review-filter="source" aria-pressed="false" title="Review source and evidence cards">Sources/evidence</button>
+          </div>
+          <p class="review-filter-state" id="reviewFilterState">All review cards.</p>
+        </div>
+        <div class="review-option-actions">
+          <button class="primary" id="reviewStart" type="button" title="Start reviewing cards from this map" aria-label="Start review">Start review</button>
+          <button id="reviewStartWeak" type="button" title="Review cards last rated Missed or Almost" aria-label="Review weak cards">Review weak cards</button>
+        </div>
+        <p class="review-weak-state" id="reviewWeakState">No weak cards yet. Review this map first.</p>
+      </article>
       <article class="review-empty" id="reviewEmpty" hidden>
-        <p>Add a few blocks with explanations or relationship labels to review this map.</p>
+        <p id="reviewEmptyText">Add a few blocks with explanations or relationship labels to review this map.</p>
       </article>
       <article class="review-card" id="reviewCard" hidden>
         <p class="review-card-type" id="reviewCardType">Block recall</p>
@@ -612,7 +639,7 @@ a{color:inherit}
         </div>
       </article>
       <article class="review-summary" id="reviewSummary" hidden>
-        <h3 class="review-prompt">Session summary</h3>
+        <h3 class="review-prompt" id="reviewSummaryTitle">Session summary</h3>
         <ul class="review-summary-list">
           <li><span>Reviewed</span><strong id="reviewSummaryReviewed">0</strong></li>
           <li><span>Got it</span><strong id="reviewSummaryGotIt">0</strong></li>
@@ -807,7 +834,15 @@ import {
   const reviewPanel = document.getElementById('reviewPanel');
   const reviewProgress = document.getElementById('reviewProgress');
   const reviewHistory = document.getElementById('reviewHistory');
+  const reviewLauncher = document.getElementById('reviewLauncher');
+  const reviewLauncherTitle = document.getElementById('reviewLauncherTitle');
+  const reviewFilterOptions = document.getElementById('reviewFilterOptions');
+  const reviewFilterState = document.getElementById('reviewFilterState');
+  const reviewStart = document.getElementById('reviewStart');
+  const reviewStartWeak = document.getElementById('reviewStartWeak');
+  const reviewWeakState = document.getElementById('reviewWeakState');
   const reviewEmpty = document.getElementById('reviewEmpty');
+  const reviewEmptyText = document.getElementById('reviewEmptyText');
   const reviewCard = document.getElementById('reviewCard');
   const reviewCardType = document.getElementById('reviewCardType');
   const reviewPrompt = document.getElementById('reviewPrompt');
@@ -816,6 +851,7 @@ import {
   const reviewReveal = document.getElementById('reviewReveal');
   const reviewRatings = document.getElementById('reviewRatings');
   const reviewSummary = document.getElementById('reviewSummary');
+  const reviewSummaryTitle = document.getElementById('reviewSummaryTitle');
   const reviewSummaryReviewed = document.getElementById('reviewSummaryReviewed');
   const reviewSummaryGotIt = document.getElementById('reviewSummaryGotIt');
   const reviewSummaryAlmost = document.getElementById('reviewSummaryAlmost');
@@ -989,6 +1025,8 @@ import {
     cards:[],
     index:0,
     revealed:false,
+    mode:'normal',
+    selectedFilter:'all',
     session:null,
     highlightNodeIds:new Set(),
     highlightEdgeIds:new Set(),
@@ -1006,6 +1044,14 @@ import {
     neighbor:'Connected blocks recall',
     source:'Source or evidence recall'
   };
+  const REVIEW_FILTER_LABELS = {
+    all:'All',
+    block:'Blocks',
+    relationship:'Relationships',
+    neighbor:'Connected blocks',
+    source:'Sources/evidence'
+  };
+  const REVIEW_SESSION_MODES = new Set(['normal', 'weak']);
   const MAP_HISTORY_LIMIT = 100;
   const LONG_PRESS_DELAY = 450;
   const LONG_PRESS_MOVE = 10;
@@ -1400,7 +1446,9 @@ import {
         gotIt:Math.max(0, Number(session.gotIt) || 0),
         almost:Math.max(0, Number(session.almost) || 0),
         missed:Math.max(0, Number(session.missed) || 0),
-        cardIds:Array.isArray(session.cardIds) ? session.cardIds.map(String).filter(Boolean) : []
+        cardIds:Array.isArray(session.cardIds) ? session.cardIds.map(String).filter(Boolean) : [],
+        mode:REVIEW_SESSION_MODES.has(session.mode) ? session.mode : 'normal',
+        filter:REVIEW_FILTER_LABELS[session.filter] ? session.filter : 'all'
       }];
     }) : [];
     return {version:REVIEW_STATE_VERSION, attempts, sessions};
@@ -1424,20 +1472,79 @@ import {
     const mapViewId = currentMapViewId();
     return reviewStore.sessions.filter(session => session.pageId === runtimePageId && session.mapViewId === mapViewId);
   }
-  function reviewHistoryText(){
-    const attempts = currentReviewAttempts();
-    if(!attempts.length) return 'No review attempts yet.';
-    const gotIt = attempts.filter(attempt => attempt.rating === 'got-it').length;
-    const almost = attempts.filter(attempt => attempt.rating === 'almost').length;
-    const missed = attempts.filter(attempt => attempt.rating === 'missed').length;
-    const last = attempts[attempts.length - 1];
-    const lastLabel = REVIEW_RATING_LABELS[last.rating] || last.rating;
+  function normalizeReviewFilter(filter){
+    return REVIEW_FILTER_LABELS[filter] ? filter : 'all';
+  }
+  function reviewAttemptTime(attempt){
+    const time = Date.parse(attempt?.reviewedAt || '');
+    return Number.isFinite(time) ? time : 0;
+  }
+  function latestReviewAttemptsByCard(cardIds=null){
+    const validIds = cardIds ? new Set(cardIds) : null;
+    const latest = new Map();
+    currentReviewAttempts().forEach((attempt, order) => {
+      if(validIds && !validIds.has(attempt.cardId)) return;
+      const time = reviewAttemptTime(attempt);
+      const existing = latest.get(attempt.cardId);
+      if(!existing || time > existing.__time || (time === existing.__time && order > existing.__order)){
+        latest.set(attempt.cardId, Object.assign({}, attempt, {__time:time, __order:order}));
+      }
+    });
+    return latest;
+  }
+  function filterReviewCards(cards, filter=reviewMode.selectedFilter){
+    const selected = normalizeReviewFilter(filter);
+    if(selected === 'all') return cards.slice();
+    return cards.filter(card => card.type === selected);
+  }
+  function buildWeakReviewCards(cards){
+    const cardIds = cards.map(card => card.id);
+    const latest = latestReviewAttemptsByCard(cardIds);
+    const order = new Map(cards.map((card, index) => [card.id, index]));
+    const priority = {missed:0, almost:1};
+    return cards.filter(card => {
+      const attempt = latest.get(card.id);
+      return attempt?.rating === 'missed' || attempt?.rating === 'almost';
+    }).sort((a, b) => {
+      const aAttempt = latest.get(a.id);
+      const bAttempt = latest.get(b.id);
+      const ratingDiff = priority[aAttempt.rating] - priority[bAttempt.rating];
+      if(ratingDiff) return ratingDiff;
+      const timeDiff = reviewAttemptTime(aAttempt) - reviewAttemptTime(bAttempt);
+      if(timeDiff) return timeDiff;
+      return (order.get(a.id) || 0) - (order.get(b.id) || 0);
+    });
+  }
+  function reviewStats(cards=generateReviewCards()){
+    const cardIds = cards.map(card => card.id);
+    const latest = latestReviewAttemptsByCard(cardIds);
+    const attempts = currentReviewAttempts().filter(attempt => cardIds.includes(attempt.cardId));
     const sessions = currentReviewSessions();
-    const lastSession = sessions[sessions.length - 1];
-    if(lastSession?.completedAt){
-      return `Previous review: ${lastSession.reviewedCount} reviewed. Got it ${lastSession.gotIt}, Almost ${lastSession.almost}, Missed ${lastSession.missed}.`;
+    const completedSessions = sessions.filter(session => session.completedAt);
+    const weakCards = Array.from(latest.values()).filter(attempt => attempt.rating === 'missed' || attempt.rating === 'almost').length;
+    return {
+      totalCards:cards.length,
+      reviewedCards:latest.size,
+      weakCards,
+      attempts,
+      latest,
+      lastAttempt:attempts[attempts.length - 1] || null,
+      lastSession:completedSessions[completedSessions.length - 1] || null
+    };
+  }
+  function reviewHistoryText(cards=generateReviewCards()){
+    const stats = reviewStats(cards);
+    const base = `${reviewCardCountLabel(stats.totalCards)} · ${stats.reviewedCards} reviewed · ${stats.weakCards} weak`;
+    if(!stats.totalCards) return 'No review cards yet.';
+    if(stats.lastSession){
+      const label = stats.lastSession.mode === 'weak' ? 'Last weak review' : 'Last review';
+      return `${base}. ${label}: ${stats.lastSession.reviewedCount} reviewed, Got it ${stats.lastSession.gotIt}, Almost ${stats.lastSession.almost}, Missed ${stats.lastSession.missed}.`;
     }
-    return `Previous attempts: ${attempts.length}. Got it ${gotIt}, Almost ${almost}, Missed ${missed}. Last: ${lastLabel}.`;
+    if(stats.lastAttempt){
+      const lastLabel = REVIEW_RATING_LABELS[stats.lastAttempt.rating] || stats.lastAttempt.rating;
+      return `${base}. Latest rating: ${lastLabel}.`;
+    }
+    return `${base}. No review attempts yet.`;
   }
   async function saveReviewState(){
     if(!runtimePageInitialized || !runtimePageId) return null;
@@ -1710,8 +1817,69 @@ import {
     });
   }
   function currentReviewCard(){
-    if(!reviewMode.active || !reviewMode.cards.length) return null;
+    if(!reviewMode.active || !reviewMode.session || reviewMode.session.completed || !reviewMode.cards.length) return null;
     return reviewMode.cards[reviewMode.index] || null;
+  }
+  function reviewCardCountLabel(count){
+    return `${count} card${count === 1 ? '' : 's'}`;
+  }
+  function updateReviewFilterControls(){
+    const selected = normalizeReviewFilter(reviewMode.selectedFilter);
+    reviewFilterOptions?.querySelectorAll('button[data-review-filter]').forEach(button => {
+      const active = button.dataset.reviewFilter === selected;
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+  function prepareReviewPanelForUse(){
+    closeMenu();
+    closeSidePanel();
+    cancelPlacementMode('review');
+    if(connectFrom) cancelConnect();
+    setWorkbenchOpen(false, {user:false});
+    setSelectionShelfSuppressed(true, 'review-open');
+  }
+  function renderReviewLauncher(allCards){
+    const selectedFilter = normalizeReviewFilter(reviewMode.selectedFilter);
+    reviewMode.selectedFilter = selectedFilter;
+    const filteredCards = filterReviewCards(allCards, selectedFilter);
+    const weakCards = buildWeakReviewCards(filteredCards);
+    const stats = reviewStats(allCards);
+    updateReviewFilterControls();
+    reviewLauncher.hidden = false;
+    reviewCard.hidden = true;
+    reviewSummary.hidden = true;
+    if(reviewLeakHint) reviewLeakHint.hidden = true;
+    reviewProgress.textContent = 'Ready to review';
+    reviewLauncherTitle.textContent = 'Choose a review session.';
+    if(selectedFilter === 'all'){
+      reviewFilterState.textContent = `${reviewCardCountLabel(filteredCards.length)} in All.`;
+    }else{
+      reviewFilterState.textContent = `${reviewCardCountLabel(filteredCards.length)} for ${REVIEW_FILTER_LABELS[selectedFilter]}.`;
+    }
+    const hasCards = filteredCards.length > 0;
+    reviewStart.disabled = !hasCards;
+    reviewStart.title = hasCards ? 'Start reviewing cards from this map' : 'No cards match this filter';
+    reviewStartWeak.disabled = weakCards.length === 0;
+    reviewStartWeak.textContent = weakCards.length ? `Review weak cards (${weakCards.length})` : 'Review weak cards';
+    reviewStartWeak.title = weakCards.length ? 'Review cards last rated Missed or Almost' : 'No weak cards are available';
+    reviewWeakState.hidden = false;
+    if(weakCards.length){
+      reviewWeakState.textContent = `${reviewCardCountLabel(weakCards.length)} last rated Missed or Almost.`;
+    }else if(!stats.reviewedCards){
+      reviewWeakState.textContent = 'No weak cards yet. Review this map first.';
+    }else{
+      reviewWeakState.textContent = selectedFilter === 'all' ? 'No weak cards right now.' : 'No weak cards match this filter.';
+    }
+    if(!allCards.length){
+      reviewEmptyText.textContent = 'Add a few blocks with explanations or relationship labels to review this map.';
+      reviewEmpty.hidden = false;
+    }else if(!filteredCards.length){
+      reviewEmptyText.textContent = 'No cards match this filter yet.';
+      reviewEmpty.hidden = false;
+    }else{
+      reviewEmpty.hidden = true;
+    }
+    clearReviewHighlights();
   }
   function renderReviewPanel(){
     if(!reviewMode.active){
@@ -1723,22 +1891,20 @@ import {
     }
     reviewPanel.hidden = false;
     btnReviewMap?.classList.add('active');
-    reviewHistory.textContent = reviewHistoryText();
-    if(!reviewMode.cards.length){
-      reviewProgress.textContent = 'No cards yet';
-      reviewEmpty.hidden = false;
-      reviewCard.hidden = true;
-      reviewSummary.hidden = true;
-      if(reviewLeakHint) reviewLeakHint.hidden = true;
-      clearReviewHighlights();
+    const allCards = generateReviewCards();
+    reviewHistory.textContent = reviewHistoryText(allCards);
+    if(!reviewMode.session){
+      renderReviewLauncher(allCards);
       return;
     }
     if(reviewMode.session?.completed){
-      reviewProgress.textContent = 'Review complete';
+      reviewProgress.textContent = reviewMode.mode === 'weak' ? 'Weak-card review complete' : 'Review complete';
+      reviewLauncher.hidden = true;
       reviewEmpty.hidden = true;
       reviewCard.hidden = true;
       reviewSummary.hidden = false;
       if(reviewLeakHint) reviewLeakHint.hidden = true;
+      reviewSummaryTitle.textContent = reviewMode.mode === 'weak' ? 'Weak-card session summary' : 'Session summary';
       reviewSummaryReviewed.textContent = String(reviewMode.session.reviewedCount);
       reviewSummaryGotIt.textContent = String(reviewMode.session.gotIt);
       reviewSummaryAlmost.textContent = String(reviewMode.session.almost);
@@ -1748,11 +1914,18 @@ import {
       return;
     }
     const card = currentReviewCard();
-    reviewProgress.textContent = `${reviewMode.index + 1} of ${reviewMode.cards.length}`;
+    if(!card){
+      reviewMode.session = null;
+      renderReviewLauncher(allCards);
+      return;
+    }
+    reviewProgress.textContent = `${reviewMode.mode === 'weak' ? 'Weak cards · ' : ''}${reviewMode.index + 1} of ${reviewMode.cards.length}`;
+    reviewLauncher.hidden = true;
     reviewEmpty.hidden = true;
     reviewCard.hidden = false;
     reviewSummary.hidden = true;
     reviewCard.dataset.cardType = card.type;
+    reviewCard.dataset.sessionMode = reviewMode.mode;
     reviewCardType.textContent = REVIEW_CARD_TYPE_LABELS[card.type] || 'Review card';
     reviewPrompt.textContent = card.prompt;
     reviewAnswer.hidden = !reviewMode.revealed;
@@ -1762,12 +1935,41 @@ import {
     reviewRatings.hidden = !reviewMode.revealed;
     setReviewVisualState(card);
   }
-  function startReviewSession(){
-    const cards = generateReviewCards();
+  function openReviewLauncher(){
+    reviewMode.active = true;
+    reviewMode.cards = [];
+    reviewMode.index = 0;
+    reviewMode.revealed = false;
+    reviewMode.mode = 'normal';
+    reviewMode.session = null;
+    prepareReviewPanelForUse();
+    renderReviewPanel();
+    setStatus('Choose review session');
+    requestAnimationFrame(() => {
+      if(!reviewStart?.disabled) reviewStart?.focus();
+      else reviewExit?.focus();
+    });
+  }
+  function startReviewSession(mode='normal'){
+    const selectedMode = REVIEW_SESSION_MODES.has(mode) ? mode : 'normal';
+    const selectedFilter = normalizeReviewFilter(reviewMode.selectedFilter);
+    const allCards = generateReviewCards();
+    const filteredCards = filterReviewCards(allCards, selectedFilter);
+    const cards = selectedMode === 'weak' ? buildWeakReviewCards(filteredCards) : filteredCards;
     reviewMode.active = true;
     reviewMode.cards = cards;
     reviewMode.index = 0;
     reviewMode.revealed = false;
+    reviewMode.mode = selectedMode;
+    reviewMode.selectedFilter = selectedFilter;
+    if(!cards.length){
+      reviewMode.session = null;
+      prepareReviewPanelForUse();
+      renderReviewPanel();
+      setStatus(selectedMode === 'weak' ? 'No weak cards yet' : 'No review cards match');
+      requestAnimationFrame(() => reviewExit?.focus());
+      return;
+    }
     reviewMode.session = {
       id:reviewId('review-session'),
       pageId:runtimePageId,
@@ -1779,19 +1981,15 @@ import {
       almost:0,
       missed:0,
       cardIds:cards.map(card => card.id),
+      mode:selectedMode,
+      filter:selectedFilter,
       completed:false
     };
-    closeMenu();
-    closeSidePanel();
-    cancelPlacementMode('review');
-    if(connectFrom) cancelConnect();
-    setWorkbenchOpen(false, {user:false});
-    setSelectionShelfSuppressed(true, 'review-open');
+    prepareReviewPanelForUse();
     renderReviewPanel();
-    setStatus(cards.length ? 'Review ready' : 'Add reviewable map content');
+    setStatus(selectedMode === 'weak' ? 'Weak cards ready' : 'Review ready');
     requestAnimationFrame(() => {
-      if(cards.length) reviewReveal?.focus();
-      else reviewExit?.focus();
+      reviewReveal?.focus();
     });
   }
   function exitReviewMode(reason='exit'){
@@ -1800,6 +1998,7 @@ import {
     reviewMode.cards = [];
     reviewMode.index = 0;
     reviewMode.revealed = false;
+    reviewMode.mode = 'normal';
     reviewMode.session = null;
     reviewPanel.hidden = true;
     if(reviewLeakHint) reviewLeakHint.hidden = true;
@@ -1830,7 +2029,9 @@ import {
       gotIt:session.gotIt,
       almost:session.almost,
       missed:session.missed,
-      cardIds:session.cardIds
+      cardIds:session.cardIds,
+      mode:session.mode || 'normal',
+      filter:session.filter || 'all'
     });
   }
   function rateCurrentReviewCard(rating){
@@ -5830,8 +6031,19 @@ import {
   btnReviewMap?.addEventListener('click', event => {
     event.preventDefault();
     event.stopPropagation();
-    startReviewSession();
+    openReviewLauncher();
   });
+  reviewFilterOptions?.addEventListener('click', event => {
+    const target = event.target instanceof Element ? event.target : null;
+    const button = target?.closest('button[data-review-filter]');
+    if(!button || (reviewMode.session && !reviewMode.session.completed)) return;
+    event.preventDefault();
+    reviewMode.selectedFilter = normalizeReviewFilter(button.dataset.reviewFilter);
+    if(!reviewMode.active) openReviewLauncher();
+    else renderReviewPanel();
+  });
+  reviewStart?.addEventListener('click', () => startReviewSession('normal'));
+  reviewStartWeak?.addEventListener('click', () => startReviewSession('weak'));
   reviewReveal?.addEventListener('click', revealCurrentReviewCard);
   reviewRatings?.addEventListener('click', event => {
     const target = event.target instanceof Element ? event.target : null;
@@ -5840,7 +6052,7 @@ import {
     event.preventDefault();
     rateCurrentReviewCard(button.dataset.rating);
   });
-  reviewRestart?.addEventListener('click', startReviewSession);
+  reviewRestart?.addEventListener('click', () => startReviewSession(reviewMode.mode || 'normal'));
   reviewExit?.addEventListener('click', () => exitReviewMode('exit'));
   reviewExitSummary?.addEventListener('click', () => exitReviewMode('summary-exit'));
   mapWorkbench?.addEventListener('pointerdown', event => event.stopPropagation(), true);

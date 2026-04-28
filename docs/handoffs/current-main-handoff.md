@@ -6,7 +6,8 @@
 - Repo: `https://github.com/Adel199223/neuro-map-studio`
 - Local WSL path: `/home/fa507/dev/neuro-map-studio-codex`
 - Source-of-truth branch: `main`
-- Latest shipped feature baseline: `7b062803a309b21daeda74e11a6b0183931d0f58`
+- Latest shipped feature baseline: `761cf89c9bc3ac46483779793270df4f19ef8f3f`
+- Previous Stage 3A2 baseline retained for doctor checks: `7b062803a309b21daeda74e11a6b0183931d0f58`
 - For the exact current commit after docs-only cleanup, run `git rev-parse main`.
 - Remote source of truth: `origin/main`.
 
@@ -35,6 +36,9 @@ Preserve:
 - connection-port quick-add for linked blocks, dynamic relationship re-anchoring, and collision-aware placement
 - group drag for selected blocks, arrow-key nudge, Zoom to selection, and desktop/trackpad box selection
 - S Pen/finger drag, port tapping, pan/zoom, long-press, selection toolbar, and debug mode
+- embedded map Review Mode with block, relationship, connected-block, and source/evidence recall cards
+- pre-Reveal answer masking on map blocks and relationship labels
+- local review attempts/session summaries, weak-card queue, and card-type filters
 
 ## Normal Checks
 
@@ -49,6 +53,8 @@ npm run check
 ```
 
 Do not run `package:review`, `package:verify`, create zips, push, merge, delete branches, rebase, or force-push unless explicitly asked.
+
+Review Mode is local-first only. Do not add spaced-repetition scheduling, AI-generated questions, cloud sync, accounts, or collaboration unless explicitly requested.
 
 ## Recommended Start For Future Work
 
