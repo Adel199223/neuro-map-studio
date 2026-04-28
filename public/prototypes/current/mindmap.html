@@ -1018,6 +1018,7 @@ import {
   let multiSelectMode = false;
   let mapClipboard = null;
   let textEditState = null;
+  let reviewDeepLinkHandled = false;
   const mapHistory = {undo:[], redo:[]};
   let reviewStore = {version:1, attempts:[], sessions:[]};
   const reviewMode = {
@@ -1950,6 +1951,22 @@ import {
       else reviewExit?.focus();
     });
   }
+  function requestedReviewModeFromUrl(){
+    const value = clean(runtimeParams.get('review') || '').toLowerCase();
+    if(['1', 'true', 'yes', 'normal', 'map'].includes(value)) return 'normal';
+    if(value === 'weak') return 'weak';
+    return '';
+  }
+  function launchReviewFromUrl(){
+    if(reviewDeepLinkHandled) return;
+    reviewDeepLinkHandled = true;
+    const requestedMode = requestedReviewModeFromUrl();
+    if(requestedMode === 'weak'){
+      startReviewSession('weak');
+    }else if(requestedMode === 'normal'){
+      openReviewLauncher();
+    }
+  }
   function startReviewSession(mode='normal'){
     const selectedMode = REVIEW_SESSION_MODES.has(mode) ? mode : 'normal';
     const selectedFilter = normalizeReviewFilter(reviewMode.selectedFilter);
@@ -2145,10 +2162,12 @@ import {
       setStatus('Map ready');
       await refreshProjectDocuments();
       if(freshStartupView) await persistWorkspaceState('View ready');
+      launchReviewFromUrl();
     }catch(error){
       setStatus('Using local map fallback');
       updateRuntimeChrome();
       await refreshProjectDocuments();
+      launchReviewFromUrl();
     }
   }
   function renderPageControls(){

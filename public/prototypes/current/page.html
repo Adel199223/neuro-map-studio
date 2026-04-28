@@ -272,6 +272,10 @@ function renderMapDispatch(){
   if(params.get('debugInput') === '1'){
     mapUrl.searchParams.set('debugInput', '1');
   }
+  const reviewParam = params.get('review');
+  if(reviewParam){
+    mapUrl.searchParams.set('review', reviewParam);
+  }
   compatibilityLink.classList.remove('hidden');
   compatibilityLink.textContent = 'Open editable map';
   compatibilityLink.href = mapUrl.toString();

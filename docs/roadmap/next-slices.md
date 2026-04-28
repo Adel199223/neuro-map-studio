@@ -10,8 +10,8 @@ These are small, high-leverage directions to consider after the current main bra
 
 ## Review And Retrieval Pages
 
-- Add spaced-repetition scheduling only after the local weak-card queue has settled.
-- Consider a project-wide review dashboard later.
+- Add spaced-repetition scheduling only after the local weak-card queue and dashboard summaries have settled.
+- Expand review dashboards only if the next slice stays local-first and avoids due-date scheduling.
 - Keep review surfaces short and focused for recall practice.
 - Keep forms short and ADHD-friendly.
 

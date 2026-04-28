@@ -4,7 +4,7 @@ Neuro Map Studio is a local-first learning workspace for projects, pages, docume
 
 ## Workspace Dashboard
 
-The root React app shows an app-like workspace dashboard with recent work, project cards, quick creation, backup/restore, help, and secondary developer utilities.
+The root React app shows an app-like workspace dashboard with recent work, project cards, a compact workspace review summary, quick creation, backup/restore, help, and secondary developer utilities.
 
 Primary actions:
 
@@ -20,6 +20,7 @@ The project hub is available at `public/prototypes/current/project.html`.
 
 It organizes a project into:
 
+- Review: map review summaries with normal review and weak-card review launch actions
 - Pages: lesson, map, notes, review, and glossary pages
 - Documents: project source/document metadata
 - Utilities: page-document references and secondary actions
@@ -90,6 +91,8 @@ The review panel supports:
 - lightweight history counts for total, reviewed, and weak cards
 - local review attempts and session summaries preserved in page state and workspace backup/export/import
 
+The project hub and root workspace dashboard derive review summaries from the same local page state. They show total cards, reviewed cards, weak cards, last reviewed status, and launch links for normal or weak-card review. Maps with weak cards are prioritized before maps with no weak cards; scheduling and due dates are still deferred.
+
 ## Backup And Restore
 
 Workspace backup/export/import uses JSON from the local IndexedDB model. Import merges valid records and rejects invalid backup JSON without replacing existing data.
@@ -112,5 +115,5 @@ Galaxy Tab and S Pen support includes:
 - No PDF/DOCX parsing or binary file storage.
 - Some runtime surfaces remain prototype HTML while the root dashboard is React.
 - Operation-log architecture is a future direction, not implemented yet.
-- Review Mode does not yet include spaced-repetition scheduling, due dates, or a project-wide review dashboard.
+- Review Mode does not yet include spaced-repetition scheduling, due dates, or project-wide scheduling dashboards.
 - Relationship endpoint reconnect, edge midpoint insert, relationship-line box selection, tablet/touch marquee, and group resize remain future map-editor polish.

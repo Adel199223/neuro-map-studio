@@ -5,6 +5,7 @@ Use this for quick validation on local dev or GitHub Pages.
 ## Workspace Dashboard
 
 - [ ] Root dashboard loads.
+- [ ] Workspace review summary shows weak, recent, and not-reviewed map states when review data exists.
 - [ ] Recent pages/diagrams section appears.
 - [ ] Project cards are visible.
 - [ ] New map, New page, and New project are reachable.
@@ -17,6 +18,9 @@ Use this for quick validation on local dev or GitHub Pages.
 - [ ] Documents view loads and shows project sources.
 - [ ] Utilities view opens.
 - [ ] Page cards have real runtime links.
+- [ ] Project Review section shows map card counts, reviewed counts, weak counts, and last reviewed state.
+- [ ] Review map opens the map review launcher.
+- [ ] Review weak cards opens weak-card review when weak cards exist, or stays disabled with a friendly state when none exist.
 
 ## Pages
 
@@ -36,6 +40,9 @@ Use this for quick validation on local dev or GitHub Pages.
 - [ ] Selection toolbar remains usable.
 - [ ] Notification bubbles appear briefly and do not stretch layout.
 - [ ] Zoom controls remain usable.
+- [ ] Review this map still opens normal review with card-type filters.
+- [ ] Review weak cards uses latest Missed/Almost ratings and excludes cards later rated Got it.
+- [ ] Answers remain masked on the map before Reveal for block, relationship, connected-block, and source/evidence cards.
 
 ## Backup
 

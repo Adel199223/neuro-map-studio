@@ -43,7 +43,7 @@ interface PageDocumentLinkRecord {
 interface PageStateRecord {
   id: string;
   pageId: string;
-  data?: {
+  data?: Record<string, unknown> & {
     workspace?: {
       pages?: Array<{
         map?: {
@@ -93,6 +93,40 @@ interface WorkspaceStore {
   pageRuntimeHref: (pageId: string) => string;
 }
 
+interface ReviewCardDescriptor {
+  id: string;
+  type: 'block' | 'relationship' | 'neighbor' | 'source' | string;
+  title?: string;
+}
+
+interface MapReviewSummary {
+  pageId: string;
+  projectId: string;
+  title: string;
+  totalCards: number;
+  reviewedCards: number;
+  weakCards: number;
+  lastReviewedAt: string;
+  lastReviewedLabel: string;
+  weakQueue: ReviewCardDescriptor[];
+}
+
+interface WorkspaceReviewSummary {
+  summaries: MapReviewSummary[];
+  weakMaps: MapReviewSummary[];
+  recentlyReviewed: MapReviewSummary[];
+  notReviewed: MapReviewSummary[];
+}
+
+interface ReviewSummaryModule {
+  summarizeWorkspaceReview: (input: {
+    pages: PageRecord[];
+    pageStates: PageStateRecord[];
+    documents: DocumentRecord[];
+  }) => WorkspaceReviewSummary;
+  lastReviewedLabel: (summary: MapReviewSummary) => string;
+}
+
 function withBase(path: string) {
   const normalizedBase = import.meta.env.BASE_URL.replace(/\/+$/, '');
   const normalizedPath = path.replace(/^\/+/, '');
@@ -104,6 +138,7 @@ const prototypeLesson = withBase('prototypes/current/lesson.html');
 const prototypePageRuntime = withBase('prototypes/current/page.html');
 const prototypeProject = withBase('prototypes/current/project.html');
 const workspaceStoreUrl = withBase('prototypes/current/workspace-store.js');
+const reviewSummaryUrl = withBase('prototypes/current/review-summary.js');
 
 function projectUrl(projectId: string) {
   return `${prototypeProject}?projectId=${encodeURIComponent(projectId)}`;
@@ -114,12 +149,21 @@ function runtimeUrl(store: WorkspaceStore | null, pageId: string) {
   return withBase(`prototypes/current/${runtimePath}`);
 }
 
+function mapReviewUrl(pageId: string, mode: '1' | 'weak' = '1') {
+  return `${prototypeMindMap}?pageId=${encodeURIComponent(pageId)}&review=${encodeURIComponent(mode)}`;
+}
+
 async function loadWorkspaceStore(): Promise<WorkspaceStore> {
   const runtimeImport = new Function('url', 'return import(url)') as (
     url: string,
   ) => Promise<{ workspaceStore: WorkspaceStore }>;
   const module = await runtimeImport(workspaceStoreUrl);
   return module.workspaceStore;
+}
+
+async function loadReviewSummaryModule(): Promise<ReviewSummaryModule> {
+  const runtimeImport = new Function('url', 'return import(url)') as (url: string) => Promise<ReviewSummaryModule>;
+  return runtimeImport(reviewSummaryUrl);
 }
 
 function pageTypeLabel(type: string) {
@@ -181,6 +225,10 @@ function projectStats(snapshot: WorkspaceSnapshot | null, projectId: string) {
     maps: pages.filter((page) => page.type === 'map').length,
     documents: snapshot?.documents.filter((documentRecord) => documentRecord.projectId === projectId).length ?? 0,
   };
+}
+
+function reviewCardCountLabel(count: number) {
+  return `${count} card${count === 1 ? '' : 's'}`;
 }
 
 function openDialog(ref: RefObject<HTMLDialogElement | null>) {
@@ -262,6 +310,7 @@ export default function App() {
   const helpDialogRef = useRef<HTMLDialogElement>(null);
   const devDialogRef = useRef<HTMLDialogElement>(null);
   const [store, setStore] = useState<WorkspaceStore | null>(null);
+  const [reviewSummaryModule, setReviewSummaryModule] = useState<ReviewSummaryModule | null>(null);
   const [snapshot, setSnapshot] = useState<WorkspaceSnapshot | null>(null);
   const [status, setStatus] = useState('Loading workspace...');
   const [backupStatus, setBackupStatus] = useState('Backups include workspace metadata and page state.');
@@ -276,10 +325,11 @@ export default function App() {
 
   useEffect(() => {
     let alive = true;
-    loadWorkspaceStore()
-      .then(async (nextStore) => {
+    Promise.all([loadWorkspaceStore(), loadReviewSummaryModule().catch(() => null)])
+      .then(async ([nextStore, nextReviewSummaryModule]) => {
         if (!alive) return;
         setStore(nextStore);
+        setReviewSummaryModule(nextReviewSummaryModule);
         const nextSnapshot = await nextStore.getWorkspaceSnapshot();
         if (!alive) return;
         setSnapshot(nextSnapshot);
@@ -300,6 +350,14 @@ export default function App() {
   const recentPages = newestFirst(snapshot?.pages ?? []).slice(0, 5);
   const recentMap = recentPages.find((page) => page.type === 'map');
   const continuePage = recentPages[0];
+  const workspaceReview =
+    snapshot && reviewSummaryModule
+      ? reviewSummaryModule.summarizeWorkspaceReview({
+          pages: snapshot.pages,
+          pageStates: snapshot.pageStates,
+          documents: snapshot.documents,
+        })
+      : null;
   const showDeveloperToolsShortcut =
     typeof window !== 'undefined' &&
     (() => {
@@ -405,6 +463,7 @@ export default function App() {
         </a>
         <nav aria-label="Workspace navigation">
           <a href="#continue">Workspace</a>
+          <a href="#review">Review</a>
           <a href="#recent">Recent</a>
           <a href="#projects">Projects</a>
           <button type="button" onClick={() => openDialog(helpDialogRef)}>
@@ -428,11 +487,17 @@ export default function App() {
             <h1>Workspace board</h1>
           </div>
           <div className="topbar-actions" aria-label="Primary workspace actions">
-            <button className="primary" type="button" onClick={() => void createPageAndOpen('map', 'New learning map')}>
+            <button
+              className="primary"
+              type="button"
+              disabled={!store || !currentProject}
+              onClick={() => void createPageAndOpen('map', 'New learning map')}
+            >
               New map
             </button>
             <button
               type="button"
+              disabled={!store || !currentProject}
               onClick={() => {
                 setDefaultPageType('notes');
                 openDialog(newPageDialogRef);
@@ -440,7 +505,7 @@ export default function App() {
             >
               New page
             </button>
-            <button type="button" onClick={() => openDialog(newProjectDialogRef)}>
+            <button type="button" disabled={!store} onClick={() => openDialog(newProjectDialogRef)}>
               New project
             </button>
           </div>
@@ -498,7 +563,12 @@ export default function App() {
             <p className="eyebrow">Create</p>
             <h2>Quick create</h2>
             <div className="quick-create-grid">
-              <button className="creation-tile primary" type="button" onClick={() => void createPageAndOpen('map', 'New learning map')}>
+              <button
+                className="creation-tile primary"
+                type="button"
+                disabled={!store || !currentProject}
+                onClick={() => void createPageAndOpen('map', 'New learning map')}
+              >
                 <span className="tile-icon">⌁</span>
                 <strong>New map</strong>
                 <small>Open a fresh diagram canvas.</small>
@@ -506,6 +576,7 @@ export default function App() {
               <button
                 className="creation-tile"
                 type="button"
+                disabled={!store || !currentProject}
                 onClick={() => {
                   setDefaultPageType('notes');
                   openDialog(newPageDialogRef);
@@ -515,13 +586,106 @@ export default function App() {
                 <strong>New page</strong>
                 <small>Lesson, notes, review, or glossary.</small>
               </button>
-              <button className="creation-tile" type="button" onClick={() => openDialog(newProjectDialogRef)}>
+              <button className="creation-tile" type="button" disabled={!store} onClick={() => openDialog(newProjectDialogRef)}>
                 <span className="tile-icon">▣</span>
                 <strong>New project</strong>
                 <small>Start a new learning workspace.</small>
               </button>
             </div>
           </article>
+        </section>
+
+        <section className="board-panel review-dashboard" id="review" aria-label="Workspace review">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Review</p>
+              <h2>Workspace review</h2>
+            </div>
+            {currentProject ? (
+              <a className="button" href={`${projectUrl(currentProject.id)}#projectReviewPanel`}>
+                Open project review
+              </a>
+            ) : null}
+          </div>
+          {workspaceReview?.summaries.length ? (
+            <div className="review-dashboard-grid">
+              <article className="review-dashboard-group">
+                <h3>Weak cards</h3>
+                {workspaceReview.weakMaps.length ? (
+                  <div className="review-list">
+                    {workspaceReview.weakMaps.slice(0, 3).map((summary) => (
+                      <div className="review-row" key={`weak-${summary.pageId}`}>
+                        <div>
+                          <strong>{summary.title}</strong>
+                          <p>
+                            {summary.weakCards} weak · {summary.reviewedCards} reviewed ·{' '}
+                            {reviewCardCountLabel(summary.totalCards)}
+                          </p>
+                        </div>
+                        <div className="actions">
+                          <a className="button primary" href={mapReviewUrl(summary.pageId, 'weak')}>
+                            Review weak cards
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <h3>No weak cards yet.</h3>
+                    <p>Review a map and mark cards Almost or Missed to build a focused queue.</p>
+                  </div>
+                )}
+              </article>
+              <article className="review-dashboard-group">
+                <h3>Recently reviewed</h3>
+                {workspaceReview.recentlyReviewed.length ? (
+                  <div className="review-list">
+                    {workspaceReview.recentlyReviewed.slice(0, 2).map((summary) => (
+                      <div className="review-row" key={`recent-review-${summary.pageId}`}>
+                        <div>
+                          <strong>{summary.title}</strong>
+                          <p>
+                            {summary.lastReviewedLabel} · {summary.weakCards} weak
+                          </p>
+                        </div>
+                        <a className="button" href={mapReviewUrl(summary.pageId, '1')}>
+                          Review map
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="review-note">Review a map to start building review history.</p>
+                )}
+              </article>
+              <article className="review-dashboard-group">
+                <h3>Not reviewed yet</h3>
+                {workspaceReview.notReviewed.length ? (
+                  <div className="review-list">
+                    {workspaceReview.notReviewed.slice(0, 2).map((summary) => (
+                      <div className="review-row" key={`not-reviewed-${summary.pageId}`}>
+                        <div>
+                          <strong>{summary.title}</strong>
+                          <p>{reviewCardCountLabel(summary.totalCards)} ready</p>
+                        </div>
+                        <a className="button" href={mapReviewUrl(summary.pageId, '1')}>
+                          Review map
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="review-note">Every map has at least one review attempt.</p>
+                )}
+              </article>
+            </div>
+          ) : (
+            <div className="empty-state">
+              <h3>Create a map to start reviewing.</h3>
+              <p>Workspace review summaries appear here once a map exists.</p>
+            </div>
+          )}
         </section>
 
         <section className="board-panel" id="recent" aria-label="Recent pages and diagrams">

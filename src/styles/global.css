@@ -35,6 +35,10 @@ select,
 textarea {
   -webkit-tap-highlight-color: transparent;
 }
+button:disabled {
+  opacity: 0.56;
+  cursor: not-allowed;
+}
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
@@ -312,6 +316,57 @@ p {
   border-radius: 999px;
   background: #fffdf7;
   padding: 0.22rem 0.55rem;
+}
+
+.review-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 12px;
+}
+
+.review-dashboard-group {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px dashed #d9c39d;
+  border-radius: 18px;
+  background: rgb(255 253 247 / 0.7);
+}
+
+.review-list {
+  display: grid;
+  gap: 8px;
+}
+
+.review-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #d9c39d;
+  border-radius: 16px;
+  background: #fffdf7;
+}
+
+.review-row strong {
+  display: block;
+  min-width: 0;
+}
+
+.review-row p,
+.review-note {
+  margin: 0.2rem 0 0;
+  color: #675d51;
+  font-weight: 800;
+}
+
+.review-row .actions {
+  margin-top: 0;
+  justify-content: flex-end;
 }
 
 .quick-create-grid,
@@ -646,7 +701,8 @@ textarea {
   }
 
   .board-grid,
-  .continue-layout {
+  .continue-layout,
+  .review-row {
     grid-template-columns: minmax(0, 1fr);
   }
 

@@ -822,6 +822,212 @@ async function loadShortReviewFixture(page: Page) {
   await expect(page.locator('.map-node[data-id="short-a"]')).toBeVisible();
 }
 
+async function seedProjectReviewDashboardFixture(page: Page) {
+  await clearWorkspaceDatabase(page);
+  await page.goto('/');
+  await waitForWorkspaceStore(page);
+  return page.evaluate(async () => {
+    const runtime = window as Window & {
+      neuroMapWorkspaceStore?: {
+        createPage: (
+          projectId: string,
+          fields: { title: string; type: string; description: string },
+        ) => Promise<{ id: string; title: string }>;
+        exportWorkspaceBackup: () => Promise<Record<string, unknown>>;
+        savePageState: (pageId: string, pageType: string, data: Record<string, unknown>) => Promise<unknown>;
+      };
+    };
+    const store = runtime.neuroMapWorkspaceStore;
+    if (!store) throw new Error('Missing workspace store.');
+    const projectId = 'geopolitics-economics';
+    const weakPage = await store.createPage(projectId, {
+      title: 'Weak review map',
+      type: 'map',
+      description: 'A map with Missed and Almost review cards.',
+    });
+    const noWeakPage = await store.createPage(projectId, {
+      title: 'Steady review map',
+      type: 'map',
+      description: 'A reviewed map with no weak cards.',
+    });
+    const notReviewedPage = await store.createPage(projectId, {
+      title: 'Not reviewed map',
+      type: 'map',
+      description: 'A map waiting for its first review.',
+    });
+    const workspaceFor = (title: string, map: Record<string, unknown>, review: Record<string, unknown>) => ({
+      kind: 'map-workspace',
+      workspace: {
+        version: 19,
+        activePageId: 'page-main',
+        pages: [{ id: 'page-main', title, map }],
+      },
+      starterHidden: true,
+      review,
+    });
+    const weakMap = {
+      version: 20,
+      view: { x: 0, y: 0, scale: 1 },
+      nodes: [
+        {
+          id: 'weak-a',
+          title: 'Weak missed',
+          body: 'Missed answer.',
+          group: 'blue',
+          shape: 'card',
+          importance: 2,
+          x: -120,
+          y: 0,
+          w: 230,
+          h: 125,
+          tag: 'review',
+          nodeType: 'concept',
+          documentId: '',
+        },
+        {
+          id: 'weak-b',
+          title: 'Weak almost',
+          body: 'Almost answer.',
+          group: 'green',
+          shape: 'card',
+          importance: 2,
+          x: 220,
+          y: 0,
+          w: 230,
+          h: 125,
+          tag: 'review',
+          nodeType: 'concept',
+          documentId: '',
+        },
+      ],
+      edges: [
+        {
+          id: 'weak-edge',
+          from: 'weak-a',
+          to: 'weak-b',
+          relation: 'causes',
+          strength: 3,
+          shape: 'curve',
+          label: 'creates pressure',
+        },
+      ],
+    };
+    const singleBlockMap = (nodeId: string, title: string, body: string) => ({
+      version: 20,
+      view: { x: 0, y: 0, scale: 1 },
+      nodes: [
+        {
+          id: nodeId,
+          title,
+          body,
+          group: 'blue',
+          shape: 'card',
+          importance: 2,
+          x: 0,
+          y: 0,
+          w: 240,
+          h: 130,
+          tag: 'review',
+          nodeType: 'concept',
+          documentId: '',
+        },
+      ],
+      edges: [],
+    });
+    await store.savePageState(
+      weakPage.id,
+      'map',
+      workspaceFor('Weak review map', weakMap, {
+        version: 1,
+        attempts: [
+          {
+            id: 'weak-missed-attempt',
+            cardId: 'page-main:block:weak-a',
+            pageId: weakPage.id,
+            mapViewId: 'page-main',
+            cardType: 'block',
+            rating: 'missed',
+            reviewedAt: '2026-04-20T10:00:00.000Z',
+            attemptCount: 1,
+          },
+          {
+            id: 'weak-almost-attempt',
+            cardId: 'page-main:block:weak-b',
+            pageId: weakPage.id,
+            mapViewId: 'page-main',
+            cardType: 'block',
+            rating: 'almost',
+            reviewedAt: '2026-04-21T10:00:00.000Z',
+            attemptCount: 1,
+          },
+          {
+            id: 'weak-got-it-attempt',
+            cardId: 'page-main:relationship:weak-edge',
+            pageId: weakPage.id,
+            mapViewId: 'page-main',
+            cardType: 'relationship',
+            rating: 'got-it',
+            reviewedAt: '2026-04-22T10:00:00.000Z',
+            attemptCount: 1,
+          },
+        ],
+        sessions: [
+          {
+            id: 'weak-normal-session',
+            pageId: weakPage.id,
+            mapViewId: 'page-main',
+            startedAt: '2026-04-20T09:55:00.000Z',
+            completedAt: '2026-04-22T10:05:00.000Z',
+            reviewedCount: 3,
+            gotIt: 1,
+            almost: 1,
+            missed: 1,
+            cardIds: ['page-main:block:weak-a', 'page-main:block:weak-b', 'page-main:relationship:weak-edge'],
+            mode: 'normal',
+            filter: 'all',
+          },
+        ],
+      }),
+    );
+    await store.savePageState(
+      noWeakPage.id,
+      'map',
+      workspaceFor('Steady review map', singleBlockMap('steady-a', 'Steady card', 'Steady answer.'), {
+        version: 1,
+        attempts: [
+          {
+            id: 'steady-got-it-attempt',
+            cardId: 'page-main:block:steady-a',
+            pageId: noWeakPage.id,
+            mapViewId: 'page-main',
+            cardType: 'block',
+            rating: 'got-it',
+            reviewedAt: '2026-04-25T10:00:00.000Z',
+            attemptCount: 1,
+          },
+        ],
+        sessions: [],
+      }),
+    );
+    await store.savePageState(
+      notReviewedPage.id,
+      'map',
+      workspaceFor('Not reviewed map', singleBlockMap('fresh-a', 'Fresh card', 'Fresh answer.'), {
+        version: 1,
+        attempts: [],
+        sessions: [],
+      }),
+    );
+    return {
+      projectId,
+      weakPageId: weakPage.id,
+      noWeakPageId: noWeakPage.id,
+      notReviewedPageId: notReviewedPage.id,
+      backup: await store.exportWorkspaceBackup(),
+    };
+  });
+}
+
 async function openReviewPanel(page: Page) {
   await page.getByRole('button', { name: /Review this map/i }).click();
   await expect(page.locator('#reviewPanel')).toBeVisible();
@@ -1097,9 +1303,10 @@ test.describe('current standalone prototypes', () => {
     await expect(page.getByLabel(/Workspace rail/i)).toBeVisible();
     await expect(continuePanel).toBeVisible();
     await expect(page.getByLabel(/Quick create/i)).toBeVisible();
+    await expect(page.getByLabel(/Workspace review/i)).toBeVisible();
     await expect(page.getByLabel(/Recent pages and diagrams/i)).toBeVisible();
     await expectReadableBox(continuePanel.getByRole('heading', { name: /Geopolitics & Economics/i }), 'medium current project title');
-    await expectElementTopBefore(page.getByLabel(/Recent pages and diagrams/i), 'medium recent pages panel', 760);
+    await expectElementTopBefore(page.getByLabel(/Workspace review/i), 'medium workspace review panel', 760);
     await expectNoHorizontalOverflow(page);
   });
 
@@ -1111,6 +1318,7 @@ test.describe('current standalone prototypes', () => {
     await expect(page.getByLabel(/Workspace rail/i)).toBeVisible();
     await expect(page.getByLabel(/Workspace topbar/i).getByRole('button', { name: /^New map$/i })).toBeVisible();
     await expect(page.getByLabel(/Quick create/i)).toBeVisible();
+    await expect(page.getByLabel(/Workspace review/i)).toBeVisible();
     await expectReadableBox(
       page.getByLabel(/Continue working/i).getByRole('heading', { name: /Geopolitics & Economics/i }),
       'narrow current project title',
@@ -1126,6 +1334,7 @@ test.describe('current standalone prototypes', () => {
 
     await expect(page.getByLabel(/Continue working/i)).toBeVisible();
     await expect(page.getByLabel(/Quick create/i)).toBeVisible();
+    await expect(page.getByLabel(/Workspace review/i)).toBeVisible();
     await expect(page.getByLabel(/Recent pages and diagrams/i)).toBeVisible();
     await expect(page.getByLabel(/^Projects$/i)).toBeVisible();
     await expectNoHorizontalOverflow(page);
@@ -1159,6 +1368,107 @@ test.describe('current standalone prototypes', () => {
     await page.reload();
     await expect(page.getByRole('heading', { name: /New learning map/i })).toBeVisible();
     await expect(page.locator('#mapStarterPanel')).toBeVisible();
+  });
+
+  test('project review section shows map review counts, sorting, and no-weak state', async ({ page }) => {
+    const fixture = await seedProjectReviewDashboardFixture(page);
+    await page.goto(`${projectPath}?projectId=${fixture.projectId}`);
+
+    const reviewPanel = page.getByLabel(/Project review/i);
+    await expect(reviewPanel).toBeVisible();
+    const rows = reviewPanel.locator('.review-row');
+    await expect(rows.first().getByRole('heading', { name: /Weak review map/i })).toBeVisible();
+
+    const weakRow = reviewPanel.locator(`[data-review-page-id="${fixture.weakPageId}"]`);
+    await expect(weakRow).toContainText(/3 cards/i);
+    await expect(weakRow).toContainText(/3 reviewed/i);
+    await expect(weakRow).toContainText(/2 weak/i);
+    await expect(weakRow).toContainText(/Last reviewed/i);
+
+    const steadyRow = reviewPanel.locator(`[data-review-page-id="${fixture.noWeakPageId}"]`);
+    await expect(steadyRow).toContainText(/1 card/i);
+    await expect(steadyRow).toContainText(/1 reviewed/i);
+    await expect(steadyRow).toContainText(/0 weak/i);
+    await expect(steadyRow.getByText(/Review weak cards/i)).toHaveAttribute('aria-disabled', 'true');
+
+    await page.reload();
+    await expect(page.getByLabel(/Project review/i).locator(`[data-review-page-id="${fixture.weakPageId}"]`)).toContainText(
+      /2 weak/i,
+    );
+  });
+
+  test('project review map action opens the map review launcher', async ({ page }) => {
+    const fixture = await seedProjectReviewDashboardFixture(page);
+    await page.goto(`${projectPath}?projectId=${fixture.projectId}`);
+
+    await page
+      .getByLabel(/Project review/i)
+      .locator(`[data-review-page-id="${fixture.weakPageId}"]`)
+      .getByRole('link', { name: /Review map Weak review map/i })
+      .click();
+
+    await expect(page).toHaveURL(new RegExp(`/prototypes/current/mindmap\\.html\\?pageId=${fixture.weakPageId}&review=1`));
+    await expect(page.locator('#reviewPanel')).toBeVisible();
+    await expect(page.locator('#reviewLauncher')).toBeVisible();
+    await expect(page.locator('#reviewHistory')).toContainText(/3 cards · 3 reviewed · 2 weak/i);
+  });
+
+  test('project review weak cards action opens missed-first weak review', async ({ page }) => {
+    const fixture = await seedProjectReviewDashboardFixture(page);
+    await page.goto(`${projectPath}?projectId=${fixture.projectId}`);
+
+    await page
+      .getByLabel(/Project review/i)
+      .locator(`[data-review-page-id="${fixture.weakPageId}"]`)
+      .getByRole('link', { name: /Review weak cards in Weak review map/i })
+      .click();
+
+    await expect(page).toHaveURL(new RegExp(`/prototypes/current/mindmap\\.html\\?pageId=${fixture.weakPageId}&review=weak`));
+    await expect(page.locator('#reviewCard')).toBeVisible();
+    await expect(page.locator('#reviewCard')).toHaveAttribute('data-session-mode', 'weak');
+    await expect(page.locator('#reviewProgress')).toContainText(/Weak cards · 1 of 2/i);
+    await expect(page.locator('#reviewPrompt')).toContainText(/Explain: Weak missed/i);
+    await expect(page.locator('.map-node[data-id="weak-a"]')).toHaveClass(/review-answer-hidden/);
+  });
+
+  test('workspace dashboard review summary shows weak, recent, and not-reviewed maps', async ({ page }) => {
+    await seedProjectReviewDashboardFixture(page);
+    await page.goto('/');
+
+    const workspaceReview = page.getByLabel(/Workspace review/i);
+    await expect(workspaceReview).toBeVisible();
+    await expect(workspaceReview).toContainText(/Weak review map/i);
+    await expect(workspaceReview).toContainText(/2 weak/i);
+    await expect(workspaceReview).toContainText(/Steady review map/i);
+    await expect(workspaceReview).toContainText(/Not reviewed map/i);
+    await expect(workspaceReview.getByRole('link', { name: /Review weak cards/i }).first()).toHaveAttribute(
+      'href',
+      /mindmap\.html\?pageId=.*&review=weak/,
+    );
+  });
+
+  test('workspace backup import preserves derived dashboard review summaries', async ({ page }) => {
+    const fixture = await seedProjectReviewDashboardFixture(page);
+
+    await clearWorkspaceDatabase(page);
+    await page.goto('/');
+    await waitForWorkspaceStore(page);
+    await page.evaluate(async (backup) => {
+      const runtime = window as Window & {
+        neuroMapWorkspaceStore?: {
+          importWorkspaceBackup: (payload: Record<string, unknown>, options: { mode: string }) => Promise<unknown>;
+        };
+      };
+      const store = runtime.neuroMapWorkspaceStore;
+      if (!store) throw new Error('Missing workspace store.');
+      await store.importWorkspaceBackup(backup, { mode: 'merge' });
+    }, fixture.backup);
+
+    await page.goto(`${projectPath}?projectId=${fixture.projectId}`);
+    const weakRow = page.getByLabel(/Project review/i).locator(`[data-review-page-id="${fixture.weakPageId}"]`);
+    await expect(weakRow).toContainText(/3 cards/i);
+    await expect(weakRow).toContainText(/3 reviewed/i);
+    await expect(weakRow).toContainText(/2 weak/i);
   });
 
   test('fresh map runtime starts with the main idea clear of overlays', async ({ page }) => {
@@ -1777,7 +2087,7 @@ test.describe('current standalone prototypes', () => {
     expect(documentNodeId).toBeTruthy();
     expect(documentId).toBeTruthy();
 
-    await page.locator('.map-node[data-id="core"]').click();
+    await syntheticClick(page.locator('.map-node[data-id="core"]'));
     await page.locator('#btnConnect').click();
     await documentNode.click();
     await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(1);
@@ -2356,18 +2666,21 @@ test.describe('current standalone prototypes', () => {
     await page.goto(`${mindmapPath}?pageId=simon-dixon-debt-power-map`);
     await expect(page.locator('.map-node', { hasText: 'Migrated idea' })).toBeVisible();
 
-    const storedKind = await page.evaluate(async () => {
-      const runtime = window as Window & {
-        neuroMapWorkspaceStore?: {
-          getPageState: (
-            pageId: string,
-          ) => Promise<{ data?: { kind?: string } } | null>;
-        };
-      };
-      const state = await runtime.neuroMapWorkspaceStore?.getPageState('simon-dixon-debt-power-map');
-      return state?.data?.kind || '';
-    });
-    expect(storedKind).toBe('map-workspace');
+    await expect
+      .poll(async () => {
+        return page.evaluate(async () => {
+          const runtime = window as Window & {
+            neuroMapWorkspaceStore?: {
+              getPageState: (
+                pageId: string,
+              ) => Promise<{ data?: { kind?: string } } | null>;
+            };
+          };
+          const state = await runtime.neuroMapWorkspaceStore?.getPageState('simon-dixon-debt-power-map');
+          return state?.data?.kind || '';
+        });
+      })
+      .toBe('map-workspace');
 
     const legacyStillExists = await page.evaluate((key) => localStorage.getItem(key), legacyKey);
     expect(legacyStillExists).not.toBeNull();
@@ -2786,11 +3099,11 @@ test.describe('current standalone prototypes', () => {
     const newNode = page.locator(`.map-node[data-id="${newNodeId}"]`);
     await expect(newNode).toBeVisible();
     await expectNodeClearOfOtherBlocks(page, newNodeId, 8);
-    await expectNoBoxOverlap(newNode, page.locator('.toolbar'), 'high zoom quick-add and toolbar', 4);
-    await expectNoBoxOverlap(newNode, page.locator('#zoomDock .toolbar-group'), 'high zoom quick-add and zoom controls', 4);
-    await expectNoBoxOverlap(newNode, page.locator('#selectionShelf'), 'high zoom quick-add and selection toolbar', 4);
-    await expectNoBoxOverlap(newNode, page.locator('#workbenchDrawer'), 'high zoom quick-add and Sources & blocks panel', 4);
-    await expectNoBoxOverlap(newNode, page.locator('#inputDebugPanel'), 'high zoom quick-add and input diagnostics', 4);
+    await waitForNoBoxOverlap(newNode, page.locator('.toolbar'), 'high zoom quick-add and toolbar', 4);
+    await waitForNoBoxOverlap(newNode, page.locator('#zoomDock .toolbar-group'), 'high zoom quick-add and zoom controls', 4);
+    await waitForNoBoxOverlap(newNode, page.locator('#selectionShelf'), 'high zoom quick-add and selection toolbar', 4);
+    await waitForNoBoxOverlap(newNode, page.locator('#workbenchDrawer'), 'high zoom quick-add and Sources & blocks panel', 4);
+    await waitForNoBoxOverlap(newNode, page.locator('#inputDebugPanel'), 'high zoom quick-add and input diagnostics', 4);
   });
 
   test('learning map recenter and zoom controls do not blank the canvas', async ({ page }) => {

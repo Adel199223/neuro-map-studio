@@ -6,7 +6,7 @@
 - Repo: `https://github.com/Adel199223/neuro-map-studio`
 - Local WSL path: `/home/fa507/dev/neuro-map-studio-codex`
 - Source-of-truth branch: `main`
-- Latest shipped feature baseline: Stage 4A2 weak-card review queue. For the exact current commit, run `git rev-parse main`.
+- Latest shipped feature baseline: Stage 4A3 project/workspace review dashboard. For the exact current commit, run `git rev-parse main`.
 - Previous Stage 3A2 baseline retained for doctor checks: `7b062803a309b21daeda74e11a6b0183931d0f58`
 - Remote source of truth: `origin/main`.
 
@@ -38,6 +38,7 @@ Preserve:
 - embedded map Review Mode with block, relationship, connected-block, and source/evidence recall cards
 - pre-Reveal answer masking on map blocks and relationship labels
 - local review attempts/session summaries, weak-card queue, and card-type filters
+- project hub and root workspace review summaries with normal review and weak-card review launch links
 
 ## Normal Checks
 
