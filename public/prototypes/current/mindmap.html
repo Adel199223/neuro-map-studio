@@ -1604,33 +1604,46 @@ import {
         type:'neighbor',
         prompt:`What is connected to ${nodeReviewTitle(node)}, and why?`,
         answer:conciseConnectionAnswer(connections, 6),
-        preReveal:{highlight:{nodes:[node.id], edges:[]}},
+        preReveal:{
+          highlight:{nodes:[node.id], edges:[]},
+          mask:{nodeAllContent:connections.map(item => item.other.id), edgeLabels:connections.map(item => item.edge.id)}
+        },
         postReveal:{highlight:{nodes:[node.id, ...connections.map(item => item.other.id)], edges:connections.map(item => item.edge.id)}}
       }));
     });
+    const supportByTarget = new Map();
     const supportSeen = new Set();
+    function addSupportReviewCandidate(support, target, edge){
+      if(!support || !target || !edge || support.id === target.id) return;
+      const key = `${target.id}:${support.id}:${edge.id}`;
+      if(supportSeen.has(key)) return;
+      supportSeen.add(key);
+      if(!supportByTarget.has(target.id)) supportByTarget.set(target.id, {target, supports:[]});
+      supportByTarget.get(target.id).supports.push({support, edge});
+    }
     data.edges.forEach(edge => {
       const from = byId(edge.from);
       const to = byId(edge.to);
       if(!from || !to) return;
       const evidenceRelation = edge.relation === 'evidence';
-      const pairs = [];
-      if(isSupportBlock(from) || evidenceRelation) pairs.push({support:from, target:to});
-      if(isSupportBlock(to)) pairs.push({support:to, target:from});
-      pairs.forEach(({support, target}) => {
-        if(!support || !target || support.id === target.id) return;
-        const key = `${support.id}:${target.id}:${edge.id}`;
-        if(supportSeen.has(key)) return;
-        supportSeen.add(key);
-        cards.push(makeReviewCard({
-          id:`${currentMapViewId()}:source:${edge.id}:${support.id}:${target.id}`,
-          type:'source',
-          prompt:`What source or evidence supports ${nodeReviewTitle(target)}?`,
-          answer:`${supportBlockMetadata(support)}\n\nConnection: ${edgeReviewCue(edge)}`,
-          preReveal:{highlight:{nodes:[target.id], edges:[]}, mask:{nodeAllContent:[support.id], edgeLabels:[edge.id]}},
-          postReveal:{highlight:{nodes:[support.id, target.id], edges:[edge.id]}}
-        }));
-      });
+      if(isSupportBlock(from) || evidenceRelation) addSupportReviewCandidate(from, to, edge);
+      if(isSupportBlock(to)) addSupportReviewCandidate(to, from, edge);
+    });
+    supportByTarget.forEach(({target, supports}) => {
+      if(!supports.length) return;
+      cards.push(makeReviewCard({
+        id:`${currentMapViewId()}:source:${target.id}`,
+        type:'source',
+        prompt:`What source or evidence supports ${nodeReviewTitle(target)}?`,
+        answer:supports.map(({support, edge}) => `${supportBlockMetadata(support)}\nConnection: ${edgeReviewCue(edge)}`).join('\n\n'),
+        preReveal:{
+          highlight:{nodes:[target.id], edges:[]},
+          mask:{nodeAllContent:supports.map(item => item.support.id), edgeLabels:supports.map(item => item.edge.id)}
+        },
+        postReveal:{
+          highlight:{nodes:[target.id, ...supports.map(item => item.support.id)], edges:supports.map(item => item.edge.id)}
+        }
+      }));
     });
     const seen = new Set();
     return cards.filter(card => {

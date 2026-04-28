@@ -17,6 +17,8 @@ Add a focused embedded review mode to the editable map so learners can practice 
 - The active card temporarily highlights relevant blocks and relationship lines.
 - Reveal keeps answers hidden until requested, including answer text that would otherwise be readable on the map canvas.
 - Before reveal, block bodies, source/evidence content, and relationship labels that would leak the answer are temporarily masked without mutating map data.
+- Neighbor recall masks connected block content and relationship labels before reveal, then restores the connected context after reveal.
+- Source/evidence recall is aggregate per supported block, masking all support candidates and labels before reveal.
 - Ratings are `Got it`, `Almost`, and `Missed`.
 - Rating attempts persist locally per map page and map view through the existing page state payload.
 
