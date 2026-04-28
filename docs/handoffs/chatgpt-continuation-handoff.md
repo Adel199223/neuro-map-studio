@@ -7,16 +7,19 @@ Project: Neuro Map Studio
 Repo: https://github.com/Adel199223/neuro-map-studio
 Local WSL path: /home/fa507/dev/neuro-map-studio-codex
 Source-of-truth branch: main
-Current main SHA: 226f716e45380174095770fb58ae0ca997f012bf
+Latest shipped feature baseline: 7b062803a309b21daeda74e11a6b0183931d0f58
+For the exact current commit, run: git rev-parse main
 
 Current state:
-- Only main exists locally/remotely after cleanup.
 - The app is a local-first learning workspace, not just a standalone Simon Dixon prototype.
 - Root dashboard, project hub, dynamic page runtime, map runtime, lesson runtime, and IndexedDB workspace store are all on main.
 - Pages open through page.html?pageId=<id>; map pages open through mindmap.html?pageId=<id>.
 - JSON workspace backup/export/import is implemented and invalid imports are rejected.
 - Guided starters exist for map, lesson, notes, review, and glossary pages.
 - Map editor has a Sources & blocks panel, placement mode for Concept/Question/Evidence/Document, project source document blocks, selection toolbar, notification bubbles, zoom controls, tablet/S Pen handling, and ?debugInput=1 diagnostics.
+- Map editing safety is live: undo/redo, multi-select blocks and relationship lines, bulk delete, copy/paste/duplicate, and shortcut guards inside editable text.
+- Connection-port quick-add is live: visible ports open Concept/Question/Evidence/Document linked-block creation, with dynamic relationship re-anchoring and collision-aware placement.
+- Navigation polish is live: selected-block group drag, arrow-key nudge, Zoom to selection, and desktop/trackpad additive box selection with Shift-drag on empty canvas.
 
 Terminology:
 - Use "Sources & blocks panel" for the visible map source/block panel.
@@ -30,6 +33,8 @@ Before editing:
 - git rev-parse HEAD
 - git rev-parse main
 - git rev-parse origin/main
+- git switch main
+- git pull --ff-only origin main
 - git switch -c <new-task-branch>
 
 Normal checks:

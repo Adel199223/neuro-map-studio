@@ -46,10 +46,19 @@ Preserve these behaviors unless the task explicitly changes them:
 - Placement mode for Concept, Question, Evidence, and Document blocks
 - Project source documents added as document blocks with preserved `documentId`
 - Document blocks remain draggable, linkable, and persistent
+- Map undo/redo for meaningful edits
+- Multi-select for blocks and relationship lines
+- Bulk delete, copy/paste, duplicate, and canvas Ctrl/Cmd+A selection
+- Connection-port quick-add for linked Concept, Question, Evidence, and Document blocks
+- Collision-aware automatic placement for port quick-add, paste, duplicate, and document blocks
+- Dynamic relationship re-anchoring as connected blocks move
+- Selected-block group drag, arrow-key nudge, and Zoom to selection
+- Desktop/trackpad box selection with Shift-drag on empty canvas
 - Map pan/zoom, lower-right zoom controls, and responsive overlay lanes
 - Selection toolbar behavior
 - Edge re-anchoring, long-press behavior, and duplicate context menu suppression
 - S Pen/finger drag behavior
+- S Pen/finger port tapping behavior
 - Lesson scrolling, glossary hints, and read-aloud controls
 - Debug mode with `?debugInput=1`
 

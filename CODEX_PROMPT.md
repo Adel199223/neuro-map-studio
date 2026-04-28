@@ -30,6 +30,7 @@ Current architecture summary:
 - Dynamic page runtime uses page.html?pageId=<id>.
 - Map pages are pageId-scoped and open through mindmap.html?pageId=<id>.
 - Map editor includes a Sources & blocks panel, placement mode, document blocks, selection toolbar, notification bubbles, zoom controls, and debug mode with ?debugInput=1.
+- Map editor also includes undo/redo, multi-select, bulk delete, copy/paste/duplicate, port quick-add, collision-aware placement, selected-block group drag, arrow-key nudge, Zoom to selection, and desktop/trackpad Shift-drag box selection.
 - Backup/export/import uses plain JSON and must reject invalid backups safely.
 
 Safety rules:
@@ -37,7 +38,7 @@ Safety rules:
 - Create a feature branch before editing.
 - Do not push, merge, delete branches, rebase, force-push, create zips, or run package:review/package:verify unless explicitly asked.
 - Do not start cloud/sync/server/PWA/native work or PDF/DOCX parsing unless explicitly requested.
-- Preserve current runtime, backup/import/export, Sources & blocks, placement mode, document block, map interaction, read-aloud, and tablet/S Pen behavior.
+- Preserve current runtime, backup/import/export, Sources & blocks, placement mode, document block, map editing safety, port quick-add, collision-aware placement, group movement, box selection, read-aloud, and tablet/S Pen behavior.
 
 Normal checks:
 - npm run doctor

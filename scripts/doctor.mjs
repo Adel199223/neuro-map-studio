@@ -150,14 +150,14 @@ expectIncludes('README.md', [
 ]);
 
 expectIncludes('docs/handoffs/current-main-handoff.md', [
-  'Current main SHA',
-  '226f716e45380174095770fb58ae0ca997f012bf',
+  'Latest shipped feature baseline',
+  '7b062803a309b21daeda74e11a6b0183931d0f58',
   'Sources & blocks panel',
   'pageId-scoped map state',
 ]);
 
 expectIncludes('docs/handoffs/chatgpt-continuation-handoff.md', [
-  'Current main SHA',
+  'Latest shipped feature baseline',
   'Source-of-truth branch: main',
   'Sources & blocks panel',
   'Normal checks',
