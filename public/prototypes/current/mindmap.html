@@ -299,6 +299,8 @@ a{color:inherit}
 .side-tabs{display:flex;flex-direction:column;gap:.4rem;pointer-events:auto;}
 .side-tab{border:1px solid var(--border);border-radius:999px;background:rgba(255,250,242,.96);box-shadow:0 10px 22px rgba(72,54,31,.11);min-width:2.8rem;min-height:2.8rem;padding:.34rem .55rem;display:flex;align-items:center;justify-content:center;gap:.35rem;cursor:pointer;font-weight:900;}
 .side-tab span{display:none;}
+.side-tab.review-tab{padding:.42rem .68rem;border-color:var(--blue-border);background:rgba(230,242,247,.98);color:#344f58;max-width:9.6rem;justify-content:flex-start;}
+.side-tab.review-tab span{display:inline;line-height:1.08;text-align:left;}
 .side-tab.active,.side-tab:hover{border-color:var(--strong);background:#fffdf8;}
 .panel-drawer{width:min(390px,calc(100vw - 8rem));max-height:calc(100dvh - 8.2rem);overflow:auto;display:grid;gap:.55rem;pointer-events:auto;}
 .panel-drawer[hidden],.learning-card[hidden],.legend-card[hidden]{display:none!important;}
@@ -312,9 +314,48 @@ a{color:inherit}
 .legend-item{display:grid;grid-template-columns:72px 1fr;gap:.45rem;align-items:center;}
 .legend-line{height:0;border-top:4px solid #888;border-radius:999px;}
 .legend-line.dashed{border-top-style:dashed}.legend-line.dotted{border-top-style:dotted}.legend-line.thin{border-top-width:2px}.legend-line.thick{border-top-width:6px}
+.review-panel{position:absolute;right:.9rem;top:.9rem;z-index:24;width:min(380px,calc(100vw - 6.2rem));max-height:calc(100dvh - 7.4rem);overflow:auto;overscroll-behavior:contain;border:1px solid var(--blue-border);border-radius:22px;background:rgba(255,250,242,.98);box-shadow:0 22px 46px rgba(72,54,31,.2);padding:.85rem;display:grid;gap:.72rem;pointer-events:auto;}
+.review-panel[hidden]{display:none!important;}
+.review-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.7rem;}
+.review-title{display:grid;gap:.16rem;min-width:0;}
+.review-title h2{margin:0;font-size:1.08rem;line-height:1.12;}
+.review-progress{margin:0;color:var(--muted);font-size:.84rem;font-weight:900;line-height:1.25;}
+.review-close{border:1px solid var(--border);border-radius:999px;background:#fffaf4;min-width:2.15rem;min-height:2.15rem;padding:.1rem .56rem;font:inherit;font-weight:900;cursor:pointer;flex:0 0 auto;}
+.review-card,.review-empty,.review-summary{border:1px solid rgba(217,199,170,.82);border-radius:18px;background:rgba(255,255,255,.62);padding:.78rem;display:grid;gap:.62rem;}
+.review-card-type{justify-self:start;margin:0;border:1px solid var(--blue-border);border-radius:999px;background:var(--blue);padding:.14rem .5rem;color:#365862;font-size:.75rem;font-weight:900;line-height:1.18;}
+.review-prompt{margin:0;font-size:1.02rem;line-height:1.25;}
+.review-answer{margin:0;border-left:5px solid var(--green-border);border-radius:12px;background:rgba(238,246,229,.72);padding:.6rem .68rem;color:#3f4c36;font-size:.9rem;line-height:1.38;white-space:pre-line;}
+.review-leak-hint{margin:0;border:1px solid var(--amber-border);border-radius:12px;background:rgba(255,244,213,.72);padding:.42rem .52rem;color:#5b4b1f;font-size:.82rem;font-weight:900;line-height:1.24;}
+.review-answer[hidden],.review-ratings[hidden],.review-card[hidden],.review-empty[hidden],.review-summary[hidden],.review-leak-hint[hidden]{display:none!important;}
+.review-actions,.review-ratings,.review-summary-actions{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;}
+.review-actions button,.review-ratings button,.review-summary-actions button{border:1px solid var(--border);border-radius:999px;background:#fffaf4;min-height:2.45rem;padding:.4rem .72rem;font:inherit;font-weight:900;cursor:pointer;}
+.review-actions button.primary,.review-ratings button.primary,.review-summary-actions button.primary{border-color:var(--green-border);background:var(--green);}
+.review-ratings button[data-rating="almost"]{border-color:var(--amber-border);background:var(--amber);}
+.review-ratings button[data-rating="missed"]{border-color:var(--rose-border);background:var(--rose);}
+.review-mini{margin:0;color:var(--muted);font-size:.84rem;line-height:1.32;}
+.review-summary-list{display:grid;gap:.35rem;margin:0;padding:0;list-style:none;font-size:.88rem;}
+.review-summary-list li{display:flex;justify-content:space-between;gap:.7rem;border-bottom:1px solid rgba(217,199,170,.62);padding-bottom:.25rem;}
+.map-node.review-highlight{outline:4px solid rgba(47,127,122,.58)!important;box-shadow:0 0 0 7px rgba(230,242,247,.82),0 18px 38px rgba(47,79,88,.2)!important;opacity:1!important;filter:none!important;}
+.edge.review-highlight{opacity:1!important;filter:drop-shadow(0 0 5px rgba(47,127,122,.45));stroke-width:5px;}
+.edge-label.review-highlight{outline:3px solid rgba(47,127,122,.3);background:#eef8f2;opacity:1!important;filter:none!important;}
+.map-node.review-answer-hidden .node-body,
+.map-node.review-answer-hidden .node-tag,
+.map-node.review-answer-hidden .document-detail-button,
+.map-node.review-source-hidden .node-title,
+.map-node.review-source-hidden .node-body,
+.map-node.review-source-hidden .node-tag,
+.map-node.review-source-hidden .document-detail-button,
+.edge-label.review-label-hidden{color:transparent!important;text-shadow:0 0 10px rgba(70,61,47,.34)!important;caret-color:transparent!important;user-select:none!important;}
+.map-node.review-answer-hidden .node-tag,
+.map-node.review-source-hidden .node-tag,
+.map-node.review-answer-hidden .document-detail-button,
+.map-node.review-source-hidden .document-detail-button{border-color:rgba(217,199,170,.42)!important;background:rgba(255,250,242,.72)!important;}
+.map-node.review-source-hidden .node-title,
+.map-node.review-source-hidden .node-body,
+.map-node.review-answer-hidden .node-body{background:linear-gradient(90deg,rgba(217,199,170,.22),rgba(255,250,242,.12));border-radius:8px;}
 .connect-banner{position:absolute;left:50%;transform:translateX(-50%);bottom:1rem;z-index:20;display:none;align-items:center;gap:.65rem;border:1px solid var(--blue-border);border-radius:999px;background:rgba(230,242,247,.96);padding:.44rem .7rem .44rem .9rem;box-shadow:var(--shadow);}
 .connect-banner.show{display:flex}.connect-banner button{border:1px solid var(--blue-border);border-radius:999px;background:#fff;padding:.25rem .6rem;cursor:pointer;}
-.selection-shelf{position:absolute;left:50%;top:1rem;transform:translateX(-50%);z-index:16;border:1px solid var(--border);border-radius:22px;background:rgba(255,250,242,.96);box-shadow:0 10px 24px rgba(72,54,31,.11);padding:.38rem .46rem;display:none;align-items:center;gap:.42rem;max-width:min(920px,calc(100vw - 165px));white-space:normal;pointer-events:auto;}
+.selection-shelf{position:absolute;left:50%;top:1rem;transform:translateX(-50%);z-index:16;border:1px solid var(--border);border-radius:22px;background:rgba(255,250,242,.96);box-shadow:0 10px 24px rgba(72,54,31,.11);padding:.38rem .46rem;display:none;align-items:center;gap:.42rem;max-width:min(920px,calc(100vw - 165px));white-space:normal;pointer-events:none;}
 .selection-shelf.show{display:flex}
 .selection-shelf[hidden]{display:none!important}
 .selection-shelf.anchored{transform:none;bottom:auto}
@@ -327,6 +368,7 @@ a{color:inherit}
 .selection-meta span{font-size:.8rem;font-weight:900;color:var(--muted)}
 .selection-meta strong{overflow:hidden;text-overflow:ellipsis;max-width:min(280px,34vw);}
 .selection-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.34rem;max-width:100%}
+.selection-shelf button,.selection-shelf select{pointer-events:auto}
 .selection-shelf button{border:1px solid var(--border);background:#fffaf4;cursor:pointer}
 .selection-toggle,.selection-action{width:2.8rem;height:2.8rem;min-height:2.8rem;border-radius:16px;display:inline-grid;place-items:center;padding:0;font-weight:900;line-height:1}
 .selection-toggle{flex:0 0 auto}
@@ -405,10 +447,10 @@ a{color:inherit}
 .placement-ghost[hidden]{display:none!important;}
 .stage.placement-mode{cursor:crosshair;}
 @media(max-width:1120px){.topbar{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"title status" "nav pagebar";align-items:start;gap:.4rem .55rem;padding:.5rem .65rem}.nav-links{align-self:center;flex-wrap:wrap}.pagebar{align-self:center;justify-self:end;flex-wrap:wrap}.pagebar select{width:min(230px,38vw)}.title-wrap h1{max-width:min(100%,64vw)}.project-kicker{max-width:min(100%,64vw)}.status-pill{font-size:.8rem}.back-link,.pagebar button{min-height:2rem;padding:.28rem .62rem}}
-@media(max-width:720px){.topbar{grid-template-columns:minmax(0,1fr);grid-template-areas:"title" "nav" "pagebar" "status";gap:.32rem;padding:.45rem .55rem}.title-wrap h1{max-width:100%}.project-kicker{max-width:100%}.nav-links,.pagebar{justify-content:flex-start}.pagebar{display:grid;grid-template-columns:auto minmax(0,1fr) repeat(4,auto);width:100%;gap:.28rem}.pagebar select{width:100%;max-width:100%;min-width:0}.side-panel{right:.45rem;top:.45rem}.side-tab{min-width:2.25rem;min-height:2.25rem;padding:.2rem}.panel-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem)}.map-workbench{right:.45rem;top:.45rem;max-width:calc(100vw - 5.4rem)}.workbench-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem);padding:.68rem}.workbench-actions{grid-template-columns:1fr}.toolbar{left:.45rem;top:.45rem}.toolbar button,.file-label{width:2.2rem;height:2.2rem;min-height:2.2rem}.zoom-dock{right:calc(max(.5rem, env(safe-area-inset-right)) + var(--zoom-dock-right-offset, 0px));bottom:calc(max(.5rem, env(safe-area-inset-bottom)) + var(--zoom-dock-lift, 0px))}.zoom-dock button{width:2.85rem;height:2.85rem;min-height:2.85rem}.zoom-dock button.zoom-readout{width:3.85rem}.map-node{width:235px;min-height:120px}.map-node .node-content{padding:.78rem .75rem 1.2rem}.node-title{font-size:.96rem}.node-body{font-size:.84rem}.selection-shelf{top:auto;bottom:.85rem;max-width:calc(100vw - 1rem)}.selection-shelf.docked{top:auto;bottom:.85rem}.selection-meta strong{max-width:36vw}.selection-toggle,.selection-action{width:2.75rem;height:2.75rem;min-height:2.75rem}.connect-banner{bottom:4.2rem;max-width:calc(100vw - 1rem);border-radius:16px}.input-debug{left:.5rem;bottom:.5rem;width:calc(100vw - 1rem);max-width:calc(100vw - 1rem)}}
-@media(max-width:520px){.project-kicker{display:none}.pagebar{grid-template-columns:1fr repeat(4,auto)}.pagebar label{grid-column:1/-1}.back-link{max-width:100%}.pagebar button{padding:.24rem .52rem}.map-workbench{left:.5rem;right:.5rem;top:auto;bottom:5rem;max-width:none;justify-items:stretch}.map-workbench.open{bottom:.75rem}.workbench-toggle{justify-self:start;max-width:calc(100vw - 7rem)}.map-workbench.open .workbench-toggle{display:none}.workbench-drawer{width:100%;max-height:min(18dvh,170px)}.toast{left:.6rem;right:auto;bottom:calc(5.1rem + var(--toast-bottom-offset, 0px));max-width:calc(100vw - 1.2rem);text-align:center}.placement-overlay{left:.6rem;right:5.8rem;bottom:calc(4.75rem + var(--placement-bottom-offset, 0px));max-width:calc(100vw - 6.4rem);border-radius:18px}.placement-overlay span{white-space:normal;line-height:1.2}}
+@media(max-width:720px){.topbar{grid-template-columns:minmax(0,1fr);grid-template-areas:"title" "nav" "pagebar" "status";gap:.32rem;padding:.45rem .55rem}.title-wrap h1{max-width:100%}.project-kicker{max-width:100%}.nav-links,.pagebar{justify-content:flex-start}.pagebar{display:grid;grid-template-columns:auto minmax(0,1fr) repeat(4,auto);width:100%;gap:.28rem}.pagebar select{width:100%;max-width:100%;min-width:0}.side-panel{right:.45rem;top:4.25rem}.side-tab{min-width:2.25rem;min-height:2.25rem;padding:.2rem}.side-tab.review-tab{padding:.32rem .5rem;max-width:8.8rem}.panel-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem)}.review-panel{right:.45rem;top:.45rem;width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem);padding:.72rem}.map-workbench{right:.45rem;top:.45rem;max-width:calc(100vw - 5.4rem)}.workbench-drawer{width:calc(100vw - 5.6rem);max-height:calc(100dvh - 7rem);padding:.68rem}.workbench-actions{grid-template-columns:1fr}.toolbar{left:.45rem;top:.45rem}.toolbar button,.file-label{width:2.2rem;height:2.2rem;min-height:2.2rem}.zoom-dock{right:calc(max(.5rem, env(safe-area-inset-right)) + var(--zoom-dock-right-offset, 0px));bottom:calc(max(.5rem, env(safe-area-inset-bottom)) + var(--zoom-dock-lift, 0px))}.zoom-dock button{width:2.85rem;height:2.85rem;min-height:2.85rem}.zoom-dock button.zoom-readout{width:3.85rem}.map-node{width:235px;min-height:120px}.map-node .node-content{padding:.78rem .75rem 1.2rem}.node-title{font-size:.96rem}.node-body{font-size:.84rem}.selection-shelf{top:auto;bottom:.85rem;max-width:calc(100vw - 1rem)}.selection-shelf.docked{top:auto;bottom:.85rem}.selection-meta strong{max-width:36vw}.selection-toggle,.selection-action{width:2.75rem;height:2.75rem;min-height:2.75rem}.connect-banner{bottom:4.2rem;max-width:calc(100vw - 1rem);border-radius:16px}.input-debug{left:.5rem;bottom:.5rem;width:calc(100vw - 1rem);max-width:calc(100vw - 1rem)}}
+@media(max-width:520px){.project-kicker{display:none}.pagebar{grid-template-columns:1fr repeat(4,auto)}.pagebar label{grid-column:1/-1}.back-link{max-width:100%}.pagebar button{padding:.24rem .52rem}.map-workbench{left:.5rem;right:.5rem;top:auto;bottom:5rem;max-width:none;justify-items:stretch}.map-workbench.open{bottom:.75rem}.workbench-toggle{justify-self:start;max-width:calc(100vw - 7rem)}.map-workbench.open .workbench-toggle{display:none}.workbench-drawer{width:100%;max-height:min(18dvh,170px)}.review-panel{left:.5rem;right:.5rem;top:auto;bottom:.75rem;width:auto;max-height:min(58dvh,430px)}.toast{left:.6rem;right:auto;bottom:calc(5.1rem + var(--toast-bottom-offset, 0px));max-width:calc(100vw - 1.2rem);text-align:center}.placement-overlay{left:.6rem;right:5.8rem;bottom:calc(4.75rem + var(--placement-bottom-offset, 0px));max-width:calc(100vw - 6.4rem);border-radius:18px}.placement-overlay span{white-space:normal;line-height:1.2}}
 @media (pointer:coarse){.menu button{min-height:2.75rem;padding:.46rem .62rem}.menu-row button{min-width:2.75rem;height:2.75rem;min-height:2.75rem}.selection-toggle,.selection-action{width:2.95rem;height:2.95rem;min-height:2.95rem}.input-debug button{min-height:2.75rem}.drag-handle{width:3rem;height:3rem;min-height:3rem}.drag-handle-icon{width:2.1rem;height:2.1rem;min-height:2.1rem}.map-node.shape-oval .drag-handle{width:2.65rem;height:2.65rem;min-height:2.65rem}.map-node.shape-oval .drag-handle-icon{width:1.85rem;height:1.85rem;min-height:1.85rem}.zoom-dock button{width:3rem;height:3rem;min-height:3rem}.zoom-dock button.zoom-readout{width:4rem}}
-@media print{.topbar,.pagebar,.toolbar,.zoom-dock,.side-panel,.menu,.toast,.placement-overlay,.placement-ghost,.connect-banner,.selection-shelf,.selection-marquee,.input-debug,.document-picker,.document-detail-card,.map-workbench{display:none!important}body{overflow:visible;background:white}.stage{overflow:visible}.map-node{break-inside:avoid}}
+@media print{.topbar,.pagebar,.toolbar,.zoom-dock,.side-panel,.review-panel,.menu,.toast,.placement-overlay,.placement-ghost,.connect-banner,.selection-shelf,.selection-marquee,.input-debug,.document-picker,.document-detail-card,.map-workbench{display:none!important}body{overflow:visible;background:white}.stage{overflow:visible}.map-node{break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -482,6 +524,7 @@ a{color:inherit}
 
     <aside class="side-panel" id="sidePanel" aria-label="Collapsed learning help panels">
       <div class="side-tabs" aria-label="Open learning help">
+        <button class="side-tab review-tab" id="btnReviewMap" type="button" title="Review this map" aria-label="Review this map">↺<span>Review this map</span></button>
         <button class="side-tab" id="btnRememberPanel" type="button" title="Open retrieval prompt" aria-label="Open retrieval prompt">↺<span>Remember</span></button>
         <button class="side-tab" id="btnVisualPanel" type="button" title="Open visual code legend" aria-label="Open visual code legend">?</button>
       </div>
@@ -540,6 +583,47 @@ a{color:inherit}
           </details>
         </section>
       </div>
+    </aside>
+
+    <aside class="review-panel" id="reviewPanel" aria-label="Map review" hidden>
+      <div class="review-head">
+        <div class="review-title">
+          <h2>Review this map</h2>
+          <p class="review-progress" id="reviewProgress">Ready</p>
+        </div>
+        <button class="review-close" id="reviewExit" type="button" title="Exit review" aria-label="Exit review">×</button>
+      </div>
+      <p class="review-mini" id="reviewHistory">No review attempts yet.</p>
+      <article class="review-empty" id="reviewEmpty" hidden>
+        <p>Add a few blocks with explanations or relationship labels to review this map.</p>
+      </article>
+      <article class="review-card" id="reviewCard" hidden>
+        <p class="review-card-type" id="reviewCardType">Block recall</p>
+        <h3 class="review-prompt" id="reviewPrompt">Explain this block.</h3>
+        <p class="review-leak-hint" id="reviewLeakHint" hidden>Answer hidden until reveal.</p>
+        <p class="review-answer" id="reviewAnswer" hidden></p>
+        <div class="review-actions">
+          <button class="primary" id="reviewReveal" type="button">Reveal</button>
+        </div>
+        <div class="review-ratings" id="reviewRatings" hidden aria-label="Rate this review card">
+          <button class="primary" type="button" data-rating="got-it">Got it</button>
+          <button type="button" data-rating="almost">Almost</button>
+          <button type="button" data-rating="missed">Missed</button>
+        </div>
+      </article>
+      <article class="review-summary" id="reviewSummary" hidden>
+        <h3 class="review-prompt">Session summary</h3>
+        <ul class="review-summary-list">
+          <li><span>Reviewed</span><strong id="reviewSummaryReviewed">0</strong></li>
+          <li><span>Got it</span><strong id="reviewSummaryGotIt">0</strong></li>
+          <li><span>Almost</span><strong id="reviewSummaryAlmost">0</strong></li>
+          <li><span>Missed</span><strong id="reviewSummaryMissed">0</strong></li>
+        </ul>
+        <div class="review-summary-actions">
+          <button class="primary" id="reviewRestart" type="button">Restart review</button>
+          <button id="reviewExitSummary" type="button">Exit review</button>
+        </div>
+      </article>
     </aside>
 
     <div class="selection-shelf" id="selectionShelf" aria-label="Selected item actions" hidden>
@@ -719,6 +803,26 @@ import {
   const legendCard = document.getElementById('legendCard');
   const panelDrawer = document.getElementById('panelDrawer');
   const promptCard = document.getElementById('promptCard');
+  const btnReviewMap = document.getElementById('btnReviewMap');
+  const reviewPanel = document.getElementById('reviewPanel');
+  const reviewProgress = document.getElementById('reviewProgress');
+  const reviewHistory = document.getElementById('reviewHistory');
+  const reviewEmpty = document.getElementById('reviewEmpty');
+  const reviewCard = document.getElementById('reviewCard');
+  const reviewCardType = document.getElementById('reviewCardType');
+  const reviewPrompt = document.getElementById('reviewPrompt');
+  const reviewLeakHint = document.getElementById('reviewLeakHint');
+  const reviewAnswer = document.getElementById('reviewAnswer');
+  const reviewReveal = document.getElementById('reviewReveal');
+  const reviewRatings = document.getElementById('reviewRatings');
+  const reviewSummary = document.getElementById('reviewSummary');
+  const reviewSummaryReviewed = document.getElementById('reviewSummaryReviewed');
+  const reviewSummaryGotIt = document.getElementById('reviewSummaryGotIt');
+  const reviewSummaryAlmost = document.getElementById('reviewSummaryAlmost');
+  const reviewSummaryMissed = document.getElementById('reviewSummaryMissed');
+  const reviewRestart = document.getElementById('reviewRestart');
+  const reviewExit = document.getElementById('reviewExit');
+  const reviewExitSummary = document.getElementById('reviewExitSummary');
   const btnRememberPanel = document.getElementById('btnRememberPanel');
   const btnVisualPanel = document.getElementById('btnVisualPanel');
   const btnClosePanel = document.getElementById('btnClosePanel');
@@ -879,8 +983,29 @@ import {
   let mapClipboard = null;
   let textEditState = null;
   const mapHistory = {undo:[], redo:[]};
+  let reviewStore = {version:1, attempts:[], sessions:[]};
+  const reviewMode = {
+    active:false,
+    cards:[],
+    index:0,
+    revealed:false,
+    session:null,
+    highlightNodeIds:new Set(),
+    highlightEdgeIds:new Set(),
+    maskNodeBodyIds:new Set(),
+    maskNodeAllContentIds:new Set(),
+    maskEdgeLabelIds:new Set()
+  };
 
   const DEBUG_INPUT_KEY = 'neuro-map-studio:debug-input';
+  const REVIEW_STATE_VERSION = 1;
+  const REVIEW_RATING_LABELS = {'got-it':'Got it', almost:'Almost', missed:'Missed'};
+  const REVIEW_CARD_TYPE_LABELS = {
+    block:'Block recall',
+    relationship:'Relationship line recall',
+    neighbor:'Connected blocks recall',
+    source:'Source or evidence recall'
+  };
   const MAP_HISTORY_LIMIT = 100;
   const LONG_PRESS_DELAY = 450;
   const LONG_PRESS_MOVE = 10;
@@ -1214,17 +1339,12 @@ import {
   }
   async function persistWorkspaceState(msg='Saved'){
     try{
-      syncCurrentPage();
-      workspace.version = 19;
+      const statePayload = mapPageStatePayload();
       if(runtimePageId === SEED_MAP_PAGE_ID){
         localStorage.setItem(workspaceKey, JSON.stringify(workspace));
       }
       if(runtimePageInitialized && runtimePageId){
-        await savePageState(runtimePageId, 'map', {
-          kind:'map-workspace',
-          workspace,
-          starterHidden
-        });
+        await savePageState(runtimePageId, 'map', statePayload);
       }
       setStatus(msg);
       renderPageControls();
@@ -1251,6 +1371,489 @@ import {
     }, 1600);
   }
   function documentById(documentId){ return projectDocuments.find(document => document.id === documentId) || null; }
+  function reviewId(prefix){ return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`; }
+  function normalizeReviewStore(value={}){
+    const attempts = Array.isArray(value?.attempts) ? value.attempts.flatMap(attempt => {
+      if(!attempt || typeof attempt !== 'object') return [];
+      const rating = REVIEW_RATING_LABELS[attempt.rating] ? attempt.rating : '';
+      if(!rating) return [];
+      return [{
+        id:String(attempt.id || reviewId('review-attempt')),
+        cardId:String(attempt.cardId || ''),
+        pageId:String(attempt.pageId || runtimePageId || ''),
+        mapViewId:String(attempt.mapViewId || ''),
+        cardType:String(attempt.cardType || 'block'),
+        rating,
+        reviewedAt:String(attempt.reviewedAt || new Date().toISOString()),
+        attemptCount:Math.max(1, Number(attempt.attemptCount) || 1)
+      }];
+    }) : [];
+    const sessions = Array.isArray(value?.sessions) ? value.sessions.flatMap(session => {
+      if(!session || typeof session !== 'object') return [];
+      return [{
+        id:String(session.id || reviewId('review-session')),
+        pageId:String(session.pageId || runtimePageId || ''),
+        mapViewId:String(session.mapViewId || ''),
+        startedAt:String(session.startedAt || new Date().toISOString()),
+        completedAt:String(session.completedAt || ''),
+        reviewedCount:Math.max(0, Number(session.reviewedCount) || 0),
+        gotIt:Math.max(0, Number(session.gotIt) || 0),
+        almost:Math.max(0, Number(session.almost) || 0),
+        missed:Math.max(0, Number(session.missed) || 0),
+        cardIds:Array.isArray(session.cardIds) ? session.cardIds.map(String).filter(Boolean) : []
+      }];
+    }) : [];
+    return {version:REVIEW_STATE_VERSION, attempts, sessions};
+  }
+  function mapPageStatePayload(){
+    syncCurrentPage();
+    workspace.version = 19;
+    return {
+      kind:'map-workspace',
+      workspace,
+      starterHidden,
+      review:normalizeReviewStore(reviewStore)
+    };
+  }
+  function currentMapViewId(){ return String(workspace.activePageId || activePage().id || 'page-main'); }
+  function currentReviewAttempts(){
+    const mapViewId = currentMapViewId();
+    return reviewStore.attempts.filter(attempt => attempt.pageId === runtimePageId && attempt.mapViewId === mapViewId);
+  }
+  function currentReviewSessions(){
+    const mapViewId = currentMapViewId();
+    return reviewStore.sessions.filter(session => session.pageId === runtimePageId && session.mapViewId === mapViewId);
+  }
+  function reviewHistoryText(){
+    const attempts = currentReviewAttempts();
+    if(!attempts.length) return 'No review attempts yet.';
+    const gotIt = attempts.filter(attempt => attempt.rating === 'got-it').length;
+    const almost = attempts.filter(attempt => attempt.rating === 'almost').length;
+    const missed = attempts.filter(attempt => attempt.rating === 'missed').length;
+    const last = attempts[attempts.length - 1];
+    const lastLabel = REVIEW_RATING_LABELS[last.rating] || last.rating;
+    const sessions = currentReviewSessions();
+    const lastSession = sessions[sessions.length - 1];
+    if(lastSession?.completedAt){
+      return `Previous review: ${lastSession.reviewedCount} reviewed. Got it ${lastSession.gotIt}, Almost ${lastSession.almost}, Missed ${lastSession.missed}.`;
+    }
+    return `Previous attempts: ${attempts.length}. Got it ${gotIt}, Almost ${almost}, Missed ${missed}. Last: ${lastLabel}.`;
+  }
+  async function saveReviewState(){
+    if(!runtimePageInitialized || !runtimePageId) return null;
+    try{
+      const state = await savePageState(runtimePageId, 'map', mapPageStatePayload());
+      setStatus('Review saved locally');
+      return state;
+    }catch(error){
+      setStatus('Could not save review');
+      return null;
+    }
+  }
+  function nodeReviewTitle(node){
+    if(!node) return 'this block';
+    const documentRecord = node.nodeType === 'document' ? documentById(node.documentId) : null;
+    return clean(documentRecord?.title || node.title || 'Untitled block') || 'this block';
+  }
+  function nodeReviewBody(node){
+    if(!node) return '';
+    const documentRecord = node.nodeType === 'document' ? documentById(node.documentId) : null;
+    return clean(node.body || documentRecord?.description || '');
+  }
+  function edgeReviewCue(edge){
+    const style = relationStyles[edge?.relation] || relationStyles.causes;
+    const label = clean(edge?.label || '');
+    if(label && label !== style.label) return `${label} (${style.label})`;
+    return style.label;
+  }
+  function edgeReviewAnswer(edge){
+    const style = relationStyles[edge?.relation] || relationStyles.causes;
+    const lines = [];
+    if(clean(edge?.label)) lines.push(`Label: ${clean(edge.label)}`);
+    lines.push(`Relationship type: ${style.label}`);
+    if(style.note) lines.push(`Meaning cue: ${style.note}`);
+    if(edge?.strength) lines.push(`Importance: ${edge.strength} of 5`);
+    return lines.join('\n');
+  }
+  function connectionsForNode(nodeId){
+    return data.edges.flatMap(edge => {
+      if(edge.from !== nodeId && edge.to !== nodeId) return [];
+      const otherId = edge.from === nodeId ? edge.to : edge.from;
+      const other = byId(otherId);
+      if(!other) return [];
+      return [{edge, other}];
+    });
+  }
+  function isSupportBlock(node){
+    if(!node) return false;
+    const type = clean(node.nodeType || '').toLowerCase();
+    const tag = clean(node.tag || '').toLowerCase();
+    return type === 'document' || type === 'evidence' || tag === 'document' || tag === 'source' || tag === 'evidence';
+  }
+  function supportBlockMetadata(node){
+    if(!node) return '';
+    const documentRecord = node.nodeType === 'document' ? documentById(node.documentId) : null;
+    const parts = [];
+    parts.push(nodeReviewTitle(node));
+    if(documentRecord?.sourceLabel || documentRecord?.type){
+      parts.push(`${documentRecord.sourceLabel || documentRecord.type}`);
+    }
+    const description = clean(documentRecord?.description || node.body || '');
+    if(description) parts.push(description);
+    return parts.join('\n');
+  }
+  function conciseConnectionAnswer(connections, limit=5){
+    const listed = connections.slice(0, limit).map(({edge, other}) => `${nodeReviewTitle(other)} — ${edgeReviewCue(edge)}`);
+    if(connections.length > limit) listed.push(`Plus ${connections.length - limit} more connection${connections.length - limit === 1 ? '' : 's'}.`);
+    return listed.join('\n');
+  }
+  function reviewVisualState(state={}){
+    const highlight = state.highlight || {};
+    const mask = state.mask || {};
+    return {
+      highlight:{
+        nodes:Array.from(new Set(highlight.nodes || [])).filter(nodeId => !!byId(nodeId)),
+        edges:Array.from(new Set(highlight.edges || [])).filter(edgeId => !!edgeById(edgeId))
+      },
+      mask:{
+        nodeBodies:Array.from(new Set(mask.nodeBodies || [])).filter(nodeId => !!byId(nodeId)),
+        nodeAllContent:Array.from(new Set(mask.nodeAllContent || [])).filter(nodeId => !!byId(nodeId)),
+        edgeLabels:Array.from(new Set(mask.edgeLabels || [])).filter(edgeId => !!edgeById(edgeId))
+      }
+    };
+  }
+  function looksLikeQuestionText(value){
+    return /[?？]\s*$/.test(clean(value));
+  }
+  function questionReviewPayload(title, body){
+    const cleanTitle = clean(title);
+    const cleanBody = clean(body);
+    if(!cleanTitle || !cleanBody) return null;
+    if(looksLikeQuestionText(cleanTitle)){
+      if(cleanBody.toLowerCase() !== cleanTitle.toLowerCase() && !looksLikeQuestionText(cleanBody)){
+        return {prompt:cleanTitle, answer:cleanBody, maskBody:true};
+      }
+      return null;
+    }
+    if(looksLikeQuestionText(cleanBody)) return null;
+    return {prompt:`Answer from memory: ${cleanTitle}`, answer:cleanBody, maskBody:true};
+  }
+  function makeReviewCard(card){
+    const preReveal = reviewVisualState(card.preReveal || {highlight:card.highlight, mask:card.mask});
+    const postReveal = reviewVisualState(card.postReveal || {highlight:card.highlight});
+    return {
+      id:card.id,
+      type:card.type,
+      prompt:card.prompt,
+      answer:card.answer,
+      preReveal,
+      postReveal,
+      highlight:postReveal.highlight
+    };
+  }
+  function generateReviewCards(){
+    const cards = [];
+    data.nodes.forEach(node => {
+      const title = nodeReviewTitle(node);
+      const body = nodeReviewBody(node);
+      if(!clean(title) || !body) return;
+      const connections = connectionsForNode(node.id);
+      const nodeType = clean(node.nodeType || 'concept').toLowerCase();
+      let prompt = `Explain: ${title}`;
+      let answer = body;
+      let maskBody = true;
+      if(nodeType === 'question'){
+        const questionPayload = questionReviewPayload(title, body);
+        if(!questionPayload) return;
+        prompt = questionPayload.prompt;
+        answer = questionPayload.answer;
+        maskBody = questionPayload.maskBody;
+      }
+      if((nodeType === 'document' || nodeType === 'evidence') && connections.length){
+        prompt = `What does this source or evidence support: ${title}?`;
+        answer = `${body}\n\nConnected to:\n${conciseConnectionAnswer(connections, 4)}`;
+        maskBody = true;
+      }
+      cards.push(makeReviewCard({
+        id:`${currentMapViewId()}:block:${node.id}`,
+        type:'block',
+        prompt,
+        answer,
+        preReveal:{highlight:{nodes:[node.id], edges:[]}, mask:{nodeBodies:maskBody ? [node.id] : []}},
+        postReveal:{highlight:{nodes:[node.id], edges:[]}}
+      }));
+    });
+    data.edges.forEach(edge => {
+      const from = byId(edge.from);
+      const to = byId(edge.to);
+      if(!from || !to) return;
+      cards.push(makeReviewCard({
+        id:`${currentMapViewId()}:relationship:${edge.id}`,
+        type:'relationship',
+        prompt:`What connects ${nodeReviewTitle(from)} to ${nodeReviewTitle(to)}?`,
+        answer:edgeReviewAnswer(edge),
+        preReveal:{highlight:{nodes:[from.id, to.id], edges:[edge.id]}, mask:{edgeLabels:[edge.id]}},
+        postReveal:{highlight:{nodes:[from.id, to.id], edges:[edge.id]}}
+      }));
+    });
+    data.nodes.forEach(node => {
+      const connections = connectionsForNode(node.id);
+      if(connections.length < 2) return;
+      cards.push(makeReviewCard({
+        id:`${currentMapViewId()}:neighbor:${node.id}`,
+        type:'neighbor',
+        prompt:`What is connected to ${nodeReviewTitle(node)}, and why?`,
+        answer:conciseConnectionAnswer(connections, 6),
+        preReveal:{highlight:{nodes:[node.id], edges:[]}},
+        postReveal:{highlight:{nodes:[node.id, ...connections.map(item => item.other.id)], edges:connections.map(item => item.edge.id)}}
+      }));
+    });
+    const supportSeen = new Set();
+    data.edges.forEach(edge => {
+      const from = byId(edge.from);
+      const to = byId(edge.to);
+      if(!from || !to) return;
+      const evidenceRelation = edge.relation === 'evidence';
+      const pairs = [];
+      if(isSupportBlock(from) || evidenceRelation) pairs.push({support:from, target:to});
+      if(isSupportBlock(to)) pairs.push({support:to, target:from});
+      pairs.forEach(({support, target}) => {
+        if(!support || !target || support.id === target.id) return;
+        const key = `${support.id}:${target.id}:${edge.id}`;
+        if(supportSeen.has(key)) return;
+        supportSeen.add(key);
+        cards.push(makeReviewCard({
+          id:`${currentMapViewId()}:source:${edge.id}:${support.id}:${target.id}`,
+          type:'source',
+          prompt:`What source or evidence supports ${nodeReviewTitle(target)}?`,
+          answer:`${supportBlockMetadata(support)}\n\nConnection: ${edgeReviewCue(edge)}`,
+          preReveal:{highlight:{nodes:[target.id], edges:[]}, mask:{nodeAllContent:[support.id], edgeLabels:[edge.id]}},
+          postReveal:{highlight:{nodes:[support.id, target.id], edges:[edge.id]}}
+        }));
+      });
+    });
+    const seen = new Set();
+    return cards.filter(card => {
+      if(!card.prompt || !card.answer || seen.has(card.id)) return false;
+      seen.add(card.id);
+      return true;
+    });
+  }
+  function clearReviewHighlights(){
+    reviewMode.highlightNodeIds.clear();
+    reviewMode.highlightEdgeIds.clear();
+    reviewMode.maskNodeBodyIds.clear();
+    reviewMode.maskNodeAllContentIds.clear();
+    reviewMode.maskEdgeLabelIds.clear();
+    applyReviewHighlights();
+  }
+  function setReviewVisualState(card){
+    const state = reviewMode.revealed ? card?.postReveal : card?.preReveal;
+    reviewMode.highlightNodeIds = new Set(state?.highlight?.nodes || []);
+    reviewMode.highlightEdgeIds = new Set(state?.highlight?.edges || []);
+    reviewMode.maskNodeBodyIds = new Set(state?.mask?.nodeBodies || []);
+    reviewMode.maskNodeAllContentIds = new Set(state?.mask?.nodeAllContent || []);
+    reviewMode.maskEdgeLabelIds = new Set(state?.mask?.edgeLabels || []);
+    applyReviewHighlights();
+  }
+  function applyReviewHighlights(){
+    nodeLayer.querySelectorAll('.map-node.review-highlight,.map-node.review-answer-hidden,.map-node.review-source-hidden').forEach(el => {
+      el.classList.remove('review-highlight', 'review-answer-hidden', 'review-source-hidden');
+    });
+    edgeLayer.querySelectorAll('.edge.review-highlight').forEach(el => el.classList.remove('review-highlight'));
+    edgeLabelLayer.querySelectorAll('.edge-label.review-highlight,.edge-label.review-label-hidden').forEach(el => {
+      el.classList.remove('review-highlight', 'review-label-hidden');
+    });
+    if(!reviewMode.active) return;
+    reviewMode.maskNodeBodyIds.forEach(nodeId => {
+      const el = nodeLayer.querySelector(`.map-node[data-id="${CSS.escape(nodeId)}"]`);
+      if(el) el.classList.add('review-answer-hidden');
+    });
+    reviewMode.maskNodeAllContentIds.forEach(nodeId => {
+      const el = nodeLayer.querySelector(`.map-node[data-id="${CSS.escape(nodeId)}"]`);
+      if(el) el.classList.add('review-source-hidden');
+    });
+    reviewMode.maskEdgeLabelIds.forEach(edgeId => {
+      const label = edgeLabelLayer.querySelector(`.edge-label[data-edge-id="${CSS.escape(edgeId)}"]`);
+      if(label) label.classList.add('review-label-hidden');
+    });
+    reviewMode.highlightNodeIds.forEach(nodeId => {
+      const el = nodeLayer.querySelector(`.map-node[data-id="${CSS.escape(nodeId)}"]`);
+      if(el){
+        el.classList.add('review-highlight');
+        el.classList.remove('dimmed');
+      }
+    });
+    reviewMode.highlightEdgeIds.forEach(edgeId => {
+      edgeLayer.querySelectorAll(`g.edge-group[data-edge-id="${CSS.escape(edgeId)}"] .edge`).forEach(el => {
+        el.classList.add('review-highlight');
+        el.classList.remove('dimmed');
+      });
+      const label = edgeLabelLayer.querySelector(`.edge-label[data-edge-id="${CSS.escape(edgeId)}"]`);
+      if(label){
+        label.classList.add('review-highlight');
+        label.classList.remove('dimmed');
+      }
+    });
+  }
+  function currentReviewCard(){
+    if(!reviewMode.active || !reviewMode.cards.length) return null;
+    return reviewMode.cards[reviewMode.index] || null;
+  }
+  function renderReviewPanel(){
+    if(!reviewMode.active){
+      reviewPanel.hidden = true;
+      btnReviewMap?.classList.remove('active');
+      if(reviewLeakHint) reviewLeakHint.hidden = true;
+      clearReviewHighlights();
+      return;
+    }
+    reviewPanel.hidden = false;
+    btnReviewMap?.classList.add('active');
+    reviewHistory.textContent = reviewHistoryText();
+    if(!reviewMode.cards.length){
+      reviewProgress.textContent = 'No cards yet';
+      reviewEmpty.hidden = false;
+      reviewCard.hidden = true;
+      reviewSummary.hidden = true;
+      if(reviewLeakHint) reviewLeakHint.hidden = true;
+      clearReviewHighlights();
+      return;
+    }
+    if(reviewMode.session?.completed){
+      reviewProgress.textContent = 'Review complete';
+      reviewEmpty.hidden = true;
+      reviewCard.hidden = true;
+      reviewSummary.hidden = false;
+      if(reviewLeakHint) reviewLeakHint.hidden = true;
+      reviewSummaryReviewed.textContent = String(reviewMode.session.reviewedCount);
+      reviewSummaryGotIt.textContent = String(reviewMode.session.gotIt);
+      reviewSummaryAlmost.textContent = String(reviewMode.session.almost);
+      reviewSummaryMissed.textContent = String(reviewMode.session.missed);
+      clearReviewHighlights();
+      reviewRestart?.focus();
+      return;
+    }
+    const card = currentReviewCard();
+    reviewProgress.textContent = `${reviewMode.index + 1} of ${reviewMode.cards.length}`;
+    reviewEmpty.hidden = true;
+    reviewCard.hidden = false;
+    reviewSummary.hidden = true;
+    reviewCard.dataset.cardType = card.type;
+    reviewCardType.textContent = REVIEW_CARD_TYPE_LABELS[card.type] || 'Review card';
+    reviewPrompt.textContent = card.prompt;
+    reviewAnswer.hidden = !reviewMode.revealed;
+    reviewAnswer.textContent = reviewMode.revealed ? card.answer : '';
+    if(reviewLeakHint) reviewLeakHint.hidden = reviewMode.revealed;
+    reviewReveal.hidden = reviewMode.revealed;
+    reviewRatings.hidden = !reviewMode.revealed;
+    setReviewVisualState(card);
+  }
+  function startReviewSession(){
+    const cards = generateReviewCards();
+    reviewMode.active = true;
+    reviewMode.cards = cards;
+    reviewMode.index = 0;
+    reviewMode.revealed = false;
+    reviewMode.session = {
+      id:reviewId('review-session'),
+      pageId:runtimePageId,
+      mapViewId:currentMapViewId(),
+      startedAt:new Date().toISOString(),
+      completedAt:'',
+      reviewedCount:0,
+      gotIt:0,
+      almost:0,
+      missed:0,
+      cardIds:cards.map(card => card.id),
+      completed:false
+    };
+    closeMenu();
+    closeSidePanel();
+    cancelPlacementMode('review');
+    if(connectFrom) cancelConnect();
+    setWorkbenchOpen(false, {user:false});
+    setSelectionShelfSuppressed(true, 'review-open');
+    renderReviewPanel();
+    setStatus(cards.length ? 'Review ready' : 'Add reviewable map content');
+    requestAnimationFrame(() => {
+      if(cards.length) reviewReveal?.focus();
+      else reviewExit?.focus();
+    });
+  }
+  function exitReviewMode(reason='exit'){
+    if(!reviewMode.active) return;
+    reviewMode.active = false;
+    reviewMode.cards = [];
+    reviewMode.index = 0;
+    reviewMode.revealed = false;
+    reviewMode.session = null;
+    reviewPanel.hidden = true;
+    if(reviewLeakHint) reviewLeakHint.hidden = true;
+    btnReviewMap?.classList.remove('active');
+    clearReviewHighlights();
+    setSelectionShelfSuppressed(false, 'review-exit');
+    setStatus(reason === 'escape' ? 'Review closed' : 'Map ready');
+    if(reason !== 'summary-exit') btnReviewMap?.focus();
+  }
+  function revealCurrentReviewCard(){
+    if(!currentReviewCard()) return;
+    reviewMode.revealed = true;
+    renderReviewPanel();
+    requestAnimationFrame(() => reviewRatings?.querySelector('button')?.focus());
+  }
+  function completeReviewSession(){
+    const session = reviewMode.session;
+    if(!session || session.completed) return;
+    session.completed = true;
+    session.completedAt = new Date().toISOString();
+    reviewStore.sessions.push({
+      id:session.id,
+      pageId:session.pageId,
+      mapViewId:session.mapViewId,
+      startedAt:session.startedAt,
+      completedAt:session.completedAt,
+      reviewedCount:session.reviewedCount,
+      gotIt:session.gotIt,
+      almost:session.almost,
+      missed:session.missed,
+      cardIds:session.cardIds
+    });
+  }
+  function rateCurrentReviewCard(rating){
+    const card = currentReviewCard();
+    if(!card || !REVIEW_RATING_LABELS[rating] || !reviewMode.session) return;
+    const previousAttemptCount = reviewStore.attempts.filter(attempt =>
+      attempt.cardId === card.id &&
+      attempt.pageId === runtimePageId &&
+      attempt.mapViewId === currentMapViewId()
+    ).length;
+    reviewStore.attempts.push({
+      id:reviewId('review-attempt'),
+      cardId:card.id,
+      pageId:runtimePageId,
+      mapViewId:currentMapViewId(),
+      cardType:card.type,
+      rating,
+      reviewedAt:new Date().toISOString(),
+      attemptCount:previousAttemptCount + 1
+    });
+    reviewMode.session.reviewedCount += 1;
+    if(rating === 'got-it') reviewMode.session.gotIt += 1;
+    else if(rating === 'almost') reviewMode.session.almost += 1;
+    else reviewMode.session.missed += 1;
+    if(reviewMode.index >= reviewMode.cards.length - 1){
+      completeReviewSession();
+    }else{
+      reviewMode.index += 1;
+      reviewMode.revealed = false;
+    }
+    void saveReviewState();
+    renderReviewPanel();
+    if(!reviewMode.session.completed){
+      requestAnimationFrame(() => reviewReveal?.focus());
+    }
+  }
   async function refreshProjectDocuments(){
     let documents = [];
     try{
@@ -1302,14 +1905,15 @@ import {
       updateRuntimeChrome();
       const storedWorkspace = workspaceFromPageStateData(context.pageState?.data);
       starterHidden = Boolean(context.pageState?.data?.starterHidden);
+      reviewStore = normalizeReviewStore(context.pageState?.data?.review);
       if(storedWorkspace){
         workspace = storedWorkspace;
       }else if(context.pageState?.data?.kind === 'seeded-debt-power-map' || runtimePageId === SEED_MAP_PAGE_ID){
         workspace = loadWorkspaceFallback();
-        await savePageState(runtimePageId, 'map', { kind:'map-workspace', workspace, starterHidden });
+        await savePageState(runtimePageId, 'map', mapPageStatePayload());
       }else{
         workspace = blankPageWorkspace(context.page?.title || 'Untitled map');
-        await savePageState(runtimePageId, 'map', { kind:'map-workspace', workspace, starterHidden });
+        await savePageState(runtimePageId, 'map', mapPageStatePayload());
       }
       data = activePage().map;
       view = Object.assign({x:0,y:0,scale:1}, data.view || {});
@@ -1348,6 +1952,7 @@ import {
   }
   function switchPage(pageId){
     if(pageId === workspace.activePageId) return;
+    if(reviewMode.active) exitReviewMode('map-view-change');
     const next = workspace.pages.find(p => p.id === pageId); if(!next) return;
     syncCurrentPage();
     workspace.activePageId = next.id;
@@ -1360,6 +1965,7 @@ import {
     render(); applyView(); updatePrompt(); recoverViewSoon('map view switched'); save('Map view switched'); showToast('Map view switched');
   }
   function createNewPage(){
+    if(reviewMode.active) exitReviewMode('map-view-change');
     const name = prompt('Name for the new map view inside this page:', 'New view');
     if(name === null) return;
     syncCurrentPage();
@@ -1374,6 +1980,7 @@ import {
     render(); resetView(); save('Map view created'); showToast('New map view created');
   }
   function duplicateCurrentPage(){
+    if(reviewMode.active) exitReviewMode('map-view-change');
     const current = activePage();
     syncCurrentPage();
     const copyMap = normalizeMap(JSON.parse(JSON.stringify(current.map)));
@@ -1396,6 +2003,7 @@ import {
     renderPageControls(); save('Map view renamed'); showToast('Map view renamed');
   }
   function deleteCurrentPage(){
+    if(reviewMode.active) exitReviewMode('map-view-change');
     if(workspace.pages.length <= 1){ showToast('Keep at least one map view'); return; }
     const p = activePage();
     if(!confirm(`Delete map view “${p.title || 'Untitled view'}”? This only deletes this view from this browser save.`)) return;
@@ -1487,7 +2095,7 @@ import {
     return hasMapSelection();
   }
   function isCanvasGestureBlockedTarget(target){
-    return !!target?.closest?.('.map-node,.toolbar,.zoom-dock,.side-panel,.map-workbench,.selection-shelf,.connect-banner,.input-debug,.menu,.document-picker,.document-detail-card,.placement-overlay,.placement-ghost,.edge-label,g.edge-group');
+    return !!target?.closest?.('.map-node,.toolbar,.zoom-dock,.side-panel,.review-panel,.map-workbench,.selection-shelf,.connect-banner,.input-debug,.menu,.document-picker,.document-detail-card,.placement-overlay,.placement-ghost,.edge-label,g.edge-group');
   }
   function marqueeRectFromPoints(start, current){
     const left = Math.min(start.x, current.x);
@@ -2189,20 +2797,155 @@ import {
     if(!workbenchRect) return false;
     return rectsOverlap(nodeScreenRectFromWorld(node.x, node.y, w, h), rectToStage(workbenchRect, stage.getBoundingClientRect()), margin);
   }
-  function nodeOverlapsOverlayLanes(node, w, h, margin=12){
-    const rect = nodeScreenRectFromWorld(node.x, node.y, w, h);
-    const avoidRects = getPlacementAvoidRects({
-      includeShelf:false,
-      includeToast:false,
+	  function nodeOverlapsOverlayLanes(node, w, h, margin=12){
+	    const rect = nodeScreenRectFromWorld(node.x, node.y, w, h);
+	    const avoidRects = getPlacementAvoidRects({
+	      includeShelf:false,
+	      includeToast:false,
       includeNodes:false,
       excludeNodeId:node.id
-    });
-    return avoidRects.some(avoidRect => rectsOverlap(rect, avoidRect, margin));
-  }
-  function nudgeNodeLeftOfOverlay(node, overlayElement, gap=14){
-    if(!node || !overlayElement || overlayElement.hidden) return false;
-    const overlayRect = rectFromElement(overlayElement);
-    const nodeElement = nodeLayer.querySelector(`[data-id="${CSS.escape(node.id)}"]`);
+	    });
+	    return avoidRects.some(avoidRect => rectsOverlap(rect, avoidRect, margin));
+	  }
+	  function panNodeAwayFromOverlayLanes(node, w, h, options={}){
+	    if(!node) return false;
+	    const margin = Number(options.margin) || 12;
+	    let moved = false;
+	    for(let pass = 0; pass < 3; pass++){
+	      const stageRect = stage.getBoundingClientRect();
+	      const avoidRects = getPlacementAvoidRects({
+	        includeShelf:options.includeShelf !== false,
+	        includeToast:options.includeToast !== false,
+	        includeNodes:false,
+	        excludeNodeId:node.id
+	      });
+	      const currentRect = nodeScreenRectFromWorld(node.x, node.y, w, h);
+	      if(!avoidRects.some(avoidRect => rectsOverlap(currentRect, avoidRect, margin))) return moved;
+	      const maxLeft = Math.max(8, stageRect.width - currentRect.width - 8);
+	      const maxTop = Math.max(8, stageRect.height - currentRect.height - 8);
+	      const candidates = [];
+	      const addCandidate = (left, top) => {
+	        if(!Number.isFinite(left) || !Number.isFinite(top)) return;
+	        const nextLeft = clamp(left, 8, maxLeft);
+	        const nextTop = clamp(top, 8, maxTop);
+	        candidates.push({
+	          left:nextLeft,
+	          top:nextTop,
+	          right:nextLeft + currentRect.width,
+	          bottom:nextTop + currentRect.height,
+	          width:currentRect.width,
+	          height:currentRect.height
+	        });
+	      };
+	      avoidRects.forEach(avoidRect => {
+	        const centerLeft = avoidRect.left + avoidRect.width / 2 - currentRect.width / 2;
+	        const centerTop = avoidRect.top + avoidRect.height / 2 - currentRect.height / 2;
+	        [currentRect.top, centerTop, 8, maxTop].forEach(top => {
+	          addCandidate(avoidRect.left - currentRect.width - margin, top);
+	          addCandidate(avoidRect.right + margin, top);
+	        });
+	        [currentRect.left, centerLeft, 8, maxLeft].forEach(left => {
+	          addCandidate(left, avoidRect.top - currentRect.height - margin);
+	          addCandidate(left, avoidRect.bottom + margin);
+	        });
+	      });
+	      const clearCandidates = candidates
+	        .filter(candidate => candidate.left >= 8 && candidate.top >= 8 && candidate.right <= stageRect.width - 8 && candidate.bottom <= stageRect.height - 8)
+	        .filter(candidate => !avoidRects.some(avoidRect => rectsOverlap(candidate, avoidRect, margin)))
+	        .sort((a, b) => {
+	          const da = Math.hypot(a.left - currentRect.left, a.top - currentRect.top);
+	          const db = Math.hypot(b.left - currentRect.left, b.top - currentRect.top);
+	          return da - db;
+	        });
+	      const chosen = clearCandidates[0];
+	      if(!chosen) return moved;
+	      view.x += chosen.left - currentRect.left;
+	      view.y += chosen.top - currentRect.top;
+	      moved = true;
+	      applyView();
+	      renderEdges();
+	      positionSelectionShelf();
+	      updateOverlayOffsets();
+	    }
+	    return moved;
+	  }
+	  function visibleOverlayRectsForPlacement(options={}){
+	    const includeShelf = options.includeShelf !== false;
+	    const includeToast = options.includeToast !== false;
+	    return [
+	      document.querySelector('.toolbar'),
+	      workbenchDrawer && !workbenchDrawer.hidden ? workbenchDrawer : null,
+	      workbenchOpen && btnWorkbenchToggle ? btnWorkbenchToggle : null,
+	      documentPicker && !documentPicker.hidden ? documentPicker : null,
+	      documentDetailCard && !documentDetailCard.hidden ? documentDetailCard : null,
+	      zoomDock && !zoomDock.hidden ? zoomDock : null,
+	      includeShelf && selectionShelf && !selectionShelf.hidden && selectionShelf.classList.contains('show') ? selectionShelf : null,
+	      includeToast && toast && toast.classList.contains('show') ? toast : null,
+	      inputDebugState.enabled && inputDebugPanel && !inputDebugPanel.hidden ? inputDebugPanel : null
+	    ].map(rectFromElement).filter(Boolean);
+	  }
+	  function panRenderedNodeAwayFromOverlayLanes(node, options={}){
+	    if(!node) return false;
+	    const element = nodeLayer.querySelector(`[data-id="${CSS.escape(node.id)}"]`);
+	    if(!element) return false;
+	    const margin = Number(options.margin) || 12;
+	    let moved = false;
+	    for(let pass = 0; pass < 3; pass++){
+	      const stageRect = stage.getBoundingClientRect();
+	      const currentRect = rectFromElement(element);
+	      if(!currentRect) return moved;
+	      const avoidRects = visibleOverlayRectsForPlacement(options)
+	        .filter(avoidRect => rectsOverlap(avoidRect, stageRect));
+	      if(!avoidRects.some(avoidRect => rectsOverlap(currentRect, avoidRect, margin))) return moved;
+	      const minLeft = stageRect.left + 8;
+	      const minTop = stageRect.top + 8;
+	      const maxLeft = Math.max(minLeft, stageRect.right - currentRect.width - 8);
+	      const maxTop = Math.max(minTop, stageRect.bottom - currentRect.height - 8);
+	      const candidates = [];
+	      const addCandidate = (left, top) => {
+	        if(!Number.isFinite(left) || !Number.isFinite(top)) return;
+	        const nextLeft = clamp(left, minLeft, maxLeft);
+	        const nextTop = clamp(top, minTop, maxTop);
+	        candidates.push({
+	          left:nextLeft,
+	          top:nextTop,
+	          right:nextLeft + currentRect.width,
+	          bottom:nextTop + currentRect.height,
+	          width:currentRect.width,
+	          height:currentRect.height
+	        });
+	      };
+	      avoidRects.forEach(avoidRect => {
+	        const centerLeft = avoidRect.left + avoidRect.width / 2 - currentRect.width / 2;
+	        const centerTop = avoidRect.top + avoidRect.height / 2 - currentRect.height / 2;
+	        [currentRect.top, centerTop, minTop, maxTop].forEach(top => {
+	          addCandidate(avoidRect.left - currentRect.width - margin, top);
+	          addCandidate(avoidRect.right + margin, top);
+	        });
+	        [currentRect.left, centerLeft, minLeft, maxLeft].forEach(left => {
+	          addCandidate(left, avoidRect.top - currentRect.height - margin);
+	          addCandidate(left, avoidRect.bottom + margin);
+	        });
+	      });
+	      const chosen = candidates
+	        .filter(candidate => candidate.left >= minLeft && candidate.top >= minTop && candidate.right <= stageRect.right - 8 && candidate.bottom <= stageRect.bottom - 8)
+	        .filter(candidate => !avoidRects.some(avoidRect => rectsOverlap(candidate, avoidRect, margin)))
+	        .sort((a, b) => Math.hypot(a.left - currentRect.left, a.top - currentRect.top) - Math.hypot(b.left - currentRect.left, b.top - currentRect.top))[0];
+	      if(!chosen) return moved;
+	      view.x += chosen.left - currentRect.left;
+	      view.y += chosen.top - currentRect.top;
+	      moved = true;
+	      applyView();
+	      renderEdges();
+	      positionSelectionShelf();
+	      updateOverlayOffsets();
+	    }
+	    return moved;
+	  }
+	  function nudgeNodeLeftOfOverlay(node, overlayElement, gap=14){
+	    if(!node || !overlayElement || overlayElement.hidden) return false;
+	    const overlayRect = rectFromElement(overlayElement);
+	    const nodeElement = nodeLayer.querySelector(`[data-id="${CSS.escape(node.id)}"]`);
     const nodeRect = rectFromElement(nodeElement);
     if(!overlayRect || !nodeRect || !rectsOverlap(nodeRect, overlayRect, gap)) return false;
     const stageRect = stage.getBoundingClientRect();
@@ -2257,12 +3000,12 @@ import {
   function clearInsertedNodePlacement(node){
     if(!node) return false;
     const dims = renderedNodeDims(node);
-    const shouldAdjust = node.nodeType === 'document'
-      || nodeOverlapsExisting(node, dims.w, dims.h, 20)
-      || nodeDomOverlapsExisting(node, 12)
-      || nodeOverlapsVisibleWorkbench(node, dims.w, dims.h, 12)
-      || nodeOverlapsOverlayLanes(node, dims.w, dims.h, 12);
-    if(!shouldAdjust) return false;
+	    const shouldAdjust = node.nodeType === 'document'
+	      || nodeOverlapsExisting(node, dims.w, dims.h, 20)
+	      || nodeDomOverlapsExisting(node, 12)
+	      || nodeOverlapsVisibleWorkbench(node, dims.w, dims.h, 12)
+	      || nodeOverlapsOverlayLanes(node, dims.w, dims.h, 12);
+	    if(!shouldAdjust) return false;
     const candidates = [];
     const addCandidate = candidate => {
       if(candidate && Number.isFinite(candidate.x) && Number.isFinite(candidate.y)) candidates.push(candidate);
@@ -2270,29 +3013,53 @@ import {
     [byId('core'), data.nodes.find(candidate => candidate.id !== node.id)].filter(Boolean).forEach(anchor => {
       [28, 72, 120, 260, 420].forEach(gap => candidatesAroundNode(anchor, dims.w, dims.h, gap).forEach(addCandidate));
     });
-    const broadSafe = getBroadCanvasSafeArea({includeShelf:false, includeToast:false, margin:18});
-    const avoidRects = getPlacementAvoidRects({includeShelf:false, includeToast:false, excludeNodeId:node.id});
-    const stageRect = stage.getBoundingClientRect();
-    const currentRect = nodeScreenRectFromWorld(node.x, node.y, dims.w, dims.h);
-    const screenWidth = dims.w * view.scale;
-    const screenHeight = dims.h * view.scale;
-    const addScreenCandidate = (localX, localY) => {
-      if(!Number.isFinite(localX) || !Number.isFinite(localY)) return;
-      addCandidate({x:(localX - view.x) / view.scale, y:(localY - view.y) / view.scale});
-    };
-    const addLeftOfOverlayCandidates = (rect, gap=28) => {
-      if(!rect || !rectsOverlap(rect, stageRect)) return;
-      const maxLeft = rect.left - stageRect.left - screenWidth - gap;
-      const localX = clamp(maxLeft, broadSafe.left, Math.max(broadSafe.left, broadSafe.right - screenWidth));
-      const maxY = Math.max(broadSafe.top, broadSafe.bottom - screenHeight);
-      [currentRect.top, broadSafe.top + 20, maxY - 20, broadSafe.top + Math.max(40, broadSafe.height * .34)].forEach(localY => {
-        addScreenCandidate(localX, clamp(localY, broadSafe.top, maxY));
-      });
-    };
-    [workbenchDrawer, documentPicker, documentDetailCard].forEach(element => {
-      if(element && !element.hidden) addLeftOfOverlayCandidates(rectFromElement(element));
-    });
-    if(zoomDock && !zoomDock.hidden) addLeftOfOverlayCandidates(rectFromElement(zoomDock), 8);
+	    const broadSafe = getBroadCanvasSafeArea({includeShelf:false, includeToast:false, margin:18});
+	    const avoidRects = getPlacementAvoidRects({includeShelf:true, includeToast:true, excludeNodeId:node.id});
+	    const stageRect = stage.getBoundingClientRect();
+	    const currentRect = nodeScreenRectFromWorld(node.x, node.y, dims.w, dims.h);
+	    const screenWidth = dims.w * view.scale;
+	    const screenHeight = dims.h * view.scale;
+	    const addScreenCandidate = (localX, localY) => {
+	      if(!Number.isFinite(localX) || !Number.isFinite(localY)) return;
+	      addCandidate({x:(localX - view.x) / view.scale, y:(localY - view.y) / view.scale});
+	    };
+	    const addAroundOverlayCandidates = (rect, gap=28) => {
+	      if(!rect || !rectsOverlap(rect, stageRect)) return;
+	      const overlay = rectToStage(rect, stageRect);
+	      const maxLeft = Math.max(broadSafe.left, broadSafe.right - screenWidth);
+	      const maxTop = Math.max(broadSafe.top, broadSafe.bottom - screenHeight);
+	      const xOptions = [
+	        currentRect.left,
+	        overlay.left + overlay.width / 2 - screenWidth / 2,
+	        broadSafe.left + 20,
+	        maxLeft - 20
+	      ].map(localX => clamp(localX, broadSafe.left, maxLeft));
+	      const yOptions = [
+	        currentRect.top,
+	        overlay.top + overlay.height / 2 - screenHeight / 2,
+	        broadSafe.top + 20,
+	        maxTop - 20
+	      ].map(localY => clamp(localY, broadSafe.top, maxTop));
+	      const left = overlay.left - screenWidth - gap;
+	      const right = overlay.right + gap;
+	      const above = overlay.top - screenHeight - gap;
+	      const below = overlay.bottom + gap;
+	      yOptions.forEach(localY => {
+	        addScreenCandidate(left, localY);
+	        addScreenCandidate(right, localY);
+	      });
+	      xOptions.forEach(localX => {
+	        addScreenCandidate(localX, above);
+	        addScreenCandidate(localX, below);
+	      });
+	    };
+	    [workbenchDrawer, documentPicker, documentDetailCard].forEach(element => {
+	      if(element && !element.hidden) addAroundOverlayCandidates(rectFromElement(element));
+	    });
+	    if(zoomDock && !zoomDock.hidden) addAroundOverlayCandidates(rectFromElement(zoomDock), 8);
+	    if(selectionShelf && !selectionShelf.hidden && selectionShelf.classList.contains('show')) addAroundOverlayCandidates(rectFromElement(selectionShelf), 18);
+	    if(toast && toast.classList.contains('show')) addAroundOverlayCandidates(rectFromElement(toast), 18);
+	    if(inputDebugPanel && !inputDebugPanel.hidden) addAroundOverlayCandidates(rectFromElement(inputDebugPanel), 18);
     let next = candidates.find(candidate => candidateIsClear(candidate, dims.w, dims.h, broadSafe, avoidRects, 28, node.id))
       || scanSafeNodePosition(dims.w, dims.h, broadSafe, avoidRects, node.id, 28)
       || radialSafeNodePosition(dims.w, dims.h, broadSafe, avoidRects, {x:node.x, y:node.y}, node.id, 28);
@@ -2310,16 +3077,17 @@ import {
     node.y = Math.round(next.y);
     render();
     let nudgedAfterRender = false;
-    if(node.nodeType === 'document'){
-      for(let pass = 0; pass < 2; pass++){
-        [workbenchDrawer, documentPicker, documentDetailCard, zoomDock].forEach(element => {
-          if(nudgeNodeLeftOfOverlay(node, element, 14)) nudgedAfterRender = true;
-        });
+	    if(node.nodeType === 'document'){
+	      for(let pass = 0; pass < 2; pass++){
+	        [workbenchDrawer, documentPicker, documentDetailCard, zoomDock].forEach(element => {
+	          if(nudgeNodeLeftOfOverlay(node, element, 14)) nudgedAfterRender = true;
+	        });
         if(nudgeNodeRightOfOverlay(node, document.querySelector('.toolbar'), 14)) nudgedAfterRender = true;
-        if(nudgedAfterRender) render();
-      }
-    }
-    const latest = mapHistory.undo[mapHistory.undo.length - 1];
+	        if(nudgedAfterRender) render();
+	      }
+	    }
+	    panNodeAwayFromOverlayLanes(node, dims.w, dims.h, {includeShelf:true, includeToast:true, margin:12});
+	    const latest = mapHistory.undo[mapHistory.undo.length - 1];
     if(latest?.after?.nodes?.some(snapshotNode => snapshotNode.id === node.id)){
       latest.after = captureMapSnapshot();
       latest.afterSelection = getSelectionSnapshot();
@@ -3067,6 +3835,7 @@ import {
       label.title = 'Right-click or long-press to modify this relationship, connection side, or line route';
       edgeLabelLayer.appendChild(label);
     });
+    applyReviewHighlights();
   }
   function getSelectionAnchor(){
     syncSelectionAliases();
@@ -3232,6 +4001,7 @@ import {
       nodeLayer.querySelectorAll('.map-node').forEach(el => el.classList.remove('dimmed'));
       edgeLayer.querySelectorAll('.edge').forEach(el => el.classList.remove('dimmed'));
       edgeLabelLayer.querySelectorAll('.edge-label').forEach(el => el.classList.remove('dimmed'));
+      applyReviewHighlights();
       return;
     }
     const keep = new Set([selectedId]);
@@ -3240,6 +4010,7 @@ import {
     nodeLayer.querySelectorAll('.map-node').forEach(el => el.classList.toggle('dimmed', !keep.has(el.dataset.id)));
     edgeLayer.querySelectorAll('g.edge-group .edge').forEach(p => { const gid = p.parentNode.dataset.edgeId; p.classList.toggle('dimmed', !edgeKeep.has(gid)); });
     edgeLabelLayer.querySelectorAll('.edge-label').forEach(el => el.classList.toggle('dimmed', !edgeKeep.has(el.dataset.edgeId)));
+    applyReviewHighlights();
   }
 
   function select(nodeId, reason='select-node'){
@@ -3724,26 +4495,27 @@ import {
     const tertiary = (side === 'left' || side === 'right') ? horizontal(fartherGap) : vertical(fartherGap);
     return [...primary, ...secondary, ...tertiary, ...candidatesAroundNode(source, w, h, 220), ...candidatesAroundNode(source, w, h, 380)];
   }
-  function positionOnPortSide(source, side, position, w, h){
-    const r = nodeRect(source);
-    if(side === 'right') return position.x >= r.x + r.w + 12;
-    if(side === 'left') return position.x + w <= r.x - 12;
-    if(side === 'top') return position.y + h <= r.y - 12;
-    if(side === 'bottom') return position.y >= r.y + r.h + 12;
-    return false;
-  }
-  function choosePortLinkedPlacement(source, side, w, h){
-    const candidates = portLinkedCandidates(source, side, w, h);
-    const placement = findFreeNodePlacement({
-      preferredTopLeft:candidates[0] || null,
-      w,
-      h,
-      candidates:candidates.slice(1),
-      options:{includeShelf:true, includeToast:true, margin:18, collisionMargin:28}
-    });
-    placement.sameSide = positionOnPortSide(source, side, placement.position, w, h);
-    return placement;
-  }
+	  function positionOnPortSide(source, side, position, w, h){
+	    const r = nodeRect(source);
+	    if(side === 'right') return position.x >= r.x + r.w + 12;
+	    if(side === 'left') return position.x + w <= r.x - 12;
+	    if(side === 'top') return position.y + h <= r.y - 12;
+	    if(side === 'bottom') return position.y >= r.y + r.h + 12;
+	    return false;
+	  }
+	  function choosePortLinkedPlacement(source, side, w, h){
+	    updateOverlayOffsets();
+	    const candidates = portLinkedCandidates(source, side, w, h);
+	    const placement = findFreeNodePlacement({
+	      preferredTopLeft:candidates[0] || null,
+	      w,
+	      h,
+	      candidates:candidates.slice(1),
+	      options:{includeShelf:true, includeToast:true, margin:18, collisionMargin:28}
+	    });
+	    placement.sameSide = positionOnPortSide(source, side, placement.position, w, h);
+	    return placement;
+	  }
   function choosePortLinkedPosition(source, side, w, h){
     return choosePortLinkedPlacement(source, side, w, h).position;
   }
@@ -3755,25 +4527,28 @@ import {
     const position = placement.position;
     markStarterMeaningfulAction();
     const linkedLabel = type === 'question' ? 'question' : (type === 'evidence' ? 'evidence' : 'concept');
-    const toastText = placement.sameSide
-      ? `Linked ${linkedLabel} added. Ctrl+Z to undo.`
-      : `Linked ${linkedLabel} placed in nearest open space. Ctrl+Z to undo.`;
-    const node = addNodeAt(position.x, position.y, {
-      ...config,
-      linkFrom:source.id,
-      fromPort:'auto',
-      toPort:'auto',
-      historyLabel:`Linked ${linkedLabel} added`,
-      toast:toastText,
-      focus:false
-    });
-    if(placement.reason === 'world-clear') panNodeIntoSafeArea(node, config.w || 268, config.h || 145, {includeShelf:true, includeToast:true, margin:18});
-    temporarilyPassThroughZoomDock();
-    requestAnimationFrame(() => {
-      positionSelectionShelf();
-      updateOverlayOffsets();
-      renderEdges();
-    });
+	    const toastText = placement.sameSide
+	      ? `Linked ${linkedLabel} added. Ctrl+Z to undo.`
+	      : `Linked ${linkedLabel} placed in nearest open space. Ctrl+Z to undo.`;
+	    const node = addNodeAt(position.x, position.y, {
+	      ...config,
+	      linkFrom:source.id,
+	      fromPort:'auto',
+	      toPort:'auto',
+	      historyLabel:`Linked ${linkedLabel} added`,
+	      toast:toastText,
+	      focus:false
+	    });
+	    clearInsertedNodePlacement(node);
+	    if(placement.reason === 'world-clear') panNodeIntoSafeArea(node, config.w || 268, config.h || 145, {includeShelf:true, includeToast:true, margin:18});
+	    temporarilyPassThroughZoomDock();
+	    updateOverlayOffsets();
+	    panRenderedNodeAwayFromOverlayLanes(node, {includeShelf:true, includeToast:true, margin:12});
+	    requestAnimationFrame(() => {
+	      positionSelectionShelf();
+	      updateOverlayOffsets();
+	      renderEdges();
+	    });
     return node;
   }
   function createPortLinkedDocumentBlock(sourceId, side, documentId){
@@ -3789,13 +4564,16 @@ import {
       linkFrom:source.id,
       fromPort:'auto',
       toPort:'auto',
-      historyLabel:'Linked document added',
-      toast:placement.sameSide ? 'Linked document added. Ctrl+Z to undo.' : 'Linked document placed in nearest open space. Ctrl+Z to undo.',
-      focus:false
-    });
-    if(placement.reason === 'world-clear') panNodeIntoSafeArea(node, size.w, size.h, {includeShelf:true, includeToast:true, margin:18});
-    return node;
-  }
+	      historyLabel:'Linked document added',
+	      toast:placement.sameSide ? 'Linked document added. Ctrl+Z to undo.' : 'Linked document placed in nearest open space. Ctrl+Z to undo.',
+	      focus:false
+	    });
+	    clearInsertedNodePlacement(node);
+	    if(placement.reason === 'world-clear') panNodeIntoSafeArea(node, size.w, size.h, {includeShelf:true, includeToast:true, margin:18});
+	    updateOverlayOffsets();
+	    panRenderedNodeAwayFromOverlayLanes(node, {includeShelf:true, includeToast:true, margin:12});
+	    return node;
+	  }
   function chooseDocumentFromPicker(documentId){
     const quickAdd = pendingDocumentQuickAdd;
     if(quickAdd?.sourceId && quickAdd?.side){
@@ -4068,7 +4846,7 @@ import {
   }
   function isPlacementControlTarget(target){
     if(!target) return false;
-    return Boolean(target.closest('.connection-port,.toolbar,.zoom-dock,.side-panel,.map-workbench,.selection-shelf,.connect-banner,.input-debug,.menu,.document-picker,.document-detail-card,.placement-overlay,.edge-label,g.edge-group'));
+    return Boolean(target.closest('.connection-port,.toolbar,.zoom-dock,.side-panel,.review-panel,.map-workbench,.selection-shelf,.connect-banner,.input-debug,.menu,.document-picker,.document-detail-card,.placement-overlay,.edge-label,g.edge-group'));
   }
   function placementTopLeftFromClient(clientX, clientY, w, h){
     const worldPoint = screenToWorld(clientX, clientY);
@@ -4390,6 +5168,7 @@ import {
     if(!file) return; const reader = new FileReader();
     reader.onload = () => {
       try{
+        if(reviewMode.active) exitReviewMode('map-import');
         const parsed = JSON.parse(reader.result);
         if(parsed && Array.isArray(parsed.pages)){
           workspace = normalizeWorkspace(parsed);
@@ -4410,6 +5189,7 @@ import {
     reader.readAsText(file);
   }
   function resetMap(){
+    if(reviewMode.active) exitReviewMode('map-reset');
     const seededReset = runtimePageId === SEED_MAP_PAGE_ID;
     const promptText = seededReset
       ? 'Reset this map page to the original debt-power layout? Other map views stay safe.'
@@ -4615,7 +5395,7 @@ import {
   nodeLayer.addEventListener('contextmenu', e => { const el = e.target.closest('.map-node') || e.target.closest('#nodeLayer') || e.target.closest('.drag-handle') || e.target.closest('.resize-handle') || e.target.closest('.connection-port'); if(!el) return; if(suppressGestureContextMenu(e, 'node', e.target.closest('.drag-handle') || e.target.closest('.resize-handle') || e.target.closest('.connection-port') || el)) return; if(suppressRecentContextMenu(e, 'node', el)) return; e.preventDefault(); closeMenu(); const nodeEl = e.target.closest('.map-node'); const n = nodeEl ? byId(nodeEl.dataset.id) : null; if(!n) return; select(n.id); nodeMenu(n, e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
   edgeLabelLayer.addEventListener('contextmenu', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; const ed = edgeById(lab.dataset.edgeId); if(suppressGestureContextMenu(e, 'edge', lab, {edgeId:ed?.id, hitKind:'edge-label'})) return; if(suppressRecentContextMenu(e, 'edge', lab, {edgeId:ed?.id, hitKind:'edge-label'})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind:'edge-label'}); });
   edgeLayer.addEventListener('contextmenu', e => { const g = e.target.closest('g.edge-group'); if(!g) return; const ed = edgeById(g.dataset.edgeId); const hitKind = e.target.closest('.edge-hit') ? 'edge-hit-target' : 'edge-group'; if(suppressGestureContextMenu(e, 'edge', g, {edgeId:ed?.id, hitKind})) return; if(suppressRecentContextMenu(e, 'edge', g, {edgeId:ed?.id, hitKind})) return; e.preventDefault(); closeMenu(); if(!ed) return; selectEdge(ed.id); edgeMenu(ed, e.clientX, e.clientY, {trigger:'contextmenu', source:e, hitKind}); });
-  stage.addEventListener('contextmenu', e => { if(pendingPlacement){ e.preventDefault(); e.stopPropagation(); return; } if(suppressGestureContextMenu(e, 'canvas', e.target.closest('#stage') || stage)) return; if(suppressRecentContextMenu(e, 'canvas', stage)) return; if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.map-workbench') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.document-picker') || e.target.closest('.document-detail-card') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
+  stage.addEventListener('contextmenu', e => { if(pendingPlacement){ e.preventDefault(); e.stopPropagation(); return; } if(suppressGestureContextMenu(e, 'canvas', e.target.closest('#stage') || stage)) return; if(suppressRecentContextMenu(e, 'canvas', stage)) return; if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.review-panel') || e.target.closest('.map-workbench') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.document-picker') || e.target.closest('.document-detail-card') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return; e.preventDefault(); closeMenu(); canvasMenu(screenToWorld(e.clientX, e.clientY), e.clientX, e.clientY, {trigger:'contextmenu', source:e}); });
 
   nodeLayer.addEventListener('pointerdown', e => {
     const port = e.target.closest('.connection-port');
@@ -4876,7 +5656,7 @@ import {
     if(marqueeSelection?.pointerId === e.pointerId) cancelMarqueeSelection('lostpointercapture', e);
   });
   stage.addEventListener('wheel', e => {
-    if(e.target.closest('.menu') || e.target.closest('.map-workbench')) return;
+    if(e.target.closest('.menu') || e.target.closest('.map-workbench') || e.target.closest('.review-panel')) return;
     e.preventDefault(); closeMenu();
     const modeScale = e.deltaMode === 1 ? 16 : (e.deltaMode === 2 ? 600 : 1);
     const dx = e.deltaX * modeScale, dy = e.deltaY * modeScale;
@@ -4931,6 +5711,11 @@ import {
   document.addEventListener('selectionchange', () => { if(gestureLockReasons.size > 0 || !!connectFrom) clearGestureSelection(); });
   document.addEventListener('keydown', e => {
     if(e.key === 'Escape'){
+      if(reviewMode.active && !isTextEditingActive()){
+        e.preventDefault();
+        exitReviewMode('escape');
+        return;
+      }
       if(marqueeSelection){
         e.preventDefault();
         cancelMarqueeSelection('escape', e);
@@ -5025,6 +5810,26 @@ import {
   document.getElementById('btnAddLinked').addEventListener('click', () => { cancelPlacementMode('tool'); selectedId ? addLinkedFrom(selectedId) : addFreeAtCenter(); });
   document.getElementById('btnAddFree').addEventListener('click', () => { cancelPlacementMode('tool'); addFreeAtCenter(); });
   document.getElementById('btnAddDocumentBlock').addEventListener('click', () => { cancelPlacementMode('tool'); openDocumentPicker(); });
+  reviewPanel?.addEventListener('pointerdown', event => event.stopPropagation(), true);
+  reviewPanel?.addEventListener('pointerup', event => event.stopPropagation(), true);
+  reviewPanel?.addEventListener('click', event => event.stopPropagation());
+  reviewPanel?.addEventListener('wheel', event => event.stopPropagation(), {passive:true});
+  btnReviewMap?.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    startReviewSession();
+  });
+  reviewReveal?.addEventListener('click', revealCurrentReviewCard);
+  reviewRatings?.addEventListener('click', event => {
+    const target = event.target instanceof Element ? event.target : null;
+    const button = target?.closest('button[data-rating]');
+    if(!button) return;
+    event.preventDefault();
+    rateCurrentReviewCard(button.dataset.rating);
+  });
+  reviewRestart?.addEventListener('click', startReviewSession);
+  reviewExit?.addEventListener('click', () => exitReviewMode('exit'));
+  reviewExitSummary?.addEventListener('click', () => exitReviewMode('summary-exit'));
   mapWorkbench?.addEventListener('pointerdown', event => event.stopPropagation(), true);
   mapWorkbench?.addEventListener('pointerup', event => event.stopPropagation(), true);
   mapWorkbench?.addEventListener('click', event => event.stopPropagation());
@@ -5139,7 +5944,7 @@ import {
   btnRenamePage?.addEventListener('click', renameCurrentPage);
   btnDeletePage?.addEventListener('click', deleteCurrentPage);
   stage.addEventListener('click', e => {
-    if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.map-workbench') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.document-picker') || e.target.closest('.document-detail-card') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return;
+    if(e.target.closest('.map-node') || e.target.closest('.toolbar') || e.target.closest('.zoom-dock') || e.target.closest('.side-panel') || e.target.closest('.review-panel') || e.target.closest('.map-workbench') || e.target.closest('.selection-shelf') || e.target.closest('.connect-banner') || e.target.closest('.input-debug') || e.target.closest('.menu') || e.target.closest('.document-picker') || e.target.closest('.document-detail-card') || e.target.closest('.edge-label') || e.target.closest('g.edge-group')) return;
     if(isTextEditingActive()) return;
     if(multiSelectMode) return;
     clearSelection('canvas-tap', e);

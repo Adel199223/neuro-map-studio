@@ -658,6 +658,215 @@ async function loadMarqueeFixture(page: Page) {
   await expect(page.locator('.map-node[data-id="box-a"]')).toBeVisible();
 }
 
+async function loadReviewFixture(page: Page) {
+  await resetMindmap(page);
+  const mapPayload = {
+    version: 20,
+    view: { x: 180, y: 110, scale: 1 },
+    nodes: [
+      {
+        id: 'review-core',
+        title: 'Debt pressure',
+        body: 'Debt pressure changes choices.',
+        group: 'blue',
+        shape: 'card',
+        importance: 3,
+        x: 40,
+        y: 60,
+        w: 250,
+        h: 135,
+        tag: 'claim',
+        nodeType: 'concept',
+        documentId: '',
+      },
+      {
+        id: 'review-policy',
+        title: 'Policy response',
+        body: 'Policy responds to leverage.',
+        group: 'amber',
+        shape: 'card',
+        importance: 2,
+        x: 380,
+        y: 70,
+        w: 250,
+        h: 135,
+        tag: 'policy',
+        nodeType: 'concept',
+        documentId: '',
+      },
+      {
+        id: 'review-document',
+        title: 'Interview source',
+        body: 'Source note about debt and power.',
+        group: 'violet',
+        shape: 'note',
+        importance: 2,
+        x: 40,
+        y: 300,
+        w: 285,
+        h: 150,
+        tag: 'note',
+        nodeType: 'document',
+        documentId: 'simon-dixon-debt-power',
+      },
+      {
+        id: 'review-evidence',
+        title: 'Evidence example',
+        body: 'Observed support for the claim.',
+        group: 'green',
+        shape: 'note',
+        importance: 2,
+        x: 380,
+        y: 300,
+        w: 260,
+        h: 145,
+        tag: 'evidence',
+        nodeType: 'evidence',
+        documentId: '',
+      },
+    ],
+    edges: [
+      {
+        id: 'review-edge-policy',
+        from: 'review-core',
+        to: 'review-policy',
+        relation: 'controls',
+        strength: 4,
+        shape: 'curve',
+        label: 'shapes choices',
+      },
+      {
+        id: 'review-edge-source',
+        from: 'review-document',
+        to: 'review-core',
+        relation: 'evidence',
+        strength: 3,
+        shape: 'curve',
+        label: 'supports claim',
+      },
+      {
+        id: 'review-edge-example',
+        from: 'review-evidence',
+        to: 'review-core',
+        relation: 'evidence',
+        strength: 3,
+        shape: 'curve',
+        label: 'example',
+      },
+    ],
+  };
+  await page.locator('#importFile').setInputFiles({
+    name: `review-fixture-${Date.now()}-${Math.random().toString(36).slice(2)}.json`,
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(mapPayload)),
+  });
+  await expect(page.locator('#toast')).toContainText(/Import complete/i);
+  await expect(page.locator('.map-node[data-id="review-core"]')).toBeVisible();
+}
+
+async function loadShortReviewFixture(page: Page) {
+  await resetMindmap(page);
+  const mapPayload = {
+    version: 20,
+    view: { x: 180, y: 120, scale: 1 },
+    nodes: [
+      {
+        id: 'short-a',
+        title: 'First idea',
+        body: 'First answer.',
+        group: 'blue',
+        shape: 'card',
+        importance: 2,
+        x: 70,
+        y: 100,
+        w: 230,
+        h: 125,
+        tag: 'idea',
+        nodeType: 'concept',
+        documentId: '',
+      },
+      {
+        id: 'short-b',
+        title: 'Second idea',
+        body: 'Second answer.',
+        group: 'green',
+        shape: 'card',
+        importance: 2,
+        x: 420,
+        y: 100,
+        w: 230,
+        h: 125,
+        tag: 'idea',
+        nodeType: 'concept',
+        documentId: '',
+      },
+    ],
+    edges: [
+      {
+        id: 'short-edge',
+        from: 'short-a',
+        to: 'short-b',
+        relation: 'causes',
+        strength: 3,
+        shape: 'curve',
+        label: 'leads to',
+      },
+    ],
+  };
+  await page.locator('#importFile').setInputFiles({
+    name: `short-review-fixture-${Date.now()}-${Math.random().toString(36).slice(2)}.json`,
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(mapPayload)),
+  });
+  await expect(page.locator('#toast')).toContainText(/Import complete/i);
+  await expect(page.locator('.map-node[data-id="short-a"]')).toBeVisible();
+}
+
+async function openReviewPanel(page: Page) {
+  await page.getByRole('button', { name: /Review this map/i }).click();
+  await expect(page.locator('#reviewPanel')).toBeVisible();
+  await expect(page.locator('#reviewCard')).toBeVisible();
+}
+
+async function revealAndRate(page: Page, rating: 'got-it' | 'almost' | 'missed') {
+  await page.locator('#reviewReveal').click();
+  await expect(page.locator('#reviewAnswer')).toBeVisible();
+  await page.locator(`#reviewRatings button[data-rating="${rating}"]`).click();
+}
+
+async function advanceToReviewCardType(page: Page, type: 'block' | 'relationship' | 'neighbor' | 'source') {
+  for (let index = 0; index < 30; index += 1) {
+    await expect(page.locator('#reviewCard')).toBeVisible();
+    const currentType = await page.locator('#reviewCard').evaluate((element) => element.getAttribute('data-card-type'));
+    if (currentType === type) return;
+    await revealAndRate(page, 'got-it');
+  }
+  throw new Error(`Could not find review card type ${type}.`);
+}
+
+async function expectVisuallyMasked(locator: Locator) {
+  await expect(locator).toBeVisible();
+  await expect
+    .poll(async () => locator.evaluate((element) => getComputedStyle(element).color))
+    .toMatch(/rgba\(0, 0, 0, 0\)|transparent/i);
+}
+
+async function expectVisuallyUnmasked(locator: Locator) {
+  await expect(locator).toBeVisible();
+  await expect
+    .poll(async () => locator.evaluate((element) => getComputedStyle(element).color))
+    .not.toMatch(/rgba\(0, 0, 0, 0\)|transparent/i);
+}
+
+async function highlightedReviewNodeIds(page: Page) {
+  return page.locator('.map-node.review-highlight').evaluateAll((elements) =>
+    elements
+      .map((element) => element.getAttribute('data-id') || '')
+      .filter(Boolean)
+      .sort(),
+  );
+}
+
 async function expectNodeClearOfOtherBlocks(page: Page, nodeId: string, margin = 8) {
   const overlaps = await page.evaluate(
     ({ targetNodeId, gap }) => {
@@ -1731,6 +1940,222 @@ test.describe('current standalone prototypes', () => {
     await expect(addDocumentFirst).toBeVisible();
     await expect(addDocumentFirst).toBeDisabled();
     await expect(page.locator('#starterDocumentHint')).toContainText(/Add document metadata/i);
+  });
+
+  test('map review opens block recall, hides the answer before reveal, and persists a rating', async ({ page }) => {
+    await loadReviewFixture(page);
+
+    await openReviewPanel(page);
+    await expect(page.locator('#reviewProgress')).toContainText(/1 of/i);
+    await expect(page.locator('#reviewCard')).toHaveAttribute('data-card-type', 'block');
+    await expect(page.locator('#reviewPrompt')).toContainText(/Explain: Debt pressure/i);
+    await expect(page.locator('#reviewPanel')).not.toContainText(/Debt pressure changes choices/i);
+    const coreBlock = page.locator('.map-node[data-id="review-core"]');
+    await expect(coreBlock).toHaveClass(/review-highlight/);
+    await expect(coreBlock).toHaveClass(/review-answer-hidden/);
+    await expect(coreBlock.locator('.node-title')).toContainText(/Debt pressure/i);
+    await expectVisuallyMasked(coreBlock.locator('.node-body'));
+    await expect(page.locator('#reviewLeakHint')).toContainText(/Answer hidden until reveal/i);
+
+    await page.locator('#reviewReveal').click();
+    await expect(page.locator('#reviewAnswer')).toContainText(/Debt pressure changes choices/i);
+    await expect(coreBlock).not.toHaveClass(/review-answer-hidden/);
+    await expectVisuallyUnmasked(coreBlock.locator('.node-body'));
+    await expect(page.locator('#reviewLeakHint')).toBeHidden();
+    await page.locator('#reviewRatings button[data-rating="got-it"]').click();
+    await expect(page.locator('#reviewProgress')).toContainText(/2 of/i);
+    await expect(page.locator('#saveStatus')).toContainText(/Review saved locally/i);
+
+    await page.reload();
+    await page.getByRole('button', { name: /Review this map/i }).click();
+    await expect(page.locator('#reviewHistory')).toContainText(/Previous attempts: 1/i);
+    await expect(page.locator('#reviewHistory')).toContainText(/Got it 1/i);
+  });
+
+  test('map review creates relationship, neighbor, and source cards with highlights', async ({ page }) => {
+    await loadReviewFixture(page);
+    await openReviewPanel(page);
+
+    await advanceToReviewCardType(page, 'relationship');
+    await expect(page.locator('#reviewPrompt')).toContainText(/What connects Debt pressure to Policy response/i);
+    await expect(page.locator('.map-node.review-highlight')).toHaveCount(2);
+    await expect(page.locator('#edgeLayer .edge.review-highlight')).toHaveCount(1);
+    const relationshipLabel = page.locator('#edgeLabelLayer .edge-label[data-edge-id="review-edge-policy"]');
+    await expect(relationshipLabel).toHaveClass(/review-label-hidden/);
+    await expectVisuallyMasked(relationshipLabel);
+    await page.locator('#reviewReveal').click();
+    await expect(page.locator('#reviewAnswer')).toContainText(/shapes choices/i);
+    await expect(relationshipLabel).not.toHaveClass(/review-label-hidden/);
+    await expectVisuallyUnmasked(relationshipLabel);
+    await page.locator('#reviewRatings button[data-rating="almost"]').click();
+
+    await advanceToReviewCardType(page, 'neighbor');
+    await expect(page.locator('#reviewPrompt')).toContainText(/What is connected to Debt pressure/i);
+    expect(await highlightedReviewNodeIds(page)).toEqual(['review-core']);
+    await expect(page.locator('#edgeLayer .edge.review-highlight')).toHaveCount(0);
+    await page.locator('#reviewReveal').click();
+    await expect(page.locator('#reviewAnswer')).toContainText(/Policy response/i);
+    await expect(page.locator('#reviewAnswer')).toContainText(/Simon Dixon debt-power interview\/model/i);
+    await expect(page.locator('#reviewAnswer')).toContainText(/supports claim/i);
+    await expect(page.locator('.map-node.review-highlight')).toHaveCount(4);
+    await expect(page.locator('#edgeLayer .edge.review-highlight')).toHaveCount(3);
+    await page.locator('#reviewRatings button[data-rating="missed"]').click();
+
+    await advanceToReviewCardType(page, 'source');
+    await expect(page.locator('#reviewPrompt')).toContainText(/What source or evidence supports Debt pressure/i);
+    expect(await highlightedReviewNodeIds(page)).toEqual(['review-core']);
+    const sourceBlock = page.locator('.map-node[data-id="review-document"]');
+    const sourceLabel = page.locator('#edgeLabelLayer .edge-label[data-edge-id="review-edge-source"]');
+    await expect(sourceBlock).toHaveClass(/review-source-hidden/);
+    await expectVisuallyMasked(sourceBlock.locator('.node-title'));
+    await expect(sourceLabel).toHaveClass(/review-label-hidden/);
+    await expectVisuallyMasked(sourceLabel);
+    await page.locator('#reviewReveal').click();
+    await expect(page.locator('#reviewAnswer')).toContainText(/Simon Dixon debt-power interview\/model/i);
+    await expect(page.locator('.map-node.review-highlight')).toHaveCount(2);
+    await expect(page.locator('#edgeLayer .edge.review-highlight')).toHaveCount(1);
+    await expect(sourceBlock).not.toHaveClass(/review-source-hidden/);
+    await expectVisuallyUnmasked(sourceBlock.locator('.node-title'));
+    await expect(sourceLabel).not.toHaveClass(/review-label-hidden/);
+    await expectVisuallyUnmasked(sourceLabel);
+  });
+
+  test('map review session summary counts got it almost and missed ratings', async ({ page }) => {
+    await loadShortReviewFixture(page);
+    await openReviewPanel(page);
+
+    await revealAndRate(page, 'got-it');
+    await revealAndRate(page, 'almost');
+    await revealAndRate(page, 'missed');
+
+    await expect(page.locator('#reviewSummary')).toBeVisible();
+    await expect(page.locator('#reviewSummaryReviewed')).toHaveText('3');
+    await expect(page.locator('#reviewSummaryGotIt')).toHaveText('1');
+    await expect(page.locator('#reviewSummaryAlmost')).toHaveText('1');
+    await expect(page.locator('#reviewSummaryMissed')).toHaveText('1');
+
+    await page.locator('#reviewRestart').click();
+    await expect(page.locator('#reviewCard')).toBeVisible();
+    await expect(page.locator('#reviewProgress')).toContainText(/1 of 3/i);
+  });
+
+  test('map review rating and exit do not create map undo history or alter content', async ({ page }) => {
+    await loadShortReviewFixture(page);
+    const beforeMap = await getSeedMapState(page);
+
+    await openReviewPanel(page);
+    await revealAndRate(page, 'got-it');
+    await expect(page.locator('.map-node.review-answer-hidden')).toHaveCount(1);
+    await page.locator('#reviewExit').click();
+    await expect(page.locator('.review-highlight')).toHaveCount(0);
+    await expect(page.locator('.review-answer-hidden')).toHaveCount(0);
+    await expect(page.locator('.review-source-hidden')).toHaveCount(0);
+    await expect(page.locator('.review-label-hidden')).toHaveCount(0);
+    await expectVisuallyUnmasked(page.locator('.map-node[data-id="short-b"] .node-body'));
+    await page.keyboard.press(process.platform === 'darwin' ? 'Meta+Z' : 'Control+Z');
+
+    await expect(page.locator('#toast')).toContainText(/Nothing to undo/i);
+    const afterMap = await getSeedMapState(page);
+    expect(afterMap?.nodes).toEqual(beforeMap?.nodes);
+    expect(afterMap?.edges).toEqual(beforeMap?.edges);
+  });
+
+  test('workspace backup export and import preserve map review attempts', async ({ page }) => {
+    await clearWorkspaceDatabase(page);
+    await page.goto('/');
+    await waitForWorkspaceStore(page);
+
+    const exported = await page.evaluate(async () => {
+      const runtime = window as Window & {
+        neuroMapWorkspaceStore?: {
+          createPage: (projectId: string, fields: Record<string, string>) => Promise<{ id: string }>;
+          exportWorkspaceBackup: () => Promise<Record<string, unknown>>;
+          savePageState: (pageId: string, pageType: string, data: Record<string, unknown>) => Promise<unknown>;
+        };
+      };
+      const store = runtime.neuroMapWorkspaceStore;
+      if (!store) throw new Error('Missing workspace store.');
+      const pageRecord = await store.createPage('geopolitics-economics', {
+        title: 'Backup review map',
+        type: 'map',
+        description: 'Review attempts should survive backup import.',
+      });
+      await store.savePageState(pageRecord.id, 'map', {
+        kind: 'map-workspace',
+        workspace: {
+          version: 19,
+          activePageId: 'page-main',
+          pages: [
+            {
+              id: 'page-main',
+              title: 'Backup review map',
+              map: {
+                version: 20,
+                view: { x: 0, y: 0, scale: 1 },
+                nodes: [
+                  {
+                    id: 'backup-node',
+                    title: 'Backup card',
+                    body: 'Backup answer.',
+                    group: 'blue',
+                    shape: 'card',
+                    importance: 2,
+                    x: 0,
+                    y: 0,
+                    w: 240,
+                    h: 130,
+                    tag: 'review',
+                    nodeType: 'concept',
+                    documentId: '',
+                  },
+                ],
+                edges: [],
+              },
+            },
+          ],
+        },
+        starterHidden: true,
+        review: {
+          version: 1,
+          attempts: [
+            {
+              id: 'backup-review-attempt',
+              cardId: 'page-main:block:backup-node',
+              pageId: pageRecord.id,
+              mapViewId: 'page-main',
+              cardType: 'block',
+              rating: 'missed',
+              reviewedAt: '2026-04-28T00:00:00.000Z',
+              attemptCount: 1,
+            },
+          ],
+          sessions: [],
+        },
+      });
+      return { pageId: pageRecord.id, backup: await store.exportWorkspaceBackup() };
+    });
+
+    const backupText = JSON.stringify(exported.backup);
+    expect(backupText).toContain('backup-review-attempt');
+    expect(backupText).toContain('"review"');
+
+    await clearWorkspaceDatabase(page);
+    await page.goto('/');
+    await waitForWorkspaceStore(page);
+    const importedReview = await page.evaluate(async ({ backup, pageId }) => {
+      const runtime = window as Window & {
+        neuroMapWorkspaceStore?: {
+          getPageState: (targetPageId: string) => Promise<{ data?: { review?: { attempts?: Array<{ rating: string }> } } } | null>;
+          importWorkspaceBackup: (payload: Record<string, unknown>, options: { mode: string }) => Promise<unknown>;
+        };
+      };
+      const store = runtime.neuroMapWorkspaceStore;
+      if (!store) throw new Error('Missing workspace store.');
+      await store.importWorkspaceBackup(backup, { mode: 'merge' });
+      return store.getPageState(pageId);
+    }, exported);
+
+    expect(importedReview?.data?.review?.attempts?.[0]?.rating).toBe('missed');
   });
 
   test('seeded map migrates legacy localStorage into page-owned state without deleting the legacy save', async ({ page }) => {
