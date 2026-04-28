@@ -6,9 +6,8 @@
 - Repo: `https://github.com/Adel199223/neuro-map-studio`
 - Local WSL path: `/home/fa507/dev/neuro-map-studio-codex`
 - Source-of-truth branch: `main`
-- Latest shipped feature baseline: `761cf89c9bc3ac46483779793270df4f19ef8f3f`
+- Latest shipped feature baseline: Stage 4A2 weak-card review queue. For the exact current commit, run `git rev-parse main`.
 - Previous Stage 3A2 baseline retained for doctor checks: `7b062803a309b21daeda74e11a6b0183931d0f58`
-- For the exact current commit after docs-only cleanup, run `git rev-parse main`.
 - Remote source of truth: `origin/main`.
 
 ## Current Product State
