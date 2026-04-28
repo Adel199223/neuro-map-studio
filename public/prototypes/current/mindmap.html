@@ -225,8 +225,9 @@ a{color:inherit}
 .map-node.selected{outline:3px solid rgba(139,109,66,.34);border-color:#8b6d42;box-shadow:0 18px 40px rgba(72,54,31,.17);}
 .map-node.type-document{background:linear-gradient(135deg,var(--violet),#f9f2e7);border-color:var(--violet-border);}
 .map-node.type-document .node-title{cursor:default;}
-.map-node.connect-source{outline:4px solid rgba(79,121,138,.38);}
-.map-node.connect-target{animation:pulseTarget 1.1s ease-in-out infinite alternate;}
+.map-node.connect-source{outline:4px solid rgba(79,121,138,.46);box-shadow:0 0 0 6px rgba(230,242,247,.74),0 18px 38px rgba(72,54,31,.16);}
+.map-node.connect-target{animation:pulseTarget 1.1s ease-in-out infinite alternate;cursor:crosshair;}
+.stage.connect-targeting .map-node.connect-target .node-content{outline:2px dashed rgba(85,123,136,.38);outline-offset:4px;border-radius:16px;}
 @keyframes pulseTarget{from{box-shadow:0 10px 25px rgba(72,54,31,.08)}to{box-shadow:0 0 0 5px rgba(85,123,136,.22),0 16px 34px rgba(72,54,31,.13)}}
 .node-top{display:grid;grid-template-columns:1fr auto;align-items:start;gap:.5rem;}
 .node-title{font-weight:900;font-size:1.04rem;line-height:1.12;margin:0 0 .38rem;}
@@ -683,9 +684,9 @@ a{color:inherit}
       </div>
     </div>
 
-    <div class="connect-banner" id="connectBanner">
-      <span id="connectText">Click another block to connect.</span>
-      <button id="cancelConnect">Cancel</button>
+    <div class="connect-banner" id="connectBanner" role="status" aria-live="polite">
+      <span id="connectText">Tap a block to connect. Esc to cancel.</span>
+      <button id="cancelConnect" type="button" title="Cancel connect existing block mode" aria-label="Cancel connect existing block mode">Cancel</button>
     </div>
 
     <div class="placement-overlay" id="placementOverlay" aria-live="polite" hidden>
@@ -1018,6 +1019,8 @@ import {
   let suppressNextPlacementClick = false;
   let activePortTap = null;
   let suppressedPortClick = null;
+  let activeConnectTargetTap = null;
+  let suppressedConnectClick = null;
   let activePortMenuButton = null;
   let multiSelectMode = false;
   let mapClipboard = null;
@@ -4017,7 +4020,7 @@ import {
         port.type = 'button';
         port.dataset.nodeId = n.id;
         port.dataset.portSide = side;
-        port.title = `Add linked block from ${side} side of ${documentRecord?.title || n.title || 'this block'}`;
+        port.title = `Add linked block from ${side} side of ${documentRecord?.title || n.title || 'this block'}, or connect an existing block`;
         port.setAttribute('aria-label', port.title);
         el.appendChild(port);
       });
@@ -4885,6 +4888,13 @@ import {
     const menuButton = nodeLayer.querySelector(`.map-node[data-id="${CSS.escape(source.id)}"] .connection-port.port-${CSS.escape(side)}`) || button;
     const rect = menuButton.getBoundingClientRect();
     showMenu(`Add linked block from ${portSideLabel(side)} side`, [
+      {
+        label:'Connect existing block',
+        action:'port-connect-existing',
+        title:'Connect this block to another existing block',
+        ariaLabel:'Connect existing block from this port'
+      },
+      {type:'section', label:'Create new linked block'},
       {label:'Concept block', action:'port-add-concept'},
       {label:'Question block', action:'port-add-question'},
       {label:'Evidence block', action:'port-add-evidence'},
@@ -4942,6 +4952,38 @@ import {
     }
     if(suppressedPortClick.key !== portTapKey(port)) return false;
     suppressedPortClick = null;
+    return true;
+  }
+  function startConnectTargetTap(nodeId, event){
+    activeConnectTargetTap = {
+      pointerId:event.pointerId,
+      nodeId,
+      sx:event.clientX,
+      sy:event.clientY
+    };
+  }
+  function clearConnectTargetTap(pointerId=null){
+    if(pointerId !== null && activeConnectTargetTap?.pointerId !== pointerId) return;
+    activeConnectTargetTap = null;
+  }
+  function connectTargetTapMoved(event){
+    if(!activeConnectTargetTap || activeConnectTargetTap.pointerId !== event.pointerId) return false;
+    return Math.hypot(event.clientX - activeConnectTargetTap.sx, event.clientY - activeConnectTargetTap.sy) > PORT_TAP_MOVE;
+  }
+  function suppressNextConnectClick(nodeId){
+    suppressedConnectClick = {
+      nodeId,
+      until:Date.now() + 700
+    };
+  }
+  function consumeSuppressedConnectClick(nodeId){
+    if(!suppressedConnectClick) return false;
+    if(Date.now() > suppressedConnectClick.until){
+      suppressedConnectClick = null;
+      return false;
+    }
+    if(suppressedConnectClick.nodeId !== nodeId) return false;
+    suppressedConnectClick = null;
     return true;
   }
   function addFreeAtCenter(){ const r = stage.getBoundingClientRect(); const p = screenToWorld(r.left + r.width/2, r.top + r.height/2); addNodeAt(p.x - 130, p.y - 70); }
@@ -5394,17 +5436,30 @@ import {
     commitMapCommand('Deleted block', before, {render:false});
     showToast('Block deleted. Ctrl+Z to undo.');
   }
+  function directedEdgeBetween(from, to){
+    return data.edges.find(e => e.from === from && e.to === to) || null;
+  }
   function addEdge(from,to,opts={}){
-    if(!from || !to || from===to || !byId(from) || !byId(to)) return;
-    if(data.edges.some(e => e.from === from && e.to === to)){ showToast('Already connected'); return; }
+    if(!from || !to || !byId(from) || !byId(to)) return null;
+    if(from === to){
+      showToast(opts.selfToast || 'Choose a different block to connect.');
+      return null;
+    }
+    const existingEdge = directedEdgeBetween(from, to);
+    if(existingEdge){
+      selectEdge(existingEdge.id, 'duplicate-relationship');
+      showToast(opts.duplicateToast || 'Those blocks are already connected.');
+      return existingEdge;
+    }
     const before = beginMapCommand();
     const e = {id:edgeId(), from, to, relation:opts.relation || 'causes', strength:opts.strength || 3, shape:opts.shape || 'curve', fromPort:opts.fromPort || 'auto', toPort:opts.toPort || 'auto', label:opts.label || ''};
     data.edges.push(e);
     applySelectionSnapshot({nodes:[], edges:[e.id]});
     render();
     commitMapCommand('Connected blocks', before, {render:false});
-    showToast('Connected. Use the link toolbar or right-click/long-press to style it.');
-    temporarilyPassThroughZoomDock(); logInputDebug('connect-complete', inputDebugState.lastPointer, {mode:'edge'});
+    showToast(opts.toast || 'Blocks connected. Ctrl+Z to undo.');
+    temporarilyPassThroughZoomDock(); logInputDebug('connect-complete', opts.source || inputDebugState.lastPointer, {mode:'edge'});
+    return e;
   }
   function deleteEdge(edgeId){
     if(!edgeById(edgeId)) return;
@@ -5424,8 +5479,57 @@ import {
   function setEdgeShape(edgeId, shape){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); e.shape = shape; render(); commitMapCommand('Line route changed', before, {render:false}); }
   function setEdgePort(edgeId, end, port){ const e = edgeById(edgeId); if(!e || !ports.includes(port)) return; const before = beginMapCommand(); if(end === 'from') e.fromPort = port; else e.toPort = port; render(); if(commitMapCommand('Connection side changed', before, {render:false})) showToast('Connection side changed'); }
   function setEdgeLabel(edgeId){ const e = edgeById(edgeId); if(!e) return; const style = relationStyles[e.relation]; const txt = prompt('Short label for this link:', e.label || style.label); if(txt === null) return; const before = beginMapCommand(); e.label = clean(txt); render(); commitMapCommand('Line label changed', before, {render:false}); }
-  function startConnect(nodeId){ if(!byId(nodeId)) return; connectFrom = nodeId; syncGestureLockUI(); render(); const source = byId(nodeId); connectText.textContent = `Connecting from “${source.title || 'block'}”: click another block.`; connectBanner.classList.add('show'); showToast('Click target block'); logInputDebug('connect-start', inputDebugState.lastPointer, {mode:'node'}); }
-  function cancelConnect(){ connectFrom = null; syncGestureLockUI(); connectBanner.classList.remove('show'); render(); }
+  function completeConnectToBlock(targetNodeId, sourceEvent=null){
+    if(!connectFrom) return false;
+    const sourceId = connectFrom;
+    const source = byId(sourceId);
+    const target = byId(targetNodeId);
+    if(!source || !target){
+      cancelConnect({announce:'Connection canceled.'});
+      return false;
+    }
+    if(sourceId === targetNodeId){
+      showToast('Choose a different block to connect.');
+      return true;
+    }
+    const edge = addEdge(sourceId, targetNodeId, {
+      toast:'Blocks connected. Ctrl+Z to undo.',
+      duplicateToast:'Those blocks are already connected.',
+      source:sourceEvent || inputDebugState.lastPointer
+    });
+    if(edge) cancelConnect();
+    return !!edge;
+  }
+  function startConnect(nodeId, options={}){
+    const source = byId(nodeId);
+    if(!source) return;
+    cancelPlacementMode('connect');
+    closeDocumentPicker();
+    closeDocumentDetail();
+    closeMenu();
+    clearEdgeDeleteArm();
+    activeConnectTargetTap = null;
+    connectFrom = nodeId;
+    syncGestureLockUI();
+    render();
+    connectText.textContent = `Connecting from “${source.title || 'block'}”: tap a block to connect. Esc to cancel.`;
+    connectBanner.classList.add('show');
+    setStatus('Tap a block to connect. Esc to cancel.');
+    showToast(options.toast || 'Tap a block to connect');
+    logInputDebug('connect-start', options.source || inputDebugState.lastPointer, {mode:'node', reason:options.origin || 'direct'});
+  }
+  function cancelConnect(options={}){
+    const wasConnecting = !!connectFrom || !!activeConnectTargetTap;
+    connectFrom = null;
+    activeConnectTargetTap = null;
+    suppressedConnectClick = null;
+    syncGestureLockUI();
+    connectBanner.classList.remove('show');
+    render();
+    if(options.announce) showToast(options.announce === true ? 'Connection canceled.' : options.announce);
+    if(wasConnecting) setStatus('Map ready');
+    return wasConnecting;
+  }
 
   function tidy(){
     const before = beginMapCommand();
@@ -5524,7 +5628,7 @@ import {
       if(item.type === 'fromPorts'){ const row = document.createElement('div'); row.className = 'menu-row'; ports.forEach(s => { const b = document.createElement('button'); b.dataset.action = 'port-from-' + s; b.textContent = portLabels[s]; row.appendChild(b); }); menu.appendChild(row); return; }
       if(item.type === 'toPorts'){ const row = document.createElement('div'); row.className = 'menu-row'; ports.forEach(s => { const b = document.createElement('button'); b.dataset.action = 'port-to-' + s; b.textContent = portLabels[s]; row.appendChild(b); }); menu.appendChild(row); return; }
       if(item.type === 'linkedDirs'){ const row = document.createElement('div'); row.className = 'menu-row'; ['top','right','bottom','left'].forEach(s => { const b = document.createElement('button'); b.dataset.action = 'add-linked-' + s; b.textContent = s; row.appendChild(b); }); menu.appendChild(row); return; }
-      const b = document.createElement('button'); b.type = 'button'; b.dataset.action = item.action; b.textContent = item.label; if(item.danger) b.classList.add('danger'); if(item.disabled) b.disabled = true; menu.appendChild(b);
+      const b = document.createElement('button'); b.type = 'button'; b.dataset.action = item.action; b.textContent = item.label; if(item.title) b.title = item.title; b.setAttribute('aria-label', item.ariaLabel || item.label); if(item.danger) b.classList.add('danger'); if(item.disabled) b.disabled = true; menu.appendChild(b);
     });
     menu.classList.add('show'); menu.setAttribute('aria-hidden','false');
     const pad = 8, rect = menu.getBoundingClientRect(); let x = clientX, y = clientY;
@@ -5604,7 +5708,7 @@ import {
       else if(action.startsWith('add-linked-')) addLinkedFrom(n.id, undefined, undefined, action.replace('add-linked-',''));
       else if(action === 'start-connect') startConnect(n.id);
       else if(action === 'page-from-node') createPageFromNode(n.id);
-      else if(action === 'connect-pending'){ addEdge(connectFrom, n.id); cancelConnect(); }
+      else if(action === 'connect-pending') completeConnectToBlock(n.id, ctx.source || inputDebugState.lastPointer);
       else if(action === 'duplicate') duplicateNode(n.id);
       else if(action === 'center-node') centerOnNode(n.id);
       else if(action === 'remove-edges') removeNodeEdges(n.id);
@@ -5624,7 +5728,8 @@ import {
       else if(action.startsWith('port-from-')) setEdgePort(edge.id, 'from', action.replace('port-from-',''));
       else if(action.startsWith('port-to-')) setEdgePort(edge.id, 'to', action.replace('port-to-',''));
     }else if(ctx.type === 'port'){
-      if(action === 'port-add-document') openDocumentPicker(null, {quickAdd:{sourceId:ctx.id, side:ctx.side}});
+      if(action === 'port-connect-existing') startConnect(ctx.id, {origin:'port', side:ctx.side, toast:'Tap a block to connect', source:ctx.source});
+      else if(action === 'port-add-document') openDocumentPicker(null, {quickAdd:{sourceId:ctx.id, side:ctx.side}});
       else if(action.startsWith('port-add-')) createPortLinkedBlock(ctx.id, ctx.side, action.replace('port-add-',''));
     }else if(ctx.type === 'canvas'){
       const p = ctx.point;
@@ -5666,6 +5771,16 @@ import {
     cancelLongPress(e.pointerId, 'placement', e);
     stopCanvasPan(false);
     completePlacementAt(e.clientX, e.clientY, e);
+  }, true);
+  stage.addEventListener('pointerdown', e => {
+    if(!connectFrom || e.button !== 0) return;
+    const target = e.target instanceof Element ? e.target : null;
+    if(!target || isCanvasGestureBlockedTarget(target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    cancelLongPress(e.pointerId, 'connect-canvas-cancel', e);
+    stopCanvasPan(false);
+    cancelConnect({announce:'Connection canceled.'});
   }, true);
   stage.addEventListener('pointermove', e => {
     if(!pendingPlacement) return;
@@ -5740,7 +5855,47 @@ import {
     openPortQuickAddMenu(port);
   }, true);
 
-  nodeLayer.addEventListener('click', e => { const detailButton = e.target.closest('[data-action="document-detail"]'); if(detailButton){ const nodeEl = detailButton.closest('.map-node'); const node = nodeEl ? byId(nodeEl.dataset.id) : null; if(node) openDocumentDetail(node); e.stopPropagation(); return; } const el = e.target.closest('.map-node'); if(!el) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'node', target:el}); if(connectFrom && el.dataset.id !== connectFrom){ addEdge(connectFrom, el.dataset.id); cancelConnect(); return; } if(shouldToggleSelection(e)) toggleNodeSelection(el.dataset.id, 'toggle-node', e); else select(el.dataset.id); });
+  nodeLayer.addEventListener('pointerdown', e => {
+    if(!connectFrom || !isTouchLikePointer(e) || e.button !== 0) return;
+    const target = e.target instanceof Element ? e.target : null;
+    const el = target?.closest('.map-node');
+    if(!el || target.closest('.connection-port,.drag-handle,.resize-handle,[contenteditable]')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeMenu();
+    cancelLongPress(e.pointerId, 'connect-target', e);
+    startConnectTargetTap(el.dataset.id, e);
+    setPointerGestureOwner(e.pointerId, {owner:'connect-target', nodeId:el.dataset.id});
+  }, true);
+  nodeLayer.addEventListener('pointermove', e => {
+    if(!activeConnectTargetTap || activeConnectTargetTap.pointerId !== e.pointerId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if(connectTargetTapMoved(e)){
+      clearConnectTargetTap(e.pointerId);
+      clearPointerGestureOwner(e.pointerId);
+    }
+  }, true);
+  nodeLayer.addEventListener('pointerup', e => {
+    if(!activeConnectTargetTap || activeConnectTargetTap.pointerId !== e.pointerId) return;
+    const targetNodeId = activeConnectTargetTap.nodeId;
+    e.preventDefault();
+    e.stopPropagation();
+    cancelLongPress(e.pointerId, 'connect-target', e);
+    if(!connectTargetTapMoved(e)){
+      suppressNextConnectClick(targetNodeId);
+      completeConnectToBlock(targetNodeId, e);
+    }
+    clearConnectTargetTap(e.pointerId);
+    clearPointerGestureOwner(e.pointerId);
+  }, true);
+  nodeLayer.addEventListener('pointercancel', e => {
+    if(!activeConnectTargetTap || activeConnectTargetTap.pointerId !== e.pointerId) return;
+    clearConnectTargetTap(e.pointerId);
+    clearPointerGestureOwner(e.pointerId);
+  }, true);
+
+  nodeLayer.addEventListener('click', e => { const detailButton = e.target.closest('[data-action="document-detail"]'); if(detailButton){ const nodeEl = detailButton.closest('.map-node'); const node = nodeEl ? byId(nodeEl.dataset.id) : null; if(node) openDocumentDetail(node); e.stopPropagation(); return; } const el = e.target.closest('.map-node'); if(!el) return; if(consumeSuppressedConnectClick(el.dataset.id)){ e.preventDefault(); e.stopPropagation(); return; } logInputDebug('tap', inputDebugState.lastPointer, {mode:'node', target:el}); if(connectFrom){ e.preventDefault(); e.stopPropagation(); completeConnectToBlock(el.dataset.id, e); return; } if(shouldToggleSelection(e)) toggleNodeSelection(el.dataset.id, 'toggle-node', e); else select(el.dataset.id); });
   edgeLabelLayer.addEventListener('click', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'edge', target:lab}); if(shouldToggleSelection(e)) toggleEdgeSelection(lab.dataset.edgeId, 'toggle-line', e); else selectEdge(lab.dataset.edgeId); });
   edgeLayer.addEventListener('click', e => { const g = e.target.closest('g.edge-group'); if(!g) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'edge', target:g}); if(shouldToggleSelection(e)) toggleEdgeSelection(g.dataset.edgeId, 'toggle-line', e); else selectEdge(g.dataset.edgeId); });
   nodeLayer.addEventListener('focusin', e => { const field = e.target.dataset.field, el = e.target.closest('.map-node'); if(!field || !el) return; beginTextEdit(el.dataset.id, field); });
@@ -6017,7 +6172,11 @@ import {
       }
       closeMenu();
       clearEdgeDeleteArm();
-      if(connectFrom) cancelConnect();
+      if(connectFrom){
+        e.preventDefault();
+        cancelConnect({announce:'Connection canceled.'});
+        return;
+      }
       if(multiSelectMode){
         e.preventDefault();
         setMultiSelectMode(false, {announce:true});

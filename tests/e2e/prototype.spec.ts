@@ -504,6 +504,32 @@ async function quickAddConceptFromPort(page: Page, nodeId = 'public', side: 'top
   return selected.nodes[0];
 }
 
+async function connectExistingFromPort(
+  page: Page,
+  sourceId = 'public',
+  targetId = 'bitcoin',
+  side: 'top' | 'right' | 'bottom' | 'left' = 'right',
+) {
+  const beforeMap = await getSeedMapState(page);
+  const beforeEdges = beforeMap?.edges.length ?? 0;
+  await openPortQuickAddMenu(page, sourceId, side);
+  await page.locator('#contextMenu').getByRole('button', { name: /Connect existing block/i }).click();
+  await expect(page.locator('#connectBanner')).toBeVisible();
+  await expect(page.locator('#connectText')).toContainText(/Tap a block to connect/i);
+  await expect(page.locator(`.map-node[data-id="${sourceId}"]`)).toHaveClass(/connect-source/);
+  await expect(page.locator(`.map-node[data-id="${targetId}"]`)).toHaveClass(/connect-target/);
+  await syntheticClick(page.locator(`.map-node[data-id="${targetId}"]`));
+  await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(beforeEdges + 1);
+  const selected = await getSelectedMapIds(page);
+  expect(selected.nodes).toHaveLength(0);
+  expect(selected.edges).toHaveLength(1);
+  const mapState = await getSeedMapState(page);
+  const edge = mapState?.edges.find((entry) => entry.from === sourceId && entry.to === targetId);
+  expect(edge).toBeTruthy();
+  expect(selected.edges).toContain(edge!.id);
+  return edge!.id;
+}
+
 async function getPortAffordanceState(page: Page, nodeId: string) {
   return page.evaluate((targetNodeId) => {
     const node = document.querySelector(`.map-node[data-id="${CSS.escape(targetNodeId)}"]`);
@@ -3064,6 +3090,115 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#contextMenu')).toContainText(/Question block/i);
     await expect(page.locator('#contextMenu')).toContainText(/Evidence block/i);
     await expect(page.locator('#contextMenu')).toContainText(/Document block/i);
+    await expect(page.locator('#contextMenu')).toContainText(/Connect existing block/i);
+    await expect(page.locator('#contextMenu').getByRole('button', { name: /Connect existing block/i })).toHaveAttribute(
+      'title',
+      /Connect this block to another existing block/i,
+    );
+  });
+
+  test('port menu connects to an existing block and keeps the new relationship undoable', async ({ page }) => {
+    await resetMindmap(page);
+
+    const edgeId = await connectExistingFromPort(page, 'public', 'bitcoin', 'right');
+    await expect(page.locator('#toast')).toContainText(/Blocks connected\. Ctrl\+Z to undo\./i);
+    await expect(page.locator('#connectBanner')).not.toBeVisible();
+
+    await page.locator('#stage').focus();
+    await page.keyboard.press('Control+Z');
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(14);
+    let mapState = await getSeedMapState(page);
+    expect(mapState?.edges.some((edge) => edge.id === edgeId)).toBe(false);
+
+    await page.keyboard.press('Control+Shift+Z');
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
+    mapState = await getSeedMapState(page);
+    expect(mapState?.edges.some((edge) => edge.id === edgeId && edge.from === 'public' && edge.to === 'bitcoin')).toBe(
+      true,
+    );
+    await expect(page.locator(`#edgeLayer g.edge-group[data-edge-id="${edgeId}"] .edge`)).toHaveClass(/selected/);
+  });
+
+  test('connect existing targeting can be canceled without creating map history', async ({ page }) => {
+    await resetMindmap(page);
+
+    const beforeMap = await getSeedMapState(page);
+    await openPortQuickAddMenu(page, 'public', 'right');
+    await page.locator('#contextMenu').getByRole('button', { name: /Connect existing block/i }).click();
+    await expect(page.locator('#connectBanner')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#connectBanner')).not.toBeVisible();
+    await expect(page.locator('#toast')).toContainText(/Connection canceled/i);
+    const afterMap = await getSeedMapState(page);
+    expect(afterMap?.edges).toEqual(beforeMap?.edges);
+
+    await openPortQuickAddMenu(page, 'public', 'right');
+    await page.locator('#contextMenu').getByRole('button', { name: /Connect existing block/i }).click();
+    await expect(page.locator('#connectBanner')).toBeVisible();
+    const stageBox = await visibleBoundingBox(page.locator('#stage'), 'blank canvas connect cancel');
+    await page.locator('#stage').dispatchEvent('pointerdown', {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      pointerId: 81,
+      pointerType: 'mouse',
+      button: 0,
+      buttons: 1,
+      clientX: stageBox.x + stageBox.width - 18,
+      clientY: stageBox.y + stageBox.height - 18,
+    });
+    await expect(page.locator('#connectBanner')).not.toBeVisible();
+    await expect(page.locator('#toast')).toContainText(/Connection canceled/i);
+    expect((await getSeedMapState(page))?.edges).toEqual(beforeMap?.edges);
+
+    await page.locator('#stage').focus();
+    await page.keyboard.press('Control+Z');
+    await expect(page.locator('#toast')).toContainText(/Nothing to undo/i);
+    expect((await getSeedMapState(page))?.edges).toEqual(beforeMap?.edges);
+  });
+
+  test('connect existing prevents self-links and duplicate same-direction relationships', async ({ page }) => {
+    await resetMindmap(page);
+
+    const beforeMap = await getSeedMapState(page);
+    await openPortQuickAddMenu(page, 'public', 'right');
+    await page.locator('#contextMenu').getByRole('button', { name: /Connect existing block/i }).click();
+    await syntheticClick(page.locator('.map-node[data-id="public"]'));
+    await expect(page.locator('#toast')).toContainText(/Choose a different block to connect/i);
+    await expect(page.locator('#connectBanner')).toBeVisible();
+    expect((await getSeedMapState(page))?.edges).toEqual(beforeMap?.edges);
+    await page.locator('#cancelConnect').click();
+
+    const edgeId = await connectExistingFromPort(page, 'public', 'bitcoin', 'right');
+    await openPortQuickAddMenu(page, 'public', 'right');
+    await page.locator('#contextMenu').getByRole('button', { name: /Connect existing block/i }).click();
+    await syntheticClick(page.locator('.map-node[data-id="bitcoin"]'));
+    await expect(page.locator('#toast')).toContainText(/Those blocks are already connected/i);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
+    const selected = await getSelectedMapIds(page);
+    expect(selected).toEqual({ nodes: [], edges: [edgeId] });
+    const mapState = await getSeedMapState(page);
+    expect(mapState?.edges.filter((edge) => edge.from === 'public' && edge.to === 'bitcoin')).toHaveLength(1);
+  });
+
+  test('pen-style port flow connects one existing block without duplicate menus', async ({ page }) => {
+    await resetMindmap(page);
+
+    await pointerTap(page.locator('.map-node[data-id="public"]'), { pointerType: 'pen' });
+    const rightPort = page.locator('.map-node[data-id="public"] .connection-port.port-right');
+    await pointerTap(rightPort, { pointerType: 'pen' });
+    const menu = page.locator('#contextMenu');
+    await expect(menu).toHaveAttribute('aria-hidden', 'false');
+    await expect(menu).toContainText(/Connect existing block/i);
+    await page.locator('#contextMenu').getByRole('button', { name: /Connect existing block/i }).click();
+    await expect(page.locator('#connectBanner')).toBeVisible();
+
+    await pointerTap(page.locator('.map-node[data-id="bitcoin"]'), { pointerType: 'pen' });
+    await expect(menu).toHaveAttribute('aria-hidden', 'true');
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
+    const mapState = await getSeedMapState(page);
+    expect(mapState?.edges.filter((edge) => edge.from === 'public' && edge.to === 'bitcoin')).toHaveLength(1);
+    await expect(page.locator('#toast')).toContainText(/Blocks connected\. Ctrl\+Z to undo\./i);
   });
 
   test('connection port plus appears only on the active port affordance', async ({ page }, testInfo) => {

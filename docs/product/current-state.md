@@ -56,7 +56,7 @@ The map editor is the central diagram workspace. It preserves canvas-first behav
 - selected-block group drag and arrow-key nudge
 - Zoom to selection from the selection toolbar
 - desktop/trackpad box selection with Shift-drag on empty canvas
-- connection-port quick-add for linked Concept, Question, Evidence, and Document blocks
+- connection-port quick-add for linked Concept, Question, Evidence, and Document blocks, plus Connect existing block targeting
 - collision-aware automatic placement for port quick-add, paste, duplicate, and document blocks
 - dynamic relationship re-anchoring when connected blocks move
 
@@ -104,7 +104,7 @@ Galaxy Tab and S Pen support includes:
 
 - S Pen tap-to-place
 - S Pen/finger drag
-- S Pen/finger port tapping for linked-block quick-add
+- S Pen/finger port tapping for linked-block quick-add and Connect existing block
 - touch-accessible undo/redo, multi-select, and selection toolbar actions
 - finger pan/zoom
 - long-press menus

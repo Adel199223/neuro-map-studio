@@ -38,6 +38,7 @@ Use this for quick validation on local dev or GitHub Pages.
 - [ ] Question and Evidence blocks can be placed.
 - [ ] A project source can be added as a document block.
 - [ ] Document block shows title/type, can be dragged, can be linked, and persists after reload.
+- [ ] A connection-port menu can Connect existing block, creates one undoable relationship line, and prevents self-links or duplicate same-direction links.
 - [ ] Selection toolbar remains usable.
 - [ ] Notification bubbles appear briefly and do not stretch layout.
 - [ ] Zoom controls remain usable.

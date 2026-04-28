@@ -51,6 +51,17 @@ localStorage.removeItem("neuro-map-studio:debug-input")
 - [ ] Link document block to another block.
 - [ ] Move the linked block and confirm the relationship line follows.
 
+## Connection Ports
+
+- [ ] Tap a block connection port with S Pen and confirm the menu includes Connect existing block.
+- [ ] Tap Connect existing block, then tap a different existing block.
+- [ ] Confirm one relationship line is created and selected.
+- [ ] Use undo and redo to remove and restore that relationship line.
+- [ ] Try connecting a block to itself and confirm no line is created.
+- [ ] Try connecting the same source and target twice and confirm the existing line is selected instead of creating a duplicate.
+- [ ] Tap Cancel or blank canvas during targeting and confirm normal editing resumes.
+- [ ] Confirm linked Concept / Question / Evidence / Document quick-add still works from the same port menu.
+
 ## Canvas And Zoom
 
 - [ ] Finger pan moves the canvas.
