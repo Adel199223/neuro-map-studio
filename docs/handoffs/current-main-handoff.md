@@ -6,7 +6,7 @@
 - Repo: `https://github.com/Adel199223/neuro-map-studio`
 - Local WSL path: `/home/fa507/dev/neuro-map-studio-codex`
 - Source-of-truth branch: `main`
-- Latest shipped feature baseline: Stage 4A3 project/workspace review dashboard. For the exact current commit, run `git rev-parse main`.
+- Latest shipped feature baseline: Stage 4A4 Review next priority queue. For the exact current commit, run `git rev-parse main`.
 - Previous Stage 3A2 baseline retained for doctor checks: `7b062803a309b21daeda74e11a6b0183931d0f58`
 - Remote source of truth: `origin/main`.
 
@@ -37,8 +37,8 @@ Preserve:
 - S Pen/finger drag, port tapping, pan/zoom, long-press, selection toolbar, and debug mode
 - embedded map Review Mode with block, relationship, connected-block, and source/evidence recall cards
 - pre-Reveal answer masking on map blocks and relationship labels
-- local review attempts/session summaries, weak-card queue, and card-type filters
-- project hub and root workspace review summaries with normal review and weak-card review launch links
+- local review attempts/session summaries, Review next priority queue, weak-card queue, and card-type filters
+- project hub and root workspace review summaries with Review next, normal review, and weak-card review launch links
 
 ## Normal Checks
 
@@ -54,7 +54,7 @@ npm run check
 
 Do not run `package:review`, `package:verify`, create zips, push, merge, delete branches, rebase, or force-push unless explicitly asked.
 
-Review Mode is local-first only. Do not add spaced-repetition scheduling, AI-generated questions, cloud sync, accounts, or collaboration unless explicitly requested.
+Review Mode is local-first only. Do not add spaced-repetition scheduling, due-date intervals, AI-generated questions, cloud sync, accounts, or collaboration unless explicitly requested.
 
 ## Recommended Start For Future Work
 

@@ -333,7 +333,7 @@ a{color:inherit}
 .review-filter-options button{border:1px solid var(--border);border-radius:999px;background:#fffaf4;min-height:2.1rem;padding:.28rem .54rem;font:inherit;font-size:.78rem;font-weight:900;cursor:pointer;}
 .review-filter-options button[aria-pressed="true"]{border-color:var(--blue-border);background:var(--blue);color:#365862;}
 .review-filter-state,.review-weak-state{margin:0;color:var(--muted);font-size:.82rem;font-weight:900;line-height:1.28;}
-.review-answer[hidden],.review-ratings[hidden],.review-card[hidden],.review-empty[hidden],.review-summary[hidden],.review-leak-hint[hidden],.review-launcher[hidden],.review-weak-state[hidden]{display:none!important;}
+.review-answer[hidden],.review-ratings[hidden],.review-card[hidden],.review-empty[hidden],.review-summary[hidden],.review-leak-hint[hidden],.review-launcher[hidden],.review-weak-state[hidden],.review-next-state[hidden]{display:none!important;}
 .review-actions,.review-ratings,.review-summary-actions,.review-option-actions{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;}
 .review-actions button,.review-ratings button,.review-summary-actions button,.review-option-actions button{border:1px solid var(--border);border-radius:999px;background:#fffaf4;min-height:2.45rem;padding:.4rem .72rem;font:inherit;font-weight:900;cursor:pointer;}
 .review-actions button.primary,.review-ratings button.primary,.review-summary-actions button.primary,.review-option-actions button.primary{border-color:var(--green-border);background:var(--green);}
@@ -617,8 +617,10 @@ a{color:inherit}
         </div>
         <div class="review-option-actions">
           <button class="primary" id="reviewStart" type="button" title="Start reviewing cards from this map" aria-label="Start review">Start review</button>
+          <button id="reviewStartNext" type="button" title="Review the most useful cards next" aria-label="Review next">Review next</button>
           <button id="reviewStartWeak" type="button" title="Review cards last rated Missed or Almost" aria-label="Review weak cards">Review weak cards</button>
         </div>
+        <p class="review-weak-state review-next-state" id="reviewNextState">Nothing urgent. Review any card or add more map content.</p>
         <p class="review-weak-state" id="reviewWeakState">No weak cards yet. Review this map first.</p>
       </article>
       <article class="review-empty" id="reviewEmpty" hidden>
@@ -839,7 +841,9 @@ import {
   const reviewFilterOptions = document.getElementById('reviewFilterOptions');
   const reviewFilterState = document.getElementById('reviewFilterState');
   const reviewStart = document.getElementById('reviewStart');
+  const reviewStartNext = document.getElementById('reviewStartNext');
   const reviewStartWeak = document.getElementById('reviewStartWeak');
+  const reviewNextState = document.getElementById('reviewNextState');
   const reviewWeakState = document.getElementById('reviewWeakState');
   const reviewEmpty = document.getElementById('reviewEmpty');
   const reviewEmptyText = document.getElementById('reviewEmptyText');
@@ -1052,7 +1056,7 @@ import {
     neighbor:'Connected blocks',
     source:'Sources/evidence'
   };
-  const REVIEW_SESSION_MODES = new Set(['normal', 'weak']);
+  const REVIEW_SESSION_MODES = new Set(['normal', 'weak', 'next']);
   const MAP_HISTORY_LIMIT = 100;
   const LONG_PRESS_DELAY = 450;
   const LONG_PRESS_MOVE = 10;
@@ -1516,17 +1520,51 @@ import {
       return (order.get(a.id) || 0) - (order.get(b.id) || 0);
     });
   }
+  function buildReviewNextCards(cards){
+    const cardIds = cards.map(card => card.id);
+    const latest = latestReviewAttemptsByCard(cardIds);
+    const order = new Map(cards.map((card, index) => [card.id, index]));
+    const priority = {missed:0, almost:1, unreviewed:2};
+    function priorityMeta(card){
+      const attempt = latest.get(card.id);
+      if(attempt?.rating === 'missed' || attempt?.rating === 'almost'){
+        return {bucket:attempt.rating, time:reviewAttemptTime(attempt)};
+      }
+      if(!attempt) return {bucket:'unreviewed', time:0};
+      return null;
+    }
+    return cards.map(card => ({card, meta:priorityMeta(card)}))
+      .filter(item => item.meta)
+      .sort((a, b) => {
+        const bucketDiff = priority[a.meta.bucket] - priority[b.meta.bucket];
+        if(bucketDiff) return bucketDiff;
+        if(a.meta.bucket !== 'unreviewed'){
+          const timeDiff = a.meta.time - b.meta.time;
+          if(timeDiff) return timeDiff;
+        }
+        return (order.get(a.card.id) || 0) - (order.get(b.card.id) || 0);
+      })
+      .map(item => item.card);
+  }
   function reviewStats(cards=generateReviewCards()){
     const cardIds = cards.map(card => card.id);
     const latest = latestReviewAttemptsByCard(cardIds);
     const attempts = currentReviewAttempts().filter(attempt => cardIds.includes(attempt.cardId));
     const sessions = currentReviewSessions();
     const completedSessions = sessions.filter(session => session.completedAt);
-    const weakCards = Array.from(latest.values()).filter(attempt => attempt.rating === 'missed' || attempt.rating === 'almost').length;
+    const latestValues = Array.from(latest.values());
+    const missedCards = latestValues.filter(attempt => attempt.rating === 'missed').length;
+    const almostCards = latestValues.filter(attempt => attempt.rating === 'almost').length;
+    const unreviewedCards = cards.filter(card => !latest.has(card.id)).length;
+    const weakCards = missedCards + almostCards;
     return {
       totalCards:cards.length,
       reviewedCards:latest.size,
       weakCards,
+      missedCards,
+      almostCards,
+      unreviewedCards,
+      priorityCards:missedCards + almostCards + unreviewedCards,
       attempts,
       latest,
       lastAttempt:attempts[attempts.length - 1] || null,
@@ -1535,10 +1573,10 @@ import {
   }
   function reviewHistoryText(cards=generateReviewCards()){
     const stats = reviewStats(cards);
-    const base = `${reviewCardCountLabel(stats.totalCards)} · ${stats.reviewedCards} reviewed · ${stats.weakCards} weak`;
+    const base = `${reviewCardCountLabel(stats.totalCards)} · ${stats.reviewedCards} reviewed · ${stats.weakCards} weak · ${stats.missedCards} missed · ${stats.almostCards} almost · ${stats.unreviewedCards} new`;
     if(!stats.totalCards) return 'No review cards yet.';
     if(stats.lastSession){
-      const label = stats.lastSession.mode === 'weak' ? 'Last weak review' : 'Last review';
+      const label = stats.lastSession.mode === 'weak' ? 'Last weak review' : (stats.lastSession.mode === 'next' ? 'Last Review next' : 'Last review');
       return `${base}. ${label}: ${stats.lastSession.reviewedCount} reviewed, Got it ${stats.lastSession.gotIt}, Almost ${stats.lastSession.almost}, Missed ${stats.lastSession.missed}.`;
     }
     if(stats.lastAttempt){
@@ -1844,6 +1882,7 @@ import {
     reviewMode.selectedFilter = selectedFilter;
     const filteredCards = filterReviewCards(allCards, selectedFilter);
     const weakCards = buildWeakReviewCards(filteredCards);
+    const nextCards = buildReviewNextCards(filteredCards);
     const stats = reviewStats(allCards);
     updateReviewFilterControls();
     reviewLauncher.hidden = false;
@@ -1860,6 +1899,16 @@ import {
     const hasCards = filteredCards.length > 0;
     reviewStart.disabled = !hasCards;
     reviewStart.title = hasCards ? 'Start reviewing cards from this map' : 'No cards match this filter';
+    reviewStartNext.disabled = nextCards.length === 0;
+    reviewStartNext.textContent = nextCards.length ? `Review next (${nextCards.length})` : 'Review next';
+    reviewStartNext.title = nextCards.length ? 'Review Missed, Almost, then new cards' : 'Nothing urgent to review next';
+    reviewNextState.hidden = false;
+    if(nextCards.length){
+      const filteredStats = reviewStats(filteredCards);
+      reviewNextState.textContent = `${filteredStats.missedCards} missed · ${filteredStats.almostCards} almost · ${filteredStats.unreviewedCards} new.`;
+    }else{
+      reviewNextState.textContent = 'Nothing urgent. Review any card or add more map content.';
+    }
     reviewStartWeak.disabled = weakCards.length === 0;
     reviewStartWeak.textContent = weakCards.length ? `Review weak cards (${weakCards.length})` : 'Review weak cards';
     reviewStartWeak.title = weakCards.length ? 'Review cards last rated Missed or Almost' : 'No weak cards are available';
@@ -1876,6 +1925,9 @@ import {
       reviewEmpty.hidden = false;
     }else if(!filteredCards.length){
       reviewEmptyText.textContent = 'No cards match this filter yet.';
+      reviewEmpty.hidden = false;
+    }else if(!nextCards.length && reviewStart.disabled && reviewStartWeak.disabled){
+      reviewEmptyText.textContent = 'Nothing urgent. Review any card or add more map content.';
       reviewEmpty.hidden = false;
     }else{
       reviewEmpty.hidden = true;
@@ -1899,13 +1951,13 @@ import {
       return;
     }
     if(reviewMode.session?.completed){
-      reviewProgress.textContent = reviewMode.mode === 'weak' ? 'Weak-card review complete' : 'Review complete';
+      reviewProgress.textContent = reviewMode.mode === 'weak' ? 'Weak-card review complete' : (reviewMode.mode === 'next' ? 'Review next complete' : 'Review complete');
       reviewLauncher.hidden = true;
       reviewEmpty.hidden = true;
       reviewCard.hidden = true;
       reviewSummary.hidden = false;
       if(reviewLeakHint) reviewLeakHint.hidden = true;
-      reviewSummaryTitle.textContent = reviewMode.mode === 'weak' ? 'Weak-card session summary' : 'Session summary';
+      reviewSummaryTitle.textContent = reviewMode.mode === 'weak' ? 'Weak-card session summary' : (reviewMode.mode === 'next' ? 'Review next session summary' : 'Session summary');
       reviewSummaryReviewed.textContent = String(reviewMode.session.reviewedCount);
       reviewSummaryGotIt.textContent = String(reviewMode.session.gotIt);
       reviewSummaryAlmost.textContent = String(reviewMode.session.almost);
@@ -1920,7 +1972,8 @@ import {
       renderReviewLauncher(allCards);
       return;
     }
-    reviewProgress.textContent = `${reviewMode.mode === 'weak' ? 'Weak cards · ' : ''}${reviewMode.index + 1} of ${reviewMode.cards.length}`;
+    const modePrefix = reviewMode.mode === 'weak' ? 'Weak cards · ' : (reviewMode.mode === 'next' ? 'Review next · ' : '');
+    reviewProgress.textContent = `${modePrefix}${reviewMode.index + 1} of ${reviewMode.cards.length}`;
     reviewLauncher.hidden = true;
     reviewEmpty.hidden = true;
     reviewCard.hidden = false;
@@ -1955,14 +2008,15 @@ import {
     const value = clean(runtimeParams.get('review') || '').toLowerCase();
     if(['1', 'true', 'yes', 'normal', 'map'].includes(value)) return 'normal';
     if(value === 'weak') return 'weak';
+    if(value === 'next') return 'next';
     return '';
   }
   function launchReviewFromUrl(){
     if(reviewDeepLinkHandled) return;
     reviewDeepLinkHandled = true;
     const requestedMode = requestedReviewModeFromUrl();
-    if(requestedMode === 'weak'){
-      startReviewSession('weak');
+    if(requestedMode === 'weak' || requestedMode === 'next'){
+      startReviewSession(requestedMode);
     }else if(requestedMode === 'normal'){
       openReviewLauncher();
     }
@@ -1972,7 +2026,9 @@ import {
     const selectedFilter = normalizeReviewFilter(reviewMode.selectedFilter);
     const allCards = generateReviewCards();
     const filteredCards = filterReviewCards(allCards, selectedFilter);
-    const cards = selectedMode === 'weak' ? buildWeakReviewCards(filteredCards) : filteredCards;
+    const cards = selectedMode === 'weak'
+      ? buildWeakReviewCards(filteredCards)
+      : (selectedMode === 'next' ? buildReviewNextCards(filteredCards) : filteredCards);
     reviewMode.active = true;
     reviewMode.cards = cards;
     reviewMode.index = 0;
@@ -1983,7 +2039,7 @@ import {
       reviewMode.session = null;
       prepareReviewPanelForUse();
       renderReviewPanel();
-      setStatus(selectedMode === 'weak' ? 'No weak cards yet' : 'No review cards match');
+      setStatus(selectedMode === 'weak' ? 'No weak cards yet' : (selectedMode === 'next' ? 'Nothing urgent to review next' : 'No review cards match'));
       requestAnimationFrame(() => reviewExit?.focus());
       return;
     }
@@ -2004,7 +2060,7 @@ import {
     };
     prepareReviewPanelForUse();
     renderReviewPanel();
-    setStatus(selectedMode === 'weak' ? 'Weak cards ready' : 'Review ready');
+    setStatus(selectedMode === 'weak' ? 'Weak cards ready' : (selectedMode === 'next' ? 'Review next ready' : 'Review ready'));
     requestAnimationFrame(() => {
       reviewReveal?.focus();
     });
@@ -6062,6 +6118,7 @@ import {
     else renderReviewPanel();
   });
   reviewStart?.addEventListener('click', () => startReviewSession('normal'));
+  reviewStartNext?.addEventListener('click', () => startReviewSession('next'));
   reviewStartWeak?.addEventListener('click', () => startReviewSession('weak'));
   reviewReveal?.addEventListener('click', revealCurrentReviewCard);
   reviewRatings?.addEventListener('click', event => {

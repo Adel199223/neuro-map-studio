@@ -106,14 +106,20 @@ interface MapReviewSummary {
   totalCards: number;
   reviewedCards: number;
   weakCards: number;
+  missedCards: number;
+  almostCards: number;
+  unreviewedCards: number;
+  priorityCards: number;
   lastReviewedAt: string;
   lastReviewedLabel: string;
   weakQueue: ReviewCardDescriptor[];
+  reviewNextQueue: ReviewCardDescriptor[];
 }
 
 interface WorkspaceReviewSummary {
   summaries: MapReviewSummary[];
   weakMaps: MapReviewSummary[];
+  priorityMaps: MapReviewSummary[];
   recentlyReviewed: MapReviewSummary[];
   notReviewed: MapReviewSummary[];
 }
@@ -149,7 +155,7 @@ function runtimeUrl(store: WorkspaceStore | null, pageId: string) {
   return withBase(`prototypes/current/${runtimePath}`);
 }
 
-function mapReviewUrl(pageId: string, mode: '1' | 'weak' = '1') {
+function mapReviewUrl(pageId: string, mode: '1' | 'weak' | 'next' = '1') {
   return `${prototypeMindMap}?pageId=${encodeURIComponent(pageId)}&review=${encodeURIComponent(mode)}`;
 }
 
@@ -229,6 +235,12 @@ function projectStats(snapshot: WorkspaceSnapshot | null, projectId: string) {
 
 function reviewCardCountLabel(count: number) {
   return `${count} card${count === 1 ? '' : 's'}`;
+}
+
+function reviewPriorityText(summary: MapReviewSummary) {
+  return `${summary.missedCards || 0} missed · ${summary.almostCards || 0} almost · ${
+    summary.unreviewedCards || 0
+  } new`;
 }
 
 function openDialog(ref: RefObject<HTMLDialogElement | null>) {
@@ -610,6 +622,33 @@ export default function App() {
           {workspaceReview?.summaries.length ? (
             <div className="review-dashboard-grid">
               <article className="review-dashboard-group">
+                <h3>Review next</h3>
+                {workspaceReview.priorityMaps.length ? (
+                  <div className="review-list">
+                    {workspaceReview.priorityMaps.slice(0, 3).map((summary) => (
+                      <div className="review-row" key={`next-${summary.pageId}`}>
+                        <div>
+                          <strong>{summary.title}</strong>
+                          <p>
+                            {reviewPriorityText(summary)} · {reviewCardCountLabel(summary.totalCards)}
+                          </p>
+                        </div>
+                        <div className="actions">
+                          <a className="button primary" href={mapReviewUrl(summary.pageId, 'next')}>
+                            Review next
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <h3>Nothing urgent.</h3>
+                    <p>Review any card or add more map content.</p>
+                  </div>
+                )}
+              </article>
+              <article className="review-dashboard-group">
                 <h3>Weak cards</h3>
                 {workspaceReview.weakMaps.length ? (
                   <div className="review-list">
@@ -618,8 +657,7 @@ export default function App() {
                         <div>
                           <strong>{summary.title}</strong>
                           <p>
-                            {summary.weakCards} weak · {summary.reviewedCards} reviewed ·{' '}
-                            {reviewCardCountLabel(summary.totalCards)}
+                            {summary.weakCards} weak · {summary.reviewedCards} reviewed · {reviewPriorityText(summary)}
                           </p>
                         </div>
                         <div className="actions">

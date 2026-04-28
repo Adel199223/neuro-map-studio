@@ -361,6 +361,10 @@ function reviewCardCountLabel(count){
   return `${count} card${count === 1 ? '' : 's'}`;
 }
 
+function reviewPriorityText(summary){
+  return `${summary.missedCards || 0} missed · ${summary.almostCards || 0} almost · ${summary.unreviewedCards || 0} new`;
+}
+
 function mapReviewSummaries(){
   return sortMapReviewSummaries(bundle.pages
     .filter(page => page.type === 'map')
@@ -387,15 +391,22 @@ function renderProjectReview(){
   if(summaries.every(summary => summary.weakCards === 0)){
     noteItems.push('No weak cards yet.');
   }
+  if(summaries.every(summary => summary.priorityCards === 0)){
+    noteItems.push('Nothing urgent. Review any card or add more map content.');
+  }
   notes.innerHTML = noteItems.map(item => `<span class="review-status">${escapeHtml(item)}</span>`).join('');
   list.innerHTML = summaries.map(summary => {
     const reviewHref = mapReviewHref({id:summary.pageId}, '1');
+    const nextHref = mapReviewHref({id:summary.pageId}, 'next');
     const weakHref = mapReviewHref({id:summary.pageId}, 'weak');
+    const nextAction = summary.priorityCards > 0
+      ? `<a class="button primary" href="${escapeHtml(nextHref)}" title="Review next cards in ${escapeHtml(summary.title)}" aria-label="Review next in ${escapeHtml(summary.title)}">Review next</a>`
+      : '<span class="button disabled" aria-disabled="true" title="Nothing urgent. Review any card or add more map content.">Review next</span>';
     const weakAction = summary.weakCards > 0
       ? `<a class="button" href="${escapeHtml(weakHref)}" title="Review weak cards in ${escapeHtml(summary.title)}" aria-label="Review weak cards in ${escapeHtml(summary.title)}">Review weak cards</a>`
       : '<span class="button disabled" aria-disabled="true" title="No weak cards yet.">Review weak cards</span>';
     return `
-      <article class="review-row" data-review-page-id="${escapeHtml(summary.pageId)}" data-weak-count="${summary.weakCards}">
+      <article class="review-row" data-review-page-id="${escapeHtml(summary.pageId)}" data-weak-count="${summary.weakCards}" data-priority-count="${summary.priorityCards || 0}">
         <div>
           <h3>${escapeHtml(summary.title)}</h3>
           <p>${escapeHtml(lastReviewedLabel(summary))}</p>
@@ -403,10 +414,12 @@ function renderProjectReview(){
             <span>${reviewCardCountLabel(summary.totalCards)}</span>
             <span>${summary.reviewedCards} reviewed</span>
             <span>${summary.weakCards} weak</span>
+            <span>${escapeHtml(reviewPriorityText(summary))}</span>
           </div>
         </div>
         <div class="actions">
-          <a class="button primary" href="${escapeHtml(reviewHref)}" title="Review ${escapeHtml(summary.title)}" aria-label="Review map ${escapeHtml(summary.title)}">Review map</a>
+          ${nextAction}
+          <a class="button" href="${escapeHtml(reviewHref)}" title="Review ${escapeHtml(summary.title)}" aria-label="Review map ${escapeHtml(summary.title)}">Review map</a>
           ${weakAction}
         </div>
       </article>

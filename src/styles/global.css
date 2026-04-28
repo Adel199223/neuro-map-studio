@@ -369,6 +369,15 @@ p {
   justify-content: flex-end;
 }
 
+.review-dashboard .review-row {
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+.review-dashboard .review-row .actions {
+  justify-content: flex-start;
+}
+
 .quick-create-grid,
 .object-grid,
 .project-grid {

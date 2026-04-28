@@ -1028,8 +1028,230 @@ async function seedProjectReviewDashboardFixture(page: Page) {
   });
 }
 
+async function seedReviewNextDashboardFixture(page: Page) {
+  await clearWorkspaceDatabase(page);
+  await page.goto('/');
+  await waitForWorkspaceStore(page);
+  return page.evaluate(async () => {
+    const runtime = window as Window & {
+      neuroMapWorkspaceStore?: {
+        createPage: (
+          projectId: string,
+          fields: { title: string; type: string; description: string },
+        ) => Promise<{ id: string; title: string }>;
+        exportWorkspaceBackup: () => Promise<Record<string, unknown>>;
+        savePageState: (pageId: string, pageType: string, data: Record<string, unknown>) => Promise<unknown>;
+      };
+    };
+    const store = runtime.neuroMapWorkspaceStore;
+    if (!store) throw new Error('Missing workspace store.');
+    const projectId = 'geopolitics-economics';
+    const priorityPage = await store.createPage(projectId, {
+      title: 'Priority review map',
+      type: 'map',
+      description: 'A map with Missed, Almost, Got it, and new review cards.',
+    });
+    const noPriorityPage = await store.createPage(projectId, {
+      title: 'No priority map',
+      type: 'map',
+      description: 'A map whose current cards are already Got it.',
+    });
+    const workspaceFor = (title: string, map: Record<string, unknown>, review: Record<string, unknown>) => ({
+      kind: 'map-workspace',
+      workspace: {
+        version: 19,
+        activePageId: 'page-main',
+        pages: [{ id: 'page-main', title, map }],
+      },
+      starterHidden: true,
+      review,
+    });
+    const priorityMap = {
+      version: 20,
+      view: { x: 0, y: 0, scale: 1 },
+      nodes: [
+        {
+          id: 'priority-missed',
+          title: 'Priority missed',
+          body: 'Missed answer.',
+          group: 'blue',
+          shape: 'card',
+          importance: 2,
+          x: -220,
+          y: 0,
+          w: 230,
+          h: 125,
+          tag: 'review',
+          nodeType: 'concept',
+          documentId: '',
+        },
+        {
+          id: 'priority-almost',
+          title: 'Priority almost',
+          body: 'Almost answer.',
+          group: 'green',
+          shape: 'card',
+          importance: 2,
+          x: 80,
+          y: 0,
+          w: 230,
+          h: 125,
+          tag: 'review',
+          nodeType: 'concept',
+          documentId: '',
+        },
+        {
+          id: 'priority-new',
+          title: 'Priority new',
+          body: 'New answer.',
+          group: 'amber',
+          shape: 'card',
+          importance: 2,
+          x: 380,
+          y: 0,
+          w: 230,
+          h: 125,
+          tag: 'review',
+          nodeType: 'concept',
+          documentId: '',
+        },
+        {
+          id: 'priority-got',
+          title: 'Priority got it',
+          body: 'Got it answer.',
+          group: 'violet',
+          shape: 'card',
+          importance: 2,
+          x: 680,
+          y: 0,
+          w: 230,
+          h: 125,
+          tag: 'review',
+          nodeType: 'concept',
+          documentId: '',
+        },
+      ],
+      edges: [
+        {
+          id: 'priority-edge',
+          from: 'priority-got',
+          to: 'priority-missed',
+          relation: 'causes',
+          strength: 3,
+          shape: 'curve',
+          label: 'already understood',
+        },
+      ],
+    };
+    const noPriorityMap = {
+      version: 20,
+      view: { x: 0, y: 0, scale: 1 },
+      nodes: [
+        {
+          id: 'no-priority-a',
+          title: 'Already strong',
+          body: 'Known answer.',
+          group: 'blue',
+          shape: 'card',
+          importance: 2,
+          x: 0,
+          y: 0,
+          w: 240,
+          h: 130,
+          tag: 'review',
+          nodeType: 'concept',
+          documentId: '',
+        },
+      ],
+      edges: [],
+    };
+    await store.savePageState(
+      priorityPage.id,
+      'map',
+      workspaceFor('Priority review map', priorityMap, {
+        version: 1,
+        attempts: [
+          {
+            id: 'priority-missed-attempt',
+            cardId: 'page-main:block:priority-missed',
+            pageId: priorityPage.id,
+            mapViewId: 'page-main',
+            cardType: 'block',
+            rating: 'missed',
+            reviewedAt: '2026-04-20T10:00:00.000Z',
+            attemptCount: 1,
+          },
+          {
+            id: 'priority-almost-attempt',
+            cardId: 'page-main:block:priority-almost',
+            pageId: priorityPage.id,
+            mapViewId: 'page-main',
+            cardType: 'block',
+            rating: 'almost',
+            reviewedAt: '2026-04-21T10:00:00.000Z',
+            attemptCount: 1,
+          },
+          {
+            id: 'priority-got-attempt',
+            cardId: 'page-main:block:priority-got',
+            pageId: priorityPage.id,
+            mapViewId: 'page-main',
+            cardType: 'block',
+            rating: 'got-it',
+            reviewedAt: '2026-04-22T10:00:00.000Z',
+            attemptCount: 1,
+          },
+          {
+            id: 'priority-edge-got-attempt',
+            cardId: 'page-main:relationship:priority-edge',
+            pageId: priorityPage.id,
+            mapViewId: 'page-main',
+            cardType: 'relationship',
+            rating: 'got-it',
+            reviewedAt: '2026-04-23T10:00:00.000Z',
+            attemptCount: 1,
+          },
+        ],
+        sessions: [],
+      }),
+    );
+    await store.savePageState(
+      noPriorityPage.id,
+      'map',
+      workspaceFor('No priority map', noPriorityMap, {
+        version: 1,
+        attempts: [
+          {
+            id: 'no-priority-got-attempt',
+            cardId: 'page-main:block:no-priority-a',
+            pageId: noPriorityPage.id,
+            mapViewId: 'page-main',
+            cardType: 'block',
+            rating: 'got-it',
+            reviewedAt: '2026-04-24T10:00:00.000Z',
+            attemptCount: 1,
+          },
+        ],
+        sessions: [],
+      }),
+    );
+    return {
+      projectId,
+      priorityPageId: priorityPage.id,
+      noPriorityPageId: noPriorityPage.id,
+      backup: await store.exportWorkspaceBackup(),
+    };
+  });
+}
+
 async function openReviewPanel(page: Page) {
   await page.getByRole('button', { name: /Review this map/i }).click();
+  await expect(page.locator('#reviewPanel')).toBeVisible();
+  await expect(page.locator('#reviewLauncher')).toBeVisible();
+}
+
+async function openReviewPanelByUrl(page: Page, pageId: string) {
+  await page.goto(`${mindmapPath}?pageId=${pageId}&review=1`);
   await expect(page.locator('#reviewPanel')).toBeVisible();
   await expect(page.locator('#reviewLauncher')).toBeVisible();
 }
@@ -1049,6 +1271,15 @@ async function startWeakReview(page: Page) {
   await page.locator('#reviewStartWeak').click();
   await expect(page.locator('#reviewCard')).toBeVisible();
   await expect(page.locator('#reviewCard')).toHaveAttribute('data-session-mode', 'weak');
+}
+
+async function startReviewNext(page: Page) {
+  if (!(await page.locator('#reviewPanel').isVisible())) {
+    await openReviewPanel(page);
+  }
+  await page.locator('#reviewStartNext').click();
+  await expect(page.locator('#reviewCard')).toBeVisible();
+  await expect(page.locator('#reviewCard')).toHaveAttribute('data-session-mode', 'next');
 }
 
 async function revealAndRate(page: Page, rating: 'got-it' | 'almost' | 'missed') {
@@ -1429,6 +1660,56 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#reviewProgress')).toContainText(/Weak cards · 1 of 2/i);
     await expect(page.locator('#reviewPrompt')).toContainText(/Explain: Weak missed/i);
     await expect(page.locator('.map-node[data-id="weak-a"]')).toHaveClass(/review-answer-hidden/);
+  });
+
+  test('project and workspace review next show priority counts and deep link into missed-first review', async ({
+    page,
+  }) => {
+    const fixture = await seedReviewNextDashboardFixture(page);
+
+    await page.goto('/');
+    const workspaceReview = page.getByLabel(/Workspace review/i);
+    await expect(workspaceReview).toBeVisible();
+    await expect(workspaceReview.getByRole('heading', { name: /Review next/i })).toBeVisible();
+    await expect(workspaceReview).toContainText(/Priority review map/i);
+    await expect(workspaceReview).toContainText(/1 missed · 1 almost · 1 new/i);
+    await expect(workspaceReview.getByRole('link', { name: /^Review next$/i }).first()).toHaveAttribute(
+      'href',
+      /mindmap\.html\?pageId=.*&review=next/,
+    );
+
+    await page.goto(`${projectPath}?projectId=${fixture.projectId}`);
+    const reviewPanel = page.getByLabel(/Project review/i);
+    const priorityRow = reviewPanel.locator(`[data-review-page-id="${fixture.priorityPageId}"]`);
+    await expect(priorityRow).toContainText(/5 cards/i);
+    await expect(priorityRow).toContainText(/4 reviewed/i);
+    await expect(priorityRow).toContainText(/2 weak/i);
+    await expect(priorityRow).toContainText(/1 missed · 1 almost · 1 new/i);
+    await expect(priorityRow.getByRole('link', { name: /Review next in Priority review map/i })).toHaveAttribute(
+      'href',
+      /mindmap\.html\?pageId=.*&review=next/,
+    );
+
+    await priorityRow.getByRole('link', { name: /Review next in Priority review map/i }).click();
+    await expect(page).toHaveURL(new RegExp(`/prototypes/current/mindmap\\.html\\?pageId=${fixture.priorityPageId}&review=next`));
+    await expect(page.locator('#reviewCard')).toBeVisible();
+    await expect(page.locator('#reviewCard')).toHaveAttribute('data-session-mode', 'next');
+    await expect(page.locator('#reviewProgress')).toContainText(/Review next · 1 of 3/i);
+    await expect(page.locator('#reviewPrompt')).toContainText(/Explain: Priority missed/i);
+    await expect(page.locator('.map-node[data-id="priority-missed"]')).toHaveClass(/review-answer-hidden/);
+  });
+
+  test('review next empty state opens launcher without priority cards', async ({ page }) => {
+    const fixture = await seedReviewNextDashboardFixture(page);
+    await page.goto(`${mindmapPath}?pageId=${fixture.noPriorityPageId}&review=next`);
+
+    await expect(page.locator('#reviewPanel')).toBeVisible();
+    await expect(page.locator('#reviewLauncher')).toBeVisible();
+    await expect(page.locator('#reviewStartNext')).toBeDisabled();
+    await expect(page.locator('#reviewNextState')).toContainText(
+      /Nothing urgent\. Review any card or add more map content\./i,
+    );
+    await expect(page.locator('#reviewStartWeak')).toBeDisabled();
   });
 
   test('workspace dashboard review summary shows weak, recent, and not-reviewed maps', async ({ page }) => {
@@ -2353,6 +2634,38 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#reviewHistory')).toContainText(/3 cards · 3 reviewed · 1 weak/i);
     await startWeakReview(page);
     await expect(page.locator('#reviewPrompt')).toContainText(/Explain: Second idea/i);
+  });
+
+  test('map review next orders missed almost then new and updates priority counts after Got it', async ({ page }) => {
+    const fixture = await seedReviewNextDashboardFixture(page);
+
+    await openReviewPanelByUrl(page, fixture.priorityPageId);
+    await expect(page.locator('#reviewHistory')).toContainText(/5 cards · 4 reviewed · 2 weak/i);
+    await expect(page.locator('#reviewHistory')).toContainText(/1 missed · 1 almost · 1 new/i);
+    await expect(page.locator('#reviewStartNext')).toHaveText(/Review next \(3\)/i);
+
+    await startReviewNext(page);
+    await expect(page.locator('#reviewProgress')).toContainText(/Review next · 1 of 3/i);
+    await expect(page.locator('#reviewPrompt')).toContainText(/Explain: Priority missed/i);
+    await expect(page.locator('.map-node[data-id="priority-missed"]')).toHaveClass(/review-answer-hidden/);
+    await revealAndRate(page, 'got-it');
+
+    await expect(page.locator('#reviewPrompt')).toContainText(/Explain: Priority almost/i);
+    await revealAndRate(page, 'almost');
+    await expect(page.locator('#reviewPrompt')).toContainText(/Explain: Priority new/i);
+    await page.locator('#reviewExit').click();
+
+    await openReviewPanelByUrl(page, fixture.priorityPageId);
+    await expect(page.locator('#reviewHistory')).toContainText(/5 cards · 4 reviewed · 1 weak/i);
+    await expect(page.locator('#reviewHistory')).toContainText(/0 missed · 1 almost · 1 new/i);
+    await expect(page.locator('#reviewStartNext')).toHaveText(/Review next \(2\)/i);
+    await startReviewNext(page);
+    await expect(page.locator('#reviewPrompt')).toContainText(/Explain: Priority almost/i);
+    await page.locator('#reviewExit').click();
+
+    await openReviewPanelByUrl(page, fixture.priorityPageId);
+    await expect(page.locator('#reviewHistory')).toContainText(/0 missed · 1 almost · 1 new/i);
+    await expect(page.locator('#reviewStartNext')).toHaveText(/Review next \(2\)/i);
   });
 
   test('map review card type filters select matching cards and show empty filter states', async ({ page }) => {

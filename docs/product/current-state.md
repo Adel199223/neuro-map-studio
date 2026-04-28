@@ -20,7 +20,7 @@ The project hub is available at `public/prototypes/current/project.html`.
 
 It organizes a project into:
 
-- Review: map review summaries with normal review and weak-card review launch actions
+- Review: map review summaries with Review next, normal review, and weak-card review launch actions
 - Pages: lesson, map, notes, review, and glossary pages
 - Documents: project source/document metadata
 - Utilities: page-document references and secondary actions
@@ -86,12 +86,13 @@ Answers remain hidden until Reveal, including map canvas text that could leak th
 The review panel supports:
 
 - normal review sessions
+- lightweight `Review next` sessions ordered by Missed, Almost, then new/unreviewed cards
 - focused `Review weak cards` sessions
 - card-type filters for All, Blocks, Relationships, Connected blocks, and Sources/evidence
-- lightweight history counts for total, reviewed, and weak cards
+- lightweight history counts for total, reviewed, weak, missed, almost, and new cards
 - local review attempts and session summaries preserved in page state and workspace backup/export/import
 
-The project hub and root workspace dashboard derive review summaries from the same local page state. They show total cards, reviewed cards, weak cards, last reviewed status, and launch links for normal or weak-card review. Maps with weak cards are prioritized before maps with no weak cards; scheduling and due dates are still deferred.
+The project hub and root workspace dashboard derive review summaries from the same local page state. They show total cards, reviewed cards, weak cards, priority counts, last reviewed status, and launch links for Review next, normal review, or weak-card review. Maps with Missed, Almost, and new cards are prioritized before maps with no priority cards; scheduling and due dates are still deferred.
 
 ## Backup And Restore
 
@@ -115,5 +116,5 @@ Galaxy Tab and S Pen support includes:
 - No PDF/DOCX parsing or binary file storage.
 - Some runtime surfaces remain prototype HTML while the root dashboard is React.
 - Operation-log architecture is a future direction, not implemented yet.
-- Review Mode does not yet include spaced-repetition scheduling, due dates, or project-wide scheduling dashboards.
+- Review Mode does not yet include spaced-repetition scheduling, due dates, reminders, or old-card revisit intervals.
 - Relationship endpoint reconnect, edge midpoint insert, relationship-line box selection, tablet/touch marquee, and group resize remain future map-editor polish.

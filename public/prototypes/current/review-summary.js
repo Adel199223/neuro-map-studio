@@ -1,7 +1,7 @@
 import { DEFAULT_MAP_VIEW_ID, SEED_MAP_PAGE_ID, cloneDefaultMap } from './map-defaults.js';
 
 const REVIEW_RATINGS = new Set(['got-it', 'almost', 'missed']);
-const REVIEW_SESSION_MODES = new Set(['normal', 'weak']);
+const REVIEW_SESSION_MODES = new Set(['normal', 'weak', 'next']);
 const REVIEW_FILTERS = new Set(['all', 'block', 'relationship', 'neighbor', 'source']);
 
 const RELATION_STYLES = {
@@ -272,6 +272,32 @@ export function buildWeakQueue(cards = [], latestAttempts = new Map()) {
     });
 }
 
+export function buildReviewNextQueue(cards = [], latestAttempts = new Map()) {
+  const order = new Map(cards.map((card, index) => [card.id, index]));
+  const priority = { missed: 0, almost: 1, unreviewed: 2 };
+  const priorityMeta = (card) => {
+    const attempt = latestAttempts.get(card.id);
+    if (attempt?.rating === 'missed' || attempt?.rating === 'almost') {
+      return { bucket: attempt.rating, time: parseTime(attempt.reviewedAt) };
+    }
+    if (!attempt) return { bucket: 'unreviewed', time: 0 };
+    return null;
+  };
+  return cards
+    .map((card) => ({ card, meta: priorityMeta(card) }))
+    .filter((item) => item.meta)
+    .sort((a, b) => {
+      const bucketDiff = priority[a.meta.bucket] - priority[b.meta.bucket];
+      if (bucketDiff) return bucketDiff;
+      if (a.meta.bucket !== 'unreviewed') {
+        const timeDiff = a.meta.time - b.meta.time;
+        if (timeDiff) return timeDiff;
+      }
+      return (order.get(a.card.id) || 0) - (order.get(b.card.id) || 0);
+    })
+    .map((item) => item.card);
+}
+
 export function lastReviewedLabel(summary) {
   if (!summary?.lastReviewedAt) return 'Not reviewed yet';
   const date = new Date(summary.lastReviewedAt);
@@ -290,6 +316,11 @@ export function summarizeMapReviewPage({ page, pageState, documents = [] } = {})
   const sessions = review.sessions.filter((session) => session.pageId === page?.id && session.mapViewId === mapViewId);
   const latest = latestAttemptsByCard(attempts, cardIds);
   const weakQueue = buildWeakQueue(cards, latest);
+  const reviewNextQueue = buildReviewNextQueue(cards, latest);
+  const latestValues = Array.from(latest.values());
+  const missedCards = latestValues.filter((attempt) => attempt.rating === 'missed').length;
+  const almostCards = latestValues.filter((attempt) => attempt.rating === 'almost').length;
+  const unreviewedCards = cards.filter((card) => !latest.has(card.id)).length;
   const lastAttemptTime = attempts.reduce((max, attempt) => Math.max(max, parseTime(attempt.reviewedAt)), 0);
   const lastSessionTime = sessions.reduce((max, session) => Math.max(max, parseTime(session.completedAt)), 0);
   const lastReviewedTime = Math.max(lastAttemptTime, lastSessionTime);
@@ -303,9 +334,14 @@ export function summarizeMapReviewPage({ page, pageState, documents = [] } = {})
     totalCards: cards.length,
     reviewedCards: latest.size,
     weakCards: weakQueue.length,
+    missedCards,
+    almostCards,
+    unreviewedCards,
+    priorityCards: reviewNextQueue.length,
     lastReviewedAt: lastReviewedTime ? new Date(lastReviewedTime).toISOString() : '',
     cards,
     weakQueue,
+    reviewNextQueue,
     latestAttempts: Array.from(latest.values()),
     sessions,
   };
@@ -315,10 +351,12 @@ export function summarizeMapReviewPage({ page, pageState, documents = [] } = {})
 
 export function sortMapReviewSummaries(summaries = []) {
   return [...summaries].sort((a, b) => {
-    const weakPresence = Number(b.weakCards > 0) - Number(a.weakCards > 0);
-    if (weakPresence) return weakPresence;
-    const weakDiff = b.weakCards - a.weakCards;
-    if (weakDiff) return weakDiff;
+    const missedDiff = (b.missedCards || 0) - (a.missedCards || 0);
+    if (missedDiff) return missedDiff;
+    const almostDiff = (b.almostCards || 0) - (a.almostCards || 0);
+    if (almostDiff) return almostDiff;
+    const unreviewedDiff = (b.unreviewedCards || 0) - (a.unreviewedCards || 0);
+    if (unreviewedDiff) return unreviewedDiff;
     const aNever = !a.lastReviewedAt;
     const bNever = !b.lastReviewedAt;
     if (aNever !== bNever) return aNever ? -1 : 1;
@@ -341,9 +379,10 @@ export function summarizeWorkspaceReview({ pages = [], pageStates = [], document
       ),
   );
   const weakMaps = summaries.filter((summary) => summary.weakCards > 0);
+  const priorityMaps = summaries.filter((summary) => summary.priorityCards > 0);
   const recentlyReviewed = [...summaries]
     .filter((summary) => summary.lastReviewedAt)
     .sort((a, b) => parseTime(b.lastReviewedAt) - parseTime(a.lastReviewedAt));
   const notReviewed = summaries.filter((summary) => !summary.lastReviewedAt);
-  return { summaries, weakMaps, recentlyReviewed, notReviewed };
+  return { summaries, weakMaps, priorityMaps, recentlyReviewed, notReviewed };
 }
