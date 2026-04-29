@@ -12,7 +12,8 @@ The current app includes:
 - dynamic page runtime URLs through `page.html?pageId=<id>`;
 - guided starters for map, lesson, notes, review, and glossary pages;
 - JSON workspace backup/export/import with invalid-backup rejection;
-- a map editor with Sources & blocks panel, placement mode, document blocks, selection toolbar, notification bubbles, zoom controls, and tablet/S Pen interaction support;
+- a map editor with Sources & blocks panel, placement mode, document blocks, relationship correction tools, selection toolbar, notification bubbles, zoom controls, and tablet/S Pen interaction support;
+- local Review Mode with map recall, weak-card review, Review next priority review, card-type filters, and project/workspace review summaries;
 - a lesson runtime with glossary hints and read-aloud controls.
 
 The current source-of-truth branch is `main`.

@@ -50,6 +50,9 @@ Preserve these behaviors unless the task explicitly changes them:
 - Multi-select for blocks and relationship lines
 - Bulk delete, copy/paste, duplicate, and canvas Ctrl/Cmd+A selection
 - Connection-port quick-add for linked Concept, Question, Evidence, and Document blocks
+- Connect existing block targeting from connection ports
+- Selected relationship Change source / Change target reconnect
+- Selected relationship Insert block between for Concept, Question, Evidence, and Document blocks
 - Collision-aware automatic placement for port quick-add, paste, duplicate, and document blocks
 - Dynamic relationship re-anchoring as connected blocks move
 - Selected-block group drag, arrow-key nudge, and Zoom to selection
@@ -59,6 +62,9 @@ Preserve these behaviors unless the task explicitly changes them:
 - Edge re-anchoring, long-press behavior, and duplicate context menu suppression
 - S Pen/finger drag behavior
 - S Pen/finger port tapping behavior
+- S Pen/finger relationship reconnect and insert-block-between behavior
+- Review Mode with map recall cards, weak-card review, Review next priority review, and card-type filters
+- Project hub and workspace dashboard review summaries
 - Lesson scrolling, glossary hints, and read-aloud controls
 - Debug mode with `?debugInput=1`
 
