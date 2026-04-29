@@ -18,8 +18,8 @@ These are small, high-leverage directions to consider after the current main bra
 ## Relationship Editing
 
 - Polish relationship label editing and port-side controls.
-- Harden endpoint reconnect after real tablet use, then consider freeform endpoint dragging only if it stays low-risk.
-- Add edge midpoint insert only after selected-action reconnect remains stable.
+- Harden endpoint reconnect and Insert block between after real tablet use, then consider freeform endpoint dragging only if it stays low-risk.
+- Consider a hover-only midpoint affordance only after the explicit Insert block between action stays stable.
 - Make link meaning easier to scan without adding visual clutter.
 - Preserve generous S Pen/finger hit targets.
 

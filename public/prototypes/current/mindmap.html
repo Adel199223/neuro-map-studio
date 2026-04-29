@@ -678,6 +678,7 @@ a{color:inherit}
         <button id="shelfRoute" class="selection-action" type="button" title="Change line route" aria-label="Change selected link route">⌁</button>
         <button id="shelfChangeSource" class="selection-action" type="button" title="Change source" aria-label="Change source">S</button>
         <button id="shelfChangeTarget" class="selection-action" type="button" title="Change target" aria-label="Change target">T</button>
+        <button id="shelfInsertBetween" class="selection-action" type="button" title="Insert block between" aria-label="Insert block between">＋</button>
         <button id="shelfFromPort" class="selection-action" type="button" title="Change source connection side" aria-label="Change selected link source connection side">↤</button>
         <button id="shelfToPort" class="selection-action" type="button" title="Change target connection side" aria-label="Change selected link target connection side">↦</button>
         <button id="shelfReverse" class="selection-action" type="button" title="Reverse selected link" aria-label="Reverse selected link direction">⇄</button>
@@ -829,6 +830,7 @@ import {
   const shelfRoute = document.getElementById('shelfRoute');
   const shelfChangeSource = document.getElementById('shelfChangeSource');
   const shelfChangeTarget = document.getElementById('shelfChangeTarget');
+  const shelfInsertBetween = document.getElementById('shelfInsertBetween');
   const shelfFromPort = document.getElementById('shelfFromPort');
   const shelfToPort = document.getElementById('shelfToPort');
   const shelfReverse = document.getElementById('shelfReverse');
@@ -1014,6 +1016,7 @@ import {
   let projectDocuments = [];
   let pendingDocumentBlockPoint = null;
   let pendingDocumentQuickAdd = null;
+  let pendingRelationshipInsert = null;
   let runtimePageRecord = null;
   let runtimeProject = null;
   let runtimeProjectPages = [];
@@ -4397,6 +4400,7 @@ import {
       setButtonVisible(shelfRoute, false);
       setButtonVisible(shelfChangeSource, false);
       setButtonVisible(shelfChangeTarget, false);
+      setButtonVisible(shelfInsertBetween, false);
       setButtonVisible(shelfFromPort, false);
       setButtonVisible(shelfToPort, false);
       setButtonVisible(shelfReverse, false);
@@ -4429,6 +4433,7 @@ import {
       setButtonVisible(shelfRoute, true);
       setButtonVisible(shelfChangeSource, true);
       setButtonVisible(shelfChangeTarget, true);
+      setButtonVisible(shelfInsertBetween, true);
       setButtonVisible(shelfFromPort, true);
       setButtonVisible(shelfToPort, true);
       setButtonVisible(shelfReverse, true);
@@ -4461,6 +4466,7 @@ import {
       setButtonVisible(shelfRoute, false);
       setButtonVisible(shelfChangeSource, false);
       setButtonVisible(shelfChangeTarget, false);
+      setButtonVisible(shelfInsertBetween, false);
       setButtonVisible(shelfFromPort, false);
       setButtonVisible(shelfToPort, false);
       setButtonVisible(shelfReverse, false);
@@ -4926,6 +4932,11 @@ import {
 	    return node;
 	  }
   function chooseDocumentFromPicker(documentId){
+    const relationshipInsert = pendingRelationshipInsert;
+    if(relationshipInsert?.edgeId){
+      insertBlockBetweenRelationship(relationshipInsert.edgeId, 'document', {documentId});
+      return;
+    }
     const quickAdd = pendingDocumentQuickAdd;
     if(quickAdd?.sourceId && quickAdd?.side){
       createPortLinkedDocumentBlock(quickAdd.sourceId, quickAdd.side, documentId);
@@ -5090,6 +5101,7 @@ import {
     if(!projectDocuments.length) await refreshProjectDocuments();
     pendingDocumentBlockPoint = worldPoint;
     pendingDocumentQuickAdd = options.quickAdd || null;
+    pendingRelationshipInsert = options.relationshipInsert || null;
     renderDocumentPicker();
     documentDetailCard.hidden = true;
     mapStarterPanel.hidden = true;
@@ -5101,6 +5113,7 @@ import {
     documentPicker.hidden = true;
     pendingDocumentBlockPoint = null;
     pendingDocumentQuickAdd = null;
+    pendingRelationshipInsert = null;
     renderMapStarter();
   }
   function isFreshStarterMap(){
@@ -5542,6 +5555,168 @@ import {
   function setEdgeShape(edgeId, shape){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); e.shape = shape; render(); commitMapCommand('Line route changed', before, {render:false}); }
   function setEdgePort(edgeId, end, port){ const e = edgeById(edgeId); if(!e || !ports.includes(port)) return; const before = beginMapCommand(); if(end === 'from') e.fromPort = port; else e.toPort = port; render(); if(commitMapCommand('Connection side changed', before, {render:false})) showToast('Connection side changed'); }
   function setEdgeLabel(edgeId){ const e = edgeById(edgeId); if(!e) return; const style = relationStyles[e.relation]; const txt = prompt('Short label for this link:', e.label || style.label); if(txt === null) return; const before = beginMapCommand(); e.label = clean(txt); render(); commitMapCommand('Line label changed', before, {render:false}); }
+  function relationshipInsertMenuPoint(edge, anchor={}){
+    if(anchor.button) return menuPointFromButton(anchor.button);
+    const source = anchor.source || inputDebugState.lastPointer;
+    if(Number.isFinite(source?.clientX) && Number.isFinite(source?.clientY)){
+      return {x:source.clientX, y:source.clientY};
+    }
+    if(source?.target instanceof Element){
+      const rect = source.target.getBoundingClientRect();
+      return {x:rect.left + rect.width / 2, y:rect.bottom + 8};
+    }
+    const layout = getEdgeLayout(edge);
+    if(layout?.mid){
+      const stageRect = stage.getBoundingClientRect();
+      const stagePoint = worldToStage(layout.mid.x, layout.mid.y);
+      return {x:stageRect.left + stagePoint.x, y:stageRect.top + stagePoint.y + 8};
+    }
+    return {x:window.innerWidth / 2, y:window.innerHeight / 2};
+  }
+  function showInsertBetweenMenu(edgeId, anchor={}){
+    const edge = edgeById(edgeId);
+    if(!edge){ showToast('Relationship not found'); return; }
+    const point = relationshipInsertMenuPoint(edge, anchor);
+    showMenu('Insert block between', [
+      {label:'Concept block', action:'insert-concept'},
+      {label:'Question block', action:'insert-question'},
+      {label:'Evidence block', action:'insert-evidence'},
+      {label:'Document block', action:'insert-document'}
+    ], point.x, point.y, {type:'edge-insert', id:edge.id, trigger:'insert-between', source:anchor.source || inputDebugState.lastPointer});
+  }
+  function relationshipInsertNodeTemplate(blockType, options={}){
+    if(blockType === 'document'){
+      const documentRecord = documentById(options.documentId);
+      if(!documentRecord){ showToast('Document not found'); return null; }
+      const size = documentBlockSize();
+      return {
+        title:documentRecord.title,
+        body:documentRecord.description || 'Add a note about why this document matters here.',
+        group:'violet',
+        shape:'note',
+        tag:documentRecord.type,
+        nodeType:'document',
+        documentId:documentRecord.id,
+        w:size.w,
+        h:size.h
+      };
+    }
+    const normalizedType = ['concept', 'question', 'evidence'].includes(blockType) ? blockType : 'concept';
+    return workbenchBlockConfig(normalizedType);
+  }
+  function relationshipMidpointCandidates(layout, w, h){
+    const preferred = {x:layout.mid.x - w / 2, y:layout.mid.y - h / 2};
+    const dx = layout.toRect.cx - layout.fromRect.cx;
+    const dy = layout.toRect.cy - layout.fromRect.cy;
+    const length = Math.max(1, Math.hypot(dx, dy));
+    const along = {x:dx / length, y:dy / length};
+    const normal = {x:-along.y, y:along.x};
+    const candidates = [];
+    const addCentered = (center, offset) => candidates.push({x:center.x + offset.x - w / 2, y:center.y + offset.y - h / 2});
+    [120, -120, 220, -220, 340, -340].forEach(distance => {
+      addCentered(layout.mid, {x:normal.x * distance, y:normal.y * distance});
+    });
+    [150, -150, 280, -280].forEach(distance => {
+      addCentered(layout.mid, {x:along.x * distance, y:along.y * distance});
+    });
+    [layout.from, layout.to].forEach(node => {
+      candidatesAroundNode(node, w, h, 92).forEach(candidate => candidates.push(candidate));
+      candidatesAroundNode(node, w, h, 210).forEach(candidate => candidates.push(candidate));
+    });
+    return {preferred, candidates};
+  }
+  function chooseRelationshipMidpointPlacement(edge, w, h){
+    const layout = getEdgeLayout(edge);
+    if(!layout) return null;
+    updateOverlayOffsets();
+    const {preferred, candidates} = relationshipMidpointCandidates(layout, w, h);
+    return findFreeNodePlacement({
+      preferredTopLeft:preferred,
+      w,
+      h,
+      candidates,
+      options:{includeShelf:true, includeToast:true, margin:18, collisionMargin:28}
+    });
+  }
+  function makeRelationshipInsertNode(template, placement){
+    const nodeType = nodeTypes.includes(template.nodeType) ? template.nodeType : 'concept';
+    return {
+      id:id(),
+      title:template.title || 'New block',
+      body:template.body || 'Rewrite this in your own words.',
+      group:template.group || 'blue',
+      shape:template.shape || 'card',
+      importance:Number(template.importance) || 2,
+      x:Math.round(placement.x),
+      y:Math.round(placement.y),
+      w:template.w || 268,
+      h:template.h || 145,
+      tag:String(template.tag || (nodeType === 'document' ? 'document' : 'custom')),
+      nodeType,
+      documentId:nodeType === 'document' ? String(template.documentId || '') : ''
+    };
+  }
+  function splitRelationshipEdge(original, from, to){
+    return {
+      id:edgeId(),
+      from,
+      to,
+      relation:original.relation || 'causes',
+      strength:Number(original.strength) || 3,
+      shape:edgeShapes.includes(original.shape) ? original.shape : 'curve',
+      fromPort:'auto',
+      toPort:'auto',
+      label:String(original.label || '')
+    };
+  }
+  function insertBlockBetweenRelationship(edgeId, blockType='concept', options={}){
+    const edge = edgeById(edgeId);
+    if(!edge){ showToast('Relationship not found'); return null; }
+    const fromNode = byId(edge.from);
+    const toNode = byId(edge.to);
+    if(!fromNode || !toNode || fromNode.id === toNode.id){
+      showToast('Choose a valid relationship line.');
+      return null;
+    }
+    const template = relationshipInsertNodeTemplate(blockType, options);
+    if(!template) return null;
+    const placement = chooseRelationshipMidpointPlacement(edge, template.w || 268, template.h || 145);
+    if(!placement?.position){
+      showToast('Could not find room for the new block.');
+      return null;
+    }
+    const before = beginMapCommand();
+    const original = cloneJson(edge);
+    const newNode = makeRelationshipInsertNode(template, placement.position);
+    const firstEdge = splitRelationshipEdge(original, original.from, newNode.id);
+    const secondEdge = splitRelationshipEdge(original, newNode.id, original.to);
+    const edgeIndex = data.edges.findIndex(entry => entry.id === original.id);
+    if(edgeIndex < 0){
+      showToast('Relationship not found');
+      return null;
+    }
+    markStarterMeaningfulAction();
+    clearRelationshipReviewAttempts(original.id);
+    data.nodes.push(newNode);
+    data.edges.splice(edgeIndex, 1, firstEdge, secondEdge);
+    applySelectionSnapshot({nodes:[newNode.id], edges:[]});
+    render();
+    const committed = commitMapCommand('Inserted block between', before, {render:false});
+    if(committed){
+      showToast('Block inserted between connected blocks. Ctrl+Z to undo.');
+      temporarilyPassThroughZoomDock();
+      if(placement.reason === 'world-clear') panNodeIntoSafeArea(newNode, newNode.w, newNode.h, {includeShelf:true, includeToast:true, margin:18});
+      requestAnimationFrame(() => {
+        positionSelectionShelf();
+        updateOverlayOffsets();
+        panRenderedNodeAwayFromOverlayLanes(newNode, {includeShelf:true, includeToast:true, margin:12});
+        renderEdges();
+        nodeLayer.querySelector(`[data-id="${CSS.escape(newNode.id)}"] .node-title`)?.focus();
+      });
+      logInputDebug('insert-between-complete', options.source || inputDebugState.lastPointer, {mode:'edge', reason:blockType, edgeId:original.id});
+    }
+    return newNode;
+  }
   function startReconnect(edgeId, mode, options={}){
     const edge = edgeById(edgeId);
     if(!edge) return;
@@ -5818,6 +5993,7 @@ import {
     const from = byId(edge.from), to = byId(edge.to), rel = relationStyles[edge.relation] || relationStyles.causes;
     showMenu(`${from?.title || 'Block'} — ${to?.title || 'Block'}`, [
       {label:'✎ Rename link label', action:'edge-label'}, {label:'⇄ Reverse direction', action:'edge-reverse'},
+      {label:'Insert block between', action:'edge-insert-between', title:'Insert block between', ariaLabel:'Insert block between'},
       {label:'Change source', action:'edge-change-source', title:'Change source', ariaLabel:'Change source'},
       {label:'Change target', action:'edge-change-target', title:'Change target', ariaLabel:'Change target'},
       {type:'section', label:'Relationship type'}, {type:'relations'},
@@ -5888,6 +6064,7 @@ import {
       const edge = edgeById(ctx.id); if(!edge) return;
       if(action === 'edge-label') setEdgeLabel(edge.id);
       else if(action === 'edge-reverse') reverseEdge(edge.id);
+      else if(action === 'edge-insert-between') showInsertBetweenMenu(edge.id, {source:ctx.source || inputDebugState.lastPointer});
       else if(action === 'edge-change-source') startReconnect(edge.id, 'change-source', {source:ctx.source || inputDebugState.lastPointer});
       else if(action === 'edge-change-target') startReconnect(edge.id, 'change-target', {source:ctx.source || inputDebugState.lastPointer});
       else if(action === 'edge-delete') deleteEdge(edge.id);
@@ -5896,6 +6073,10 @@ import {
       else if(action.startsWith('edge-shape-')) setEdgeShape(edge.id, action.replace('edge-shape-',''));
       else if(action.startsWith('port-from-')) setEdgePort(edge.id, 'from', action.replace('port-from-',''));
       else if(action.startsWith('port-to-')) setEdgePort(edge.id, 'to', action.replace('port-to-',''));
+    }else if(ctx.type === 'edge-insert'){
+      const edge = edgeById(ctx.id); if(!edge) return;
+      if(action === 'insert-document') openDocumentPicker(null, {relationshipInsert:{edgeId:edge.id}});
+      else if(action.startsWith('insert-')) insertBlockBetweenRelationship(edge.id, action.replace('insert-',''), {source:ctx.source || inputDebugState.lastPointer});
     }else if(ctx.type === 'port'){
       if(action === 'port-connect-existing') startConnect(ctx.id, {origin:'port', side:ctx.side, toast:'Tap a block to connect', source:ctx.source});
       else if(action === 'port-add-document') openDocumentPicker(null, {quickAdd:{sourceId:ctx.id, side:ctx.side}});
@@ -6547,6 +6728,11 @@ import {
   });
   shelfChangeSource.addEventListener('click', () => selectedEdgeId && startReconnect(selectedEdgeId, 'change-source'));
   shelfChangeTarget.addEventListener('click', () => selectedEdgeId && startReconnect(selectedEdgeId, 'change-target'));
+  shelfInsertBetween.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if(selectedEdgeId) showInsertBetweenMenu(selectedEdgeId, {button:shelfInsertBetween, source:inputDebugState.lastPointer});
+  });
   shelfFromPort.addEventListener('click', () => {
     if(!selectedEdgeId) return;
     openMenuFromButton(shelfFromPort, 'Source connection side', [

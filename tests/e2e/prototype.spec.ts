@@ -572,6 +572,28 @@ async function startRelationshipReconnect(
   );
 }
 
+async function openInsertBetweenMenu(page: Page, edgeId = 'e2') {
+  await selectRelationship(page, edgeId);
+  await page.locator('#shelfInsertBetween').click();
+  await expect(page.locator('#contextMenu')).toHaveAttribute('aria-hidden', 'false');
+  await expect(page.locator('#contextMenu')).toContainText(/Insert block between/i);
+  await expect(page.locator('#contextMenu')).toContainText(/Concept block/i);
+}
+
+async function insertConceptBetween(page: Page, edgeId = 'e2') {
+  const beforeMap = await getSeedMapState(page);
+  const beforeNodeCount = beforeMap?.nodes.length ?? 0;
+  const beforeEdgeCount = beforeMap?.edges.length ?? 0;
+  await openInsertBetweenMenu(page, edgeId);
+  await page.locator('#contextMenu').getByRole('button', { name: /^Concept block$/i }).click();
+  await expect(page.locator('.map-node')).toHaveCount(beforeNodeCount + 1);
+  await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(beforeEdgeCount + 1);
+  const selected = await getSelectedMapIds(page);
+  expect(selected.nodes).toHaveLength(1);
+  expect(selected.edges).toHaveLength(0);
+  return selected.nodes[0];
+}
+
 async function getPortAffordanceState(page: Page, nodeId: string) {
   return page.evaluate((targetNodeId) => {
     const node = document.querySelector(`.map-node[data-id="${CSS.escape(targetNodeId)}"]`);
@@ -3243,16 +3265,168 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#toast')).toContainText(/Blocks connected\. Ctrl\+Z to undo\./i);
   });
 
-  test('selected relationship exposes Change source and Change target in toolbar and context menu', async ({ page }) => {
+  test('selected relationship exposes Insert block between and reconnect actions in toolbar and context menu', async ({ page }) => {
     await resetMindmap(page);
 
     await selectRelationship(page, 'e2');
+    await expect(page.getByRole('button', { name: /^Insert block between$/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Change source$/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Change target$/i })).toBeVisible();
 
     await openRelationshipContextMenu(page, 'e2');
+    await expect(page.locator('#contextMenu').getByRole('button', { name: /^Insert block between$/i })).toBeVisible();
     await expect(page.locator('#contextMenu').getByRole('button', { name: /^Change source$/i })).toBeVisible();
     await expect(page.locator('#contextMenu').getByRole('button', { name: /^Change target$/i })).toBeVisible();
+  });
+
+  test('Insert block between adds a concept at the relationship midpoint and stays undoable', async ({ page }) => {
+    await resetMindmap(page);
+    const beforeMap = await getSeedMapState(page);
+    const beforeEdge = seedEdge(beforeMap, 'e2');
+    const beforeNodeCount = beforeMap?.nodes.length ?? 0;
+    const beforeEdgeCount = beforeMap?.edges.length ?? 0;
+
+    const insertedNodeId = await insertConceptBetween(page, 'e2');
+    await expect(page.locator('#toast')).toContainText(/Block inserted between connected blocks\. Ctrl\+Z to undo\./i);
+    await expect(page.locator(`.map-node[data-id="${insertedNodeId}"]`)).toBeVisible();
+    await expect(page.locator(`.map-node[data-id="${insertedNodeId}"] .node-title`)).toContainText(/New concept/i);
+    await expectNodeClearOfOtherBlocks(page, insertedNodeId, 8);
+
+    let mapState = await getSeedMapState(page);
+    expect(mapState?.nodes).toHaveLength(beforeNodeCount + 1);
+    expect(mapState?.edges).toHaveLength(beforeEdgeCount + 1);
+    expect(mapState?.edges.some((edge) => edge.id === beforeEdge.id)).toBe(false);
+    let firstSplit = mapState?.edges.find((edge) => edge.from === beforeEdge.from && edge.to === insertedNodeId);
+    let secondSplit = mapState?.edges.find((edge) => edge.from === insertedNodeId && edge.to === beforeEdge.to);
+    expect(firstSplit).toBeTruthy();
+    expect(secondSplit).toBeTruthy();
+    for (const split of [firstSplit!, secondSplit!]) {
+      expect(split.label).toBe(beforeEdge.label);
+      expect(split.relation).toBe(beforeEdge.relation);
+      expect(split.strength).toBe(beforeEdge.strength);
+      expect(split.shape).toBe(beforeEdge.shape);
+      expect(split.fromPort).toBe('auto');
+      expect(split.toPort).toBe('auto');
+    }
+    expect(await getSelectedMapIds(page)).toEqual({ nodes: [insertedNodeId], edges: [] });
+
+    await page.locator('#stage').focus();
+    await page.keyboard.press('Control+Z');
+    mapState = await getSeedMapState(page);
+    expect(mapState?.nodes.some((node) => node.id === insertedNodeId)).toBe(false);
+    expect(mapState?.edges).toHaveLength(beforeEdgeCount);
+    expect(seedEdge(mapState, beforeEdge.id).from).toBe(beforeEdge.from);
+    expect(seedEdge(mapState, beforeEdge.id).to).toBe(beforeEdge.to);
+
+    await page.keyboard.press('Control+Shift+Z');
+    mapState = await getSeedMapState(page);
+    expect(mapState?.nodes.some((node) => node.id === insertedNodeId)).toBe(true);
+    firstSplit = mapState?.edges.find((edge) => edge.from === beforeEdge.from && edge.to === insertedNodeId);
+    secondSplit = mapState?.edges.find((edge) => edge.from === insertedNodeId && edge.to === beforeEdge.to);
+    expect(firstSplit).toBeTruthy();
+    expect(secondSplit).toBeTruthy();
+    expect(mapState?.edges.some((edge) => edge.id === beforeEdge.id)).toBe(false);
+  });
+
+  test('Insert block between chooses a clear visible position when the midpoint is blocked', async ({ page }) => {
+    await resetMindmap(page);
+
+    const relationshipLabel = page.locator('#edgeLabelLayer .edge-label[data-edge-id="e2"]');
+    const labelBox = await visibleBoundingBox(relationshipLabel, 'blocked midpoint relationship label');
+    const mediaHandle = page.locator('.map-node[data-id="media"] .drag-handle');
+    const handleBox = await visibleBoundingBox(mediaHandle, 'blocked midpoint media handle');
+    await dragByHandle(page, 'media', {
+      pointerType: 'touch',
+      deltaX: labelBox.x + labelBox.width / 2 - (handleBox.x + handleBox.width / 2),
+      deltaY: labelBox.y + labelBox.height / 2 - (handleBox.y + handleBox.height / 2),
+    });
+
+    const insertedNodeId = await insertConceptBetween(page, 'e2');
+    await expect(page.locator(`.map-node[data-id="${insertedNodeId}"]`)).toBeVisible();
+    await expectNodeClearOfOtherBlocks(page, insertedNodeId, 8);
+    await expectNoBoxOverlap(
+      page.locator(`.map-node[data-id="${insertedNodeId}"]`),
+      page.locator('.map-node[data-id="media"]'),
+      'inserted block avoids blocked midpoint',
+      8,
+    );
+  });
+
+  test('Insert block between can insert a document block and preserve documentId after reload', async ({ page }) => {
+    await resetMindmap(page);
+    const beforeMap = await getSeedMapState(page);
+    const beforeEdge = seedEdge(beforeMap, 'e2');
+
+    await openInsertBetweenMenu(page, 'e2');
+    await page.locator('#contextMenu').getByRole('button', { name: /^Document block$/i }).click();
+    await expect(page.locator('#documentPicker')).toBeVisible();
+    await page.locator('#documentPicker').getByRole('button', { name: /Simon Dixon debt-power/i }).click();
+
+    const selected = await getSelectedMapIds(page);
+    expect(selected.nodes).toHaveLength(1);
+    const documentNodeId = selected.nodes[0];
+    await expect(page.locator(`.map-node.type-document[data-id="${documentNodeId}"]`)).toHaveAttribute(
+      'data-document-id',
+      'simon-dixon-debt-power',
+    );
+    await expectNodeClearOfOtherBlocks(page, documentNodeId, 8);
+
+    let mapState = await getSeedMapState(page);
+    let persistedDocumentNode = mapState!.nodes.find((node) => node.id === documentNodeId);
+    expect(persistedDocumentNode?.documentId).toBe('simon-dixon-debt-power');
+    expect(persistedDocumentNode?.nodeType).toBe('document');
+    expect(mapState?.edges.some((edge) => edge.id === beforeEdge.id)).toBe(false);
+    expect(mapState?.edges.find((edge) => edge.from === beforeEdge.from && edge.to === documentNodeId)).toBeTruthy();
+    expect(mapState?.edges.find((edge) => edge.from === documentNodeId && edge.to === beforeEdge.to)).toBeTruthy();
+
+    await page.reload();
+    await expect(page.locator(`.map-node.type-document[data-id="${documentNodeId}"]`)).toHaveAttribute(
+      'data-document-id',
+      'simon-dixon-debt-power',
+    );
+    mapState = await getSeedMapState(page);
+    persistedDocumentNode = mapState!.nodes.find((node) => node.id === documentNodeId);
+    expect(persistedDocumentNode?.documentId).toBe('simon-dixon-debt-power');
+    expect(mapState?.edges.find((edge) => edge.from === beforeEdge.from && edge.to === documentNodeId)).toBeTruthy();
+    expect(mapState?.edges.find((edge) => edge.from === documentNodeId && edge.to === beforeEdge.to)).toBeTruthy();
+  });
+
+  test('pen-style relationship insert creates one split without duplicate menus', async ({ page }) => {
+    await resetMindmap(page);
+
+    await pointerTap(page.locator('#edgeLabelLayer .edge-label[data-edge-id="e2"]'), { pointerType: 'pen' });
+    await pointerTap(page.locator('#shelfInsertBetween'), { pointerType: 'pen' });
+    await expect(page.locator('#contextMenu')).toHaveAttribute('aria-hidden', 'false');
+    await pointerTap(page.locator('#contextMenu').getByRole('button', { name: /^Concept block$/i }), {
+      pointerType: 'pen',
+    });
+
+    await expect(page.locator('#contextMenu')).toHaveAttribute('aria-hidden', 'true');
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
+    const mapState = await getSeedMapState(page);
+    expect(mapState?.edges.some((edge) => edge.id === 'e2')).toBe(false);
+    const selected = await getSelectedMapIds(page);
+    expect(selected.nodes).toHaveLength(1);
+  });
+
+  test('Review Next and relationship masking reflect inserted relationships', async ({ page }) => {
+    await resetMindmap(page);
+
+    const insertedNodeId = await insertConceptBetween(page, 'e1');
+    const mapState = await getSeedMapState(page);
+    const splitEdge = mapState?.edges.find((edge) => edge.from === 'core' && edge.to === insertedNodeId);
+    expect(splitEdge).toBeTruthy();
+
+    await openReviewPanel(page);
+    await page.locator('#reviewFilterOptions button[data-review-filter="relationship"]').click();
+    await page.locator('#reviewStartNext').click();
+    await expect(page.locator('#reviewCard')).toHaveAttribute('data-card-type', 'relationship');
+    await expect(page.locator('#reviewPrompt')).toContainText(/Core claim/i);
+    await expect(page.locator('#reviewPrompt')).toContainText(/New concept/i);
+    await expect(page.locator(`#edgeLabelLayer .edge-label[data-edge-id="${splitEdge!.id}"]`)).toHaveClass(
+      /review-label-hidden/,
+    );
+    await page.locator('#reviewExit').click();
   });
 
   test('Change target reconnects a relationship, preserves metadata, resets target port, and stays undoable', async ({
@@ -3912,11 +4086,12 @@ test.describe('current standalone prototypes', () => {
   test('selected link toolbar exposes relationship controls', async ({ page }) => {
     await resetMindmap(page);
 
-    await syntheticClick(page.locator('.edge-label').first());
+    await selectRelationship(page, 'e2');
     await expect(page.locator('#selectionShelf')).toBeVisible();
     await expect(page.getByRole('button', { name: /edit selected link label/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /change selected link relationship type/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /change selected link route/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Insert block between$/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Change source$/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Change target$/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /change selected link source connection side/i })).toBeVisible();

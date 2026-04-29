@@ -73,6 +73,16 @@ localStorage.removeItem("neuro-map-studio:debug-input")
 - [ ] Try reconnecting into an already-existing same-direction relationship and confirm the existing line is selected instead of creating a duplicate.
 - [ ] Tap Cancel or blank canvas during reconnect targeting and confirm normal editing resumes.
 
+## Insert Block Between
+
+- [ ] Tap a relationship line or label and confirm the selection toolbar shows Insert block between.
+- [ ] Tap Insert block between with S Pen and choose Concept block.
+- [ ] Confirm one new block appears near the relationship midpoint and the original relationship becomes two relationship lines.
+- [ ] Use undo and redo to restore and reapply the insertion.
+- [ ] Repeat Insert block between and choose Document block.
+- [ ] Pick a project document and confirm the inserted block preserves the document title/type after reload.
+- [ ] Confirm no duplicate menus appear when opening Insert block between with S Pen or finger.
+
 ## Canvas And Zoom
 
 - [ ] Finger pan moves the canvas.

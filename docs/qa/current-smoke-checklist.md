@@ -42,6 +42,10 @@ Use this for quick validation on local dev or GitHub Pages.
 - [ ] Selecting a relationship line shows Change source and Change target.
 - [ ] Change source / Change target can reconnect a relationship, preserve its label/type/style, and undo/redo cleanly.
 - [ ] Reconnect prevents self-links and duplicate same-direction relationships.
+- [ ] Selecting a relationship line shows Insert block between.
+- [ ] Insert block between can create a Concept / Question / Evidence block near the line midpoint and split one relationship into two.
+- [ ] Insert block between can create a Document block through the document picker and preserve `documentId`.
+- [ ] Undo restores the original relationship and removes the inserted block; redo restores the inserted block and split relationships.
 - [ ] Selection toolbar remains usable.
 - [ ] Notification bubbles appear briefly and do not stretch layout.
 - [ ] Zoom controls remain usable.

@@ -6,7 +6,7 @@
 - Repo: `https://github.com/Adel199223/neuro-map-studio`
 - Local WSL path: `/home/fa507/dev/neuro-map-studio-codex`
 - Source-of-truth branch: `main`
-- Latest shipped feature baseline: Stage 3B2 Relationship endpoint reconnect MVP. For the exact current commit, run `git rev-parse main`.
+- Latest shipped feature baseline: Stage 3B3 Insert block between relationship endpoints. For the exact current commit, run `git rev-parse main`.
 - Previous Stage 3A2 baseline retained for doctor checks: `7b062803a309b21daeda74e11a6b0183931d0f58`
 - Remote source of truth: `origin/main`.
 
@@ -32,7 +32,7 @@ Preserve:
 - Sources & blocks panel and placement mode
 - document blocks with preserved `documentId`
 - map undo/redo, multi-select, bulk delete, copy/paste/duplicate, and keyboard shortcut guards
-- connection-port quick-add for linked blocks, Connect existing block targeting from ports, selected relationship Change source / Change target reconnect, dynamic relationship re-anchoring, and collision-aware placement
+- connection-port quick-add for linked blocks, Connect existing block targeting from ports, selected relationship Change source / Change target reconnect, selected relationship Insert block between, dynamic relationship re-anchoring, and collision-aware placement
 - group drag for selected blocks, arrow-key nudge, Zoom to selection, and desktop/trackpad box selection
 - S Pen/finger drag, port tapping, pan/zoom, long-press, selection toolbar, and debug mode
 - embedded map Review Mode with block, relationship, connected-block, and source/evidence recall cards
