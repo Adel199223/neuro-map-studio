@@ -62,6 +62,17 @@ localStorage.removeItem("neuro-map-studio:debug-input")
 - [ ] Tap Cancel or blank canvas during targeting and confirm normal editing resumes.
 - [ ] Confirm linked Concept / Question / Evidence / Document quick-add still works from the same port menu.
 
+## Relationship Reconnect
+
+- [ ] Tap a relationship line or label and confirm the selection toolbar shows Change source and Change target.
+- [ ] Tap Change target, then tap a different block with S Pen.
+- [ ] Confirm the relationship line stays selected, keeps its label/type/style, and moves to the new target.
+- [ ] Use undo and redo to restore and reapply the changed endpoint.
+- [ ] Tap Change source, then tap a different block with finger.
+- [ ] Try choosing the same block or the opposite endpoint and confirm no self-link is created.
+- [ ] Try reconnecting into an already-existing same-direction relationship and confirm the existing line is selected instead of creating a duplicate.
+- [ ] Tap Cancel or blank canvas during reconnect targeting and confirm normal editing resumes.
+
 ## Canvas And Zoom
 
 - [ ] Finger pan moves the canvas.

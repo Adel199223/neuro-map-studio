@@ -57,6 +57,7 @@ The map editor is the central diagram workspace. It preserves canvas-first behav
 - Zoom to selection from the selection toolbar
 - desktop/trackpad box selection with Shift-drag on empty canvas
 - connection-port quick-add for linked Concept, Question, Evidence, and Document blocks, plus Connect existing block targeting
+- selected relationship `Change source` / `Change target` reconnect targeting with undo/redo
 - collision-aware automatic placement for port quick-add, paste, duplicate, and document blocks
 - dynamic relationship re-anchoring when connected blocks move
 
@@ -105,6 +106,7 @@ Galaxy Tab and S Pen support includes:
 - S Pen tap-to-place
 - S Pen/finger drag
 - S Pen/finger port tapping for linked-block quick-add and Connect existing block
+- S Pen/finger relationship reconnect through selected-line Change source / Change target
 - touch-accessible undo/redo, multi-select, and selection toolbar actions
 - finger pan/zoom
 - long-press menus
@@ -117,4 +119,4 @@ Galaxy Tab and S Pen support includes:
 - Some runtime surfaces remain prototype HTML while the root dashboard is React.
 - Operation-log architecture is a future direction, not implemented yet.
 - Review Mode does not yet include spaced-repetition scheduling, due dates, reminders, or old-card revisit intervals.
-- Relationship endpoint reconnect, edge midpoint insert, relationship-line box selection, tablet/touch marquee, and group resize remain future map-editor polish.
+- Edge midpoint insert, relationship-line box selection, tablet/touch marquee, and group resize remain future map-editor polish.

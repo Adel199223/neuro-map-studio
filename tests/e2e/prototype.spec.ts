@@ -435,11 +435,18 @@ async function getSeedMapState(page: Page) {
 
 type SeedMapState = NonNullable<Awaited<ReturnType<typeof getSeedMapState>>>;
 type SeedMapNode = SeedMapState['nodes'][number];
+type SeedMapEdge = SeedMapState['edges'][number];
 
 function seedNode(map: SeedMapState | null, nodeId: string): SeedMapNode {
   const node = map?.nodes.find((entry) => entry.id === nodeId);
   if (!node) throw new Error(`Expected map block ${nodeId} to exist.`);
   return node;
+}
+
+function seedEdge(map: SeedMapState | null, edgeId: string): SeedMapEdge {
+  const edge = map?.edges.find((entry) => entry.id === edgeId);
+  if (!edge) throw new Error(`Expected relationship line ${edgeId} to exist.`);
+  return edge;
 }
 
 function nodeDelta(after: SeedMapNode, before: SeedMapNode) {
@@ -528,6 +535,41 @@ async function connectExistingFromPort(
   expect(edge).toBeTruthy();
   expect(selected.edges).toContain(edge!.id);
   return edge!.id;
+}
+
+async function selectRelationship(page: Page, edgeId = 'e2') {
+  const label = page.locator(`#edgeLabelLayer .edge-label[data-edge-id="${edgeId}"]`);
+  await expect(label).toBeVisible();
+  await syntheticClick(label);
+  await expect(page.locator(`#edgeLayer g.edge-group[data-edge-id="${edgeId}"] .edge`)).toHaveClass(/selected/);
+}
+
+async function openRelationshipContextMenu(page: Page, edgeId = 'e2') {
+  const label = page.locator(`#edgeLabelLayer .edge-label[data-edge-id="${edgeId}"]`);
+  const box = await visibleBoundingBox(label, `relationship context menu ${edgeId}`);
+  await label.dispatchEvent('contextmenu', {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    button: 2,
+    buttons: 2,
+    clientX: box.x + box.width / 2,
+    clientY: box.y + box.height / 2,
+  });
+  await expect(page.locator('#contextMenu')).toHaveAttribute('aria-hidden', 'false');
+}
+
+async function startRelationshipReconnect(
+  page: Page,
+  edgeId = 'e2',
+  mode: 'source' | 'target' = 'target',
+) {
+  await selectRelationship(page, edgeId);
+  await page.locator(mode === 'source' ? '#shelfChangeSource' : '#shelfChangeTarget').click();
+  await expect(page.locator('#connectBanner')).toBeVisible();
+  await expect(page.locator('#connectText')).toContainText(
+    mode === 'source' ? /new source/i : /new target/i,
+  );
 }
 
 async function getPortAffordanceState(page: Page, nodeId: string) {
@@ -3201,6 +3243,185 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#toast')).toContainText(/Blocks connected\. Ctrl\+Z to undo\./i);
   });
 
+  test('selected relationship exposes Change source and Change target in toolbar and context menu', async ({ page }) => {
+    await resetMindmap(page);
+
+    await selectRelationship(page, 'e2');
+    await expect(page.getByRole('button', { name: /^Change source$/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Change target$/i })).toBeVisible();
+
+    await openRelationshipContextMenu(page, 'e2');
+    await expect(page.locator('#contextMenu').getByRole('button', { name: /^Change source$/i })).toBeVisible();
+    await expect(page.locator('#contextMenu').getByRole('button', { name: /^Change target$/i })).toBeVisible();
+  });
+
+  test('Change target reconnects a relationship, preserves metadata, resets target port, and stays undoable', async ({
+    page,
+  }) => {
+    await resetMindmap(page);
+    const beforeMap = await getSeedMapState(page);
+    const beforeEdge = seedEdge(beforeMap, 'e2');
+
+    await startRelationshipReconnect(page, 'e2', 'target');
+    await expect(page.locator('.map-node[data-id="dependence"]')).toHaveClass(/connect-source/);
+    await expect(page.locator('.map-node[data-id="bitcoin"]')).toHaveClass(/connect-target/);
+    await syntheticClick(page.locator('.map-node[data-id="bitcoin"]'));
+
+    await expect(page.locator('#toast')).toContainText(/Relationship updated\. Ctrl\+Z to undo\./i);
+    await expect(page.locator('#connectBanner')).not.toBeVisible();
+    let mapState = await getSeedMapState(page);
+    let edge = seedEdge(mapState, 'e2');
+    expect(edge.from).toBe(beforeEdge.from);
+    expect(edge.to).toBe('bitcoin');
+    expect(edge.label).toBe(beforeEdge.label);
+    expect(edge.relation).toBe(beforeEdge.relation);
+    expect(edge.strength).toBe(beforeEdge.strength);
+    expect(edge.shape).toBe(beforeEdge.shape);
+    expect(edge.fromPort || 'auto').toBe(beforeEdge.fromPort || 'auto');
+    expect(edge.toPort).toBe('auto');
+    expect(await getSelectedMapIds(page)).toEqual({ nodes: [], edges: ['e2'] });
+
+    await page.locator('#stage').focus();
+    await page.keyboard.press('Control+Z');
+    mapState = await getSeedMapState(page);
+    edge = seedEdge(mapState, 'e2');
+    expect(edge.from).toBe(beforeEdge.from);
+    expect(edge.to).toBe(beforeEdge.to);
+
+    await page.keyboard.press('Control+Shift+Z');
+    mapState = await getSeedMapState(page);
+    edge = seedEdge(mapState, 'e2');
+    expect(edge.from).toBe(beforeEdge.from);
+    expect(edge.to).toBe('bitcoin');
+  });
+
+  test('Change source reconnects a relationship and preserves label type strength and route', async ({ page }) => {
+    await resetMindmap(page);
+    const beforeMap = await getSeedMapState(page);
+    const beforeEdge = seedEdge(beforeMap, 'e2');
+
+    await startRelationshipReconnect(page, 'e2', 'source');
+    await expect(page.locator('.map-node[data-id="money"]')).toHaveClass(/connect-source/);
+    await syntheticClick(page.locator('.map-node[data-id="bitcoin"]'));
+
+    const mapState = await getSeedMapState(page);
+    const edge = seedEdge(mapState, 'e2');
+    expect(edge.from).toBe('bitcoin');
+    expect(edge.to).toBe(beforeEdge.to);
+    expect(edge.label).toBe(beforeEdge.label);
+    expect(edge.relation).toBe(beforeEdge.relation);
+    expect(edge.strength).toBe(beforeEdge.strength);
+    expect(edge.shape).toBe(beforeEdge.shape);
+    expect(edge.fromPort).toBe('auto');
+    expect(edge.toPort || 'auto').toBe(beforeEdge.toPort || 'auto');
+    expect(await getSelectedMapIds(page)).toEqual({ nodes: [], edges: ['e2'] });
+  });
+
+  test('relationship reconnect targeting cancels with Escape, Cancel, or blank canvas without history', async ({ page }) => {
+    await resetMindmap(page);
+    const beforeMap = await getSeedMapState(page);
+
+    await startRelationshipReconnect(page, 'e2', 'target');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#connectBanner')).not.toBeVisible();
+    await expect(page.locator('#toast')).toContainText(/Connection canceled/i);
+    expect((await getSeedMapState(page))?.edges).toEqual(beforeMap?.edges);
+
+    await startRelationshipReconnect(page, 'e2', 'target');
+    await page.locator('#cancelConnect').click();
+    await expect(page.locator('#connectBanner')).not.toBeVisible();
+    expect((await getSeedMapState(page))?.edges).toEqual(beforeMap?.edges);
+
+    await startRelationshipReconnect(page, 'e2', 'target');
+    const stageBox = await visibleBoundingBox(page.locator('#stage'), 'blank canvas reconnect cancel');
+    await page.locator('#stage').dispatchEvent('pointerdown', {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      pointerId: 91,
+      pointerType: 'mouse',
+      button: 0,
+      buttons: 1,
+      clientX: stageBox.x + stageBox.width - 18,
+      clientY: stageBox.y + stageBox.height - 18,
+    });
+    await expect(page.locator('#connectBanner')).not.toBeVisible();
+    expect((await getSeedMapState(page))?.edges).toEqual(beforeMap?.edges);
+
+    await page.locator('#stage').focus();
+    await page.keyboard.press('Control+Z');
+    await expect(page.locator('#toast')).toContainText(/Nothing to undo/i);
+    expect((await getSeedMapState(page))?.edges).toEqual(beforeMap?.edges);
+  });
+
+  test('relationship reconnect prevents self-links, no-op endpoints, and duplicate same-direction links', async ({
+    page,
+  }) => {
+    await resetMindmap(page);
+    const beforeMap = await getSeedMapState(page);
+
+    await startRelationshipReconnect(page, 'e2', 'target');
+    await syntheticClick(page.locator('.map-node[data-id="dependence"]'));
+    await expect(page.locator('#toast')).toContainText(/Choose a different block/i);
+    await expect(page.locator('#connectBanner')).toBeVisible();
+    await syntheticClick(page.locator('.map-node[data-id="money"]'));
+    await expect(page.locator('#toast')).toContainText(/Choose a different block/i);
+    await expect(page.locator('#connectBanner')).toBeVisible();
+    expect((await getSeedMapState(page))?.edges).toEqual(beforeMap?.edges);
+    await page.locator('#cancelConnect').click();
+
+    const duplicateEdgeId = await connectExistingFromPort(page, 'policy', 'bitcoin', 'right');
+    await startRelationshipReconnect(page, 'e7', 'target');
+    await syntheticClick(page.locator('.map-node[data-id="bitcoin"]'));
+    await expect(page.locator('#toast')).toContainText(/Those blocks are already connected/i);
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
+    expect(await getSelectedMapIds(page)).toEqual({ nodes: [], edges: [duplicateEdgeId] });
+    const mapState = await getSeedMapState(page);
+    expect(mapState?.edges.filter((edge) => edge.from === 'policy' && edge.to === 'bitcoin')).toHaveLength(1);
+    expect(seedEdge(mapState, 'e7').to).toBe('public');
+  });
+
+  test('pen-style relationship reconnect changes one endpoint without duplicate menus', async ({ page }) => {
+    await resetMindmap(page);
+
+    await pointerTap(page.locator('#edgeLabelLayer .edge-label[data-edge-id="e2"]'), { pointerType: 'pen' });
+    await pointerTap(page.locator('#shelfChangeTarget'), { pointerType: 'pen' });
+    await expect(page.locator('#connectBanner')).toBeVisible();
+    await expect(page.locator('#contextMenu')).toHaveAttribute('aria-hidden', 'true');
+
+    await pointerTap(page.locator('.map-node[data-id="bitcoin"]'), { pointerType: 'pen' });
+    await expect(page.locator('#connectBanner')).not.toBeVisible();
+    const mapState = await getSeedMapState(page);
+    expect(seedEdge(mapState, 'e2').to).toBe('bitcoin');
+    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(14);
+    await expect(page.locator('#toast')).toContainText(/Relationship updated\. Ctrl\+Z to undo\./i);
+  });
+
+  test('review mode reflects reconnected relationships and clears stale relationship card attempts', async ({ page }) => {
+    await resetMindmap(page);
+
+    await openReviewPanel(page);
+    await page.locator('#reviewFilterOptions button[data-review-filter="relationship"]').click();
+    await page.locator('#reviewStart').click();
+    await expect(page.locator('#reviewCard')).toHaveAttribute('data-card-type', 'relationship');
+    await expect(page.locator('#reviewPrompt')).toContainText(/What connects Core claim to Money starts as debt/i);
+    await page.locator('#reviewReveal').click();
+    await page.locator('#reviewRatings button[data-rating="got-it"]').click();
+    await page.locator('#reviewExit').click();
+
+    await startRelationshipReconnect(page, 'e1', 'target');
+    await syntheticClick(page.locator('.map-node[data-id="bitcoin"]'));
+
+    await openReviewPanel(page);
+    await expect(page.locator('#reviewHistory')).toContainText(/0 reviewed/i);
+    await page.locator('#reviewFilterOptions button[data-review-filter="relationship"]').click();
+    await page.locator('#reviewStart').click();
+    await expect(page.locator('#reviewPrompt')).toContainText(/What connects Core claim to Scarce assets support exit/i);
+    const relationshipLabel = page.locator('#edgeLabelLayer .edge-label[data-edge-id="e1"]');
+    await expect(relationshipLabel).toHaveClass(/review-label-hidden/);
+    await page.locator('#reviewExit').click();
+  });
+
   test('connection port plus appears only on the active port affordance', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium', 'Desktop hover and focus affordance is covered in Chromium.');
     await resetMindmap(page);
@@ -3696,6 +3917,8 @@ test.describe('current standalone prototypes', () => {
     await expect(page.getByRole('button', { name: /edit selected link label/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /change selected link relationship type/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /change selected link route/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Change source$/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Change target$/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /change selected link source connection side/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /change selected link target connection side/i })).toBeVisible();
   });

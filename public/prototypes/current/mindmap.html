@@ -676,6 +676,8 @@ a{color:inherit}
         <button id="shelfRelation" class="selection-action" type="button" title="Change relationship type" aria-label="Change selected link relationship type">≋</button>
         <button id="shelfStrength" class="selection-action" type="button" title="Change link thickness" aria-label="Change selected link importance or thickness">★</button>
         <button id="shelfRoute" class="selection-action" type="button" title="Change line route" aria-label="Change selected link route">⌁</button>
+        <button id="shelfChangeSource" class="selection-action" type="button" title="Change source" aria-label="Change source">S</button>
+        <button id="shelfChangeTarget" class="selection-action" type="button" title="Change target" aria-label="Change target">T</button>
         <button id="shelfFromPort" class="selection-action" type="button" title="Change source connection side" aria-label="Change selected link source connection side">↤</button>
         <button id="shelfToPort" class="selection-action" type="button" title="Change target connection side" aria-label="Change selected link target connection side">↦</button>
         <button id="shelfReverse" class="selection-action" type="button" title="Reverse selected link" aria-label="Reverse selected link direction">⇄</button>
@@ -806,6 +808,7 @@ import {
   const inputDebugLog = document.getElementById('inputDebugLog');
   const connectBanner = document.getElementById('connectBanner');
   const connectText = document.getElementById('connectText');
+  const cancelConnectButton = document.getElementById('cancelConnect');
   const selectionShelf = document.getElementById('selectionShelf');
   const selectionActions = document.getElementById('selectionActions');
   const selectedTitle = document.getElementById('selectedTitle');
@@ -824,6 +827,8 @@ import {
   const shelfRelation = document.getElementById('shelfRelation');
   const shelfStrength = document.getElementById('shelfStrength');
   const shelfRoute = document.getElementById('shelfRoute');
+  const shelfChangeSource = document.getElementById('shelfChangeSource');
+  const shelfChangeTarget = document.getElementById('shelfChangeTarget');
   const shelfFromPort = document.getElementById('shelfFromPort');
   const shelfToPort = document.getElementById('shelfToPort');
   const shelfReverse = document.getElementById('shelfReverse');
@@ -992,6 +997,7 @@ import {
   let connectFrom = null;
   let zoomDockPassThroughTimer = null;
   let focusMode = false;
+  let reconnectTarget = null;
   let wheelTimer = null;
   let activePanel = null;
   let shelfCollapsed = false;
@@ -1480,6 +1486,15 @@ import {
     const mapViewId = currentMapViewId();
     return reviewStore.sessions.filter(session => session.pageId === runtimePageId && session.mapViewId === mapViewId);
   }
+  function relationshipReviewCardId(edgeId){
+    return `${currentMapViewId()}:relationship:${edgeId}`;
+  }
+  function clearRelationshipReviewAttempts(edgeId){
+    const cardId = relationshipReviewCardId(edgeId);
+    reviewStore.attempts = reviewStore.attempts.filter(attempt =>
+      !(attempt.pageId === runtimePageId && attempt.mapViewId === currentMapViewId() && attempt.cardId === cardId)
+    );
+  }
   function normalizeReviewFilter(filter){
     return REVIEW_FILTER_LABELS[filter] ? filter : 'all';
   }
@@ -1745,7 +1760,7 @@ import {
       const to = byId(edge.to);
       if(!from || !to) return;
       cards.push(makeReviewCard({
-        id:`${currentMapViewId()}:relationship:${edge.id}`,
+        id:relationshipReviewCardId(edge.id),
         type:'relationship',
         prompt:`What connects ${nodeReviewTitle(from)} to ${nodeReviewTitle(to)}?`,
         answer:edgeReviewAnswer(edge),
@@ -1884,7 +1899,7 @@ import {
     closeMenu();
     closeSidePanel();
     cancelPlacementMode('review');
-    if(connectFrom) cancelConnect();
+    if(isBlockTargetingActive()) cancelBlockTargeting();
     setWorkbenchOpen(false, {user:false});
     setSelectionShelfSuppressed(true, 'review-open');
   }
@@ -2216,6 +2231,7 @@ import {
       data = activePage().map;
       view = Object.assign({x:0,y:0,scale:1}, data.view || {});
       connectFrom = null;
+      reconnectTarget = null;
       const freshStartupView = positionFreshStarterView();
       const startupSelection = freshStartupView ? null : (data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null));
       applySelectionSnapshot({nodes:startupSelection ? [startupSelection] : [], edges:[]});
@@ -2261,7 +2277,7 @@ import {
     const nextSelection = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
     applySelectionSnapshot({nodes:nextSelection ? [nextSelection] : [], edges:[]});
     resetMapHistory();
-    connectFrom = null; closeMenu(); closeSidePanel();
+    connectFrom = null; reconnectTarget = null; closeMenu(); closeSidePanel();
     render(); applyView(); updatePrompt(); recoverViewSoon('map view switched'); save('Map view switched'); showToast('Map view switched');
   }
   function createNewPage(){
@@ -2277,6 +2293,7 @@ import {
     applySelectionSnapshot({nodes:['core'], edges:[]});
     resetMapHistory();
     connectFrom = null;
+    reconnectTarget = null;
     render(); resetView(); save('Map view created'); showToast('New map view created');
   }
   function duplicateCurrentPage(){
@@ -2293,6 +2310,7 @@ import {
     applySelectionSnapshot({nodes:copySelection ? [copySelection] : [], edges:[]});
     resetMapHistory();
     connectFrom = null;
+    reconnectTarget = null;
     render(); applyView(); recoverViewSoon('map view duplicated'); save('Map view duplicated'); showToast('Map view duplicated');
   }
   function renameCurrentPage(){
@@ -2316,6 +2334,7 @@ import {
     applySelectionSnapshot({nodes:nextSelection ? [nextSelection] : [], edges:[]});
     resetMapHistory();
     connectFrom = null;
+    reconnectTarget = null;
     render(); applyView(); recoverViewSoon('map view deleted'); save('Map view deleted'); showToast('Map view deleted');
   }
   function createPageFromNode(nodeId){
@@ -2346,6 +2365,7 @@ import {
     applySelectionSnapshot({nodes:[nodeId], edges:[]});
     resetMapHistory();
     connectFrom = null;
+    reconnectTarget = null;
     render(); resetView(); save('Detail map view created'); showToast('Detail map view created');
   }
   function id(){ return 'node-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7); }
@@ -2421,7 +2441,7 @@ import {
     selectionMarquee.style.height = '';
   }
   function canStartMarqueeSelection(event, target){
-    if(!selectionMarquee || dragNode || resizeNode || panDrag || pendingPlacement || connectFrom || touchGesture) return false;
+    if(!selectionMarquee || dragNode || resizeNode || panDrag || pendingPlacement || isBlockTargetingActive() || touchGesture) return false;
     if(event.button !== 0 || isTouchLikePointer(event)) return false;
     if(getPointerGestureOwner(event.pointerId)) return false;
     if(isCanvasGestureBlockedTarget(target)) return false;
@@ -3526,9 +3546,23 @@ import {
       if(selection && selection.rangeCount) selection.removeAllRanges();
     }catch(e){}
   }
+  function isReconnectTargetingActive(){
+    return !!(reconnectTarget && edgeById(reconnectTarget.edgeId));
+  }
+  function isBlockTargetingActive(){
+    return !!connectFrom || isReconnectTargetingActive();
+  }
+  function cancelBlockTargeting(options={}){
+    if(isReconnectTargetingActive()) return cancelReconnect(options);
+    return cancelConnect(options);
+  }
+  function completeBlockTargetingToBlock(nodeId, sourceEvent=null){
+    if(isReconnectTargetingActive()) return completeReconnectToBlock(nodeId, sourceEvent);
+    return completeConnectToBlock(nodeId, sourceEvent);
+  }
   function syncGestureLockUI(){
-    const active = gestureLockReasons.size > 0 || !!connectFrom;
-    const connecting = !!connectFrom;
+    const active = gestureLockReasons.size > 0 || isBlockTargetingActive();
+    const connecting = isBlockTargetingActive();
     document.body.classList.toggle('drag-gesture-lock', active);
     document.body.classList.toggle('connect-targeting', connecting);
     stage.classList.toggle('drag-gesture-lock', active);
@@ -3992,8 +4026,15 @@ import {
       const documentRecord = nodeType === 'document' ? documentById(n.documentId) : null;
       el.className = `map-node ${n.group} shape-${n.shape} imp-${n.importance} type-${nodeType}`;
       if(selectedNodeIds.has(n.id)) el.classList.add('selected');
-      if(connectFrom === n.id) el.classList.add('connect-source');
-      if(connectFrom && connectFrom !== n.id) el.classList.add('connect-target');
+      const activeReconnectEdge = isReconnectTargetingActive() ? edgeById(reconnectTarget.edgeId) : null;
+      const reconnectChangingNodeId = activeReconnectEdge
+        ? (reconnectTarget.mode === 'change-source' ? activeReconnectEdge.from : activeReconnectEdge.to)
+        : '';
+      const reconnectFixedNodeId = activeReconnectEdge
+        ? (reconnectTarget.mode === 'change-source' ? activeReconnectEdge.to : activeReconnectEdge.from)
+        : '';
+      if(connectFrom === n.id || reconnectChangingNodeId === n.id) el.classList.add('connect-source');
+      if((connectFrom && connectFrom !== n.id) || (activeReconnectEdge && n.id !== reconnectChangingNodeId && n.id !== reconnectFixedNodeId)) el.classList.add('connect-target');
       el.dataset.id = n.id;
       el.dataset.nodeType = nodeType;
       if(n.documentId) el.dataset.documentId = n.documentId;
@@ -4354,6 +4395,8 @@ import {
       setButtonVisible(shelfRelation, false);
       setButtonVisible(shelfStrength, false);
       setButtonVisible(shelfRoute, false);
+      setButtonVisible(shelfChangeSource, false);
+      setButtonVisible(shelfChangeTarget, false);
       setButtonVisible(shelfFromPort, false);
       setButtonVisible(shelfToPort, false);
       setButtonVisible(shelfReverse, false);
@@ -4384,6 +4427,8 @@ import {
       setButtonVisible(shelfRelation, true);
       setButtonVisible(shelfStrength, true);
       setButtonVisible(shelfRoute, true);
+      setButtonVisible(shelfChangeSource, true);
+      setButtonVisible(shelfChangeTarget, true);
       setButtonVisible(shelfFromPort, true);
       setButtonVisible(shelfToPort, true);
       setButtonVisible(shelfReverse, true);
@@ -4414,6 +4459,8 @@ import {
       setButtonVisible(shelfRelation, false);
       setButtonVisible(shelfStrength, false);
       setButtonVisible(shelfRoute, false);
+      setButtonVisible(shelfChangeSource, false);
+      setButtonVisible(shelfChangeTarget, false);
       setButtonVisible(shelfFromPort, false);
       setButtonVisible(shelfToPort, false);
       setButtonVisible(shelfReverse, false);
@@ -4437,7 +4484,7 @@ import {
     }
     setSelectionShelfRendered(hasSelection && !suppressSelectionShelf, reason);
     shelfDelete.classList.toggle('danger-armed', false);
-    document.getElementById('btnConnect').classList.toggle('active', !!connectFrom);
+    document.getElementById('btnConnect').classList.toggle('active', isBlockTargetingActive());
     document.getElementById('btnFocus').classList.toggle('active', focusMode);
     shelfFocus.classList.toggle('active', focusMode && !!node);
     updateHistoryControls();
@@ -4728,6 +4775,10 @@ import {
     data.nodes = data.nodes.filter(node => !blockIds.has(node.id));
     data.edges = data.edges.filter(edge => !lineIds.has(edge.id));
     if(connectFrom && blockIds.has(connectFrom)) connectFrom = null;
+    if(reconnectTarget){
+      const reconnectEdge = edgeById(reconnectTarget.edgeId);
+      if(!reconnectEdge || lineIds.has(reconnectTarget.edgeId) || blockIds.has(reconnectEdge.from) || blockIds.has(reconnectEdge.to)) reconnectTarget = null;
+    }
     applySelectionSnapshot({nodes:[], edges:[]});
     suppressSelectionShelf = false;
     render();
@@ -4891,7 +4942,7 @@ import {
     closeDocumentPicker();
     closeDocumentDetail();
     clearEdgeDeleteArm();
-    if(connectFrom) cancelConnect();
+    if(isBlockTargetingActive()) cancelBlockTargeting();
     select(source.id, 'port-quick-add');
     const menuButton = nodeLayer.querySelector(`.map-node[data-id="${CSS.escape(source.id)}"] .connection-port.port-${CSS.escape(side)}`) || button;
     const rect = menuButton.getBoundingClientRect();
@@ -5174,7 +5225,7 @@ import {
     closeDocumentPicker();
     closeDocumentDetail();
     clearEdgeDeleteArm();
-    if(connectFrom) cancelConnect();
+    if(isBlockTargetingActive()) cancelBlockTargeting();
     clearSelection('placement-start');
     setPlacementButtonActive(options.sourceButton || null);
     if(placementText) placementText.textContent = placementStatusText(pending);
@@ -5438,14 +5489,18 @@ import {
     const before = beginMapCommand();
     data.nodes = data.nodes.filter(x => x.id !== nodeId); data.edges = data.edges.filter(e => e.from !== nodeId && e.to !== nodeId);
     if(connectFrom === nodeId) connectFrom = null;
+    if(reconnectTarget){
+      const reconnectEdge = edgeById(reconnectTarget.edgeId);
+      if(!reconnectEdge || reconnectEdge.from === nodeId || reconnectEdge.to === nodeId) reconnectTarget = null;
+    }
     applySelectionSnapshot({nodes:[], edges:[]});
     suppressSelectionShelf = false;
     render();
     commitMapCommand('Deleted block', before, {render:false});
     showToast('Block deleted. Ctrl+Z to undo.');
   }
-  function directedEdgeBetween(from, to){
-    return data.edges.find(e => e.from === from && e.to === to) || null;
+  function directedEdgeBetween(from, to, excludeEdgeId=''){
+    return data.edges.find(e => e.id !== excludeEdgeId && e.from === from && e.to === to) || null;
   }
   function addEdge(from,to,opts={}){
     if(!from || !to || !byId(from) || !byId(to)) return null;
@@ -5487,6 +5542,103 @@ import {
   function setEdgeShape(edgeId, shape){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); e.shape = shape; render(); commitMapCommand('Line route changed', before, {render:false}); }
   function setEdgePort(edgeId, end, port){ const e = edgeById(edgeId); if(!e || !ports.includes(port)) return; const before = beginMapCommand(); if(end === 'from') e.fromPort = port; else e.toPort = port; render(); if(commitMapCommand('Connection side changed', before, {render:false})) showToast('Connection side changed'); }
   function setEdgeLabel(edgeId){ const e = edgeById(edgeId); if(!e) return; const style = relationStyles[e.relation]; const txt = prompt('Short label for this link:', e.label || style.label); if(txt === null) return; const before = beginMapCommand(); e.label = clean(txt); render(); commitMapCommand('Line label changed', before, {render:false}); }
+  function startReconnect(edgeId, mode, options={}){
+    const edge = edgeById(edgeId);
+    if(!edge) return;
+    const selectedMode = mode === 'change-source' ? 'change-source' : 'change-target';
+    cancelPlacementMode('reconnect');
+    closeDocumentPicker();
+    closeDocumentDetail();
+    closeMenu();
+    clearEdgeDeleteArm();
+    connectFrom = null;
+    activeConnectTargetTap = null;
+    suppressedConnectClick = null;
+    reconnectTarget = {edgeId:edge.id, mode:selectedMode};
+    applySelectionSnapshot({nodes:[], edges:[edge.id]});
+    syncGestureLockUI();
+    render();
+    const instruction = selectedMode === 'change-source'
+      ? 'Tap a block to use as the new source. Esc to cancel.'
+      : 'Tap a block to use as the new target. Esc to cancel.';
+    connectText.textContent = instruction;
+    cancelConnectButton.title = 'Cancel relationship reconnect mode';
+    cancelConnectButton.setAttribute('aria-label', 'Cancel relationship reconnect mode');
+    connectBanner.classList.add('show');
+    setStatus(instruction);
+    showToast(options.toast || instruction.replace(' Esc to cancel.', ''));
+    logInputDebug('reconnect-start', options.source || inputDebugState.lastPointer, {mode:'edge', reason:selectedMode});
+  }
+  function cancelReconnect(options={}){
+    const wasReconnecting = isReconnectTargetingActive() || !!activeConnectTargetTap;
+    reconnectTarget = null;
+    activeConnectTargetTap = null;
+    suppressedConnectClick = null;
+    syncGestureLockUI();
+    connectBanner.classList.remove('show');
+    cancelConnectButton.title = 'Cancel connect existing block mode';
+    cancelConnectButton.setAttribute('aria-label', 'Cancel connect existing block mode');
+    if(options.render !== false) render();
+    if(options.announce) showToast(options.announce === true ? 'Connection canceled.' : options.announce);
+    if(wasReconnecting) setStatus('Map ready');
+    return wasReconnecting;
+  }
+  function completeReconnectToBlock(targetNodeId, sourceEvent=null){
+    if(!isReconnectTargetingActive()) return false;
+    const target = byId(targetNodeId);
+    const edge = edgeById(reconnectTarget.edgeId);
+    if(!target || !edge){
+      cancelReconnect({announce:'Connection canceled.'});
+      return false;
+    }
+    const mode = reconnectTarget.mode;
+    const fixedEndpointId = mode === 'change-source' ? edge.to : edge.from;
+    const currentEndpointId = mode === 'change-source' ? edge.from : edge.to;
+    if(targetNodeId === currentEndpointId || targetNodeId === fixedEndpointId){
+      showToast('Choose a different block.');
+      return true;
+    }
+    const nextFrom = mode === 'change-source' ? targetNodeId : edge.from;
+    const nextTo = mode === 'change-target' ? targetNodeId : edge.to;
+    const duplicate = directedEdgeBetween(nextFrom, nextTo, edge.id);
+    if(duplicate){
+      reconnectTarget = null;
+      activeConnectTargetTap = null;
+      suppressedConnectClick = null;
+      syncGestureLockUI();
+      connectBanner.classList.remove('show');
+      cancelConnectButton.title = 'Cancel connect existing block mode';
+      cancelConnectButton.setAttribute('aria-label', 'Cancel connect existing block mode');
+      applySelectionSnapshot({nodes:[], edges:[duplicate.id]});
+      render();
+      showToast('Those blocks are already connected.');
+      return true;
+    }
+    const before = beginMapCommand();
+    if(mode === 'change-source'){
+      edge.from = targetNodeId;
+      edge.fromPort = 'auto';
+    }else{
+      edge.to = targetNodeId;
+      edge.toPort = 'auto';
+    }
+    clearRelationshipReviewAttempts(edge.id);
+    applySelectionSnapshot({nodes:[], edges:[edge.id]});
+    reconnectTarget = null;
+    activeConnectTargetTap = null;
+    suppressedConnectClick = null;
+    syncGestureLockUI();
+    connectBanner.classList.remove('show');
+    cancelConnectButton.title = 'Cancel connect existing block mode';
+    cancelConnectButton.setAttribute('aria-label', 'Cancel connect existing block mode');
+    render();
+    if(commitMapCommand('Updated relationship', before, {render:false})){
+      showToast('Relationship updated. Ctrl+Z to undo.');
+      temporarilyPassThroughZoomDock();
+      logInputDebug('reconnect-complete', sourceEvent || inputDebugState.lastPointer, {mode:'edge', reason:mode});
+    }
+    return true;
+  }
   function completeConnectToBlock(targetNodeId, sourceEvent=null){
     if(!connectFrom) return false;
     const sourceId = connectFrom;
@@ -5516,11 +5668,14 @@ import {
     closeDocumentDetail();
     closeMenu();
     clearEdgeDeleteArm();
+    reconnectTarget = null;
     activeConnectTargetTap = null;
     connectFrom = nodeId;
     syncGestureLockUI();
     render();
     connectText.textContent = `Connecting from “${source.title || 'block'}”: tap a block to connect. Esc to cancel.`;
+    cancelConnectButton.title = 'Cancel connect existing block mode';
+    cancelConnectButton.setAttribute('aria-label', 'Cancel connect existing block mode');
     connectBanner.classList.add('show');
     setStatus('Tap a block to connect. Esc to cancel.');
     showToast(options.toast || 'Tap a block to connect');
@@ -5584,6 +5739,7 @@ import {
         applySelectionSnapshot({nodes:importedSelection ? [importedSelection] : [], edges:[]});
         resetMapHistory();
         connectFrom = null;
+        reconnectTarget = null;
         render(); applyView(); save('Imported'); showToast('Import complete');
       }catch(e){ showToast('Import failed'); }
     };
@@ -5602,6 +5758,7 @@ import {
     applySelectionSnapshot({nodes:['core'], edges:[]});
     resetMapHistory();
     connectFrom = null;
+    reconnectTarget = null;
     render();
     recenter();
     save(seededReset ? 'Map page reset' : 'Blank map restored');
@@ -5661,6 +5818,8 @@ import {
     const from = byId(edge.from), to = byId(edge.to), rel = relationStyles[edge.relation] || relationStyles.causes;
     showMenu(`${from?.title || 'Block'} — ${to?.title || 'Block'}`, [
       {label:'✎ Rename link label', action:'edge-label'}, {label:'⇄ Reverse direction', action:'edge-reverse'},
+      {label:'Change source', action:'edge-change-source', title:'Change source', ariaLabel:'Change source'},
+      {label:'Change target', action:'edge-change-target', title:'Change target', ariaLabel:'Change target'},
       {type:'section', label:'Relationship type'}, {type:'relations'},
       {type:'section', label:'Importance / thickness'}, {type:'strengths'},
       {type:'section', label:'Line route'}, {type:'edgeShapes'},
@@ -5729,6 +5888,8 @@ import {
       const edge = edgeById(ctx.id); if(!edge) return;
       if(action === 'edge-label') setEdgeLabel(edge.id);
       else if(action === 'edge-reverse') reverseEdge(edge.id);
+      else if(action === 'edge-change-source') startReconnect(edge.id, 'change-source', {source:ctx.source || inputDebugState.lastPointer});
+      else if(action === 'edge-change-target') startReconnect(edge.id, 'change-target', {source:ctx.source || inputDebugState.lastPointer});
       else if(action === 'edge-delete') deleteEdge(edge.id);
       else if(action.startsWith('relation-')) setEdgeRelation(edge.id, action.replace('relation-',''));
       else if(action.startsWith('strength-')) setEdgeStrength(edge.id, action.replace('strength-',''));
@@ -5781,14 +5942,14 @@ import {
     completePlacementAt(e.clientX, e.clientY, e);
   }, true);
   stage.addEventListener('pointerdown', e => {
-    if(!connectFrom || e.button !== 0) return;
+    if(!isBlockTargetingActive() || e.button !== 0) return;
     const target = e.target instanceof Element ? e.target : null;
     if(!target || isCanvasGestureBlockedTarget(target)) return;
     e.preventDefault();
     e.stopPropagation();
     cancelLongPress(e.pointerId, 'connect-canvas-cancel', e);
     stopCanvasPan(false);
-    cancelConnect({announce:'Connection canceled.'});
+    cancelBlockTargeting({announce:'Connection canceled.'});
   }, true);
   stage.addEventListener('pointermove', e => {
     if(!pendingPlacement) return;
@@ -5864,7 +6025,7 @@ import {
   }, true);
 
   nodeLayer.addEventListener('pointerdown', e => {
-    if(!connectFrom || !isTouchLikePointer(e) || e.button !== 0) return;
+    if(!isBlockTargetingActive() || !isTouchLikePointer(e) || e.button !== 0) return;
     const target = e.target instanceof Element ? e.target : null;
     const el = target?.closest('.map-node');
     if(!el || target.closest('.connection-port,.drag-handle,.resize-handle,[contenteditable]')) return;
@@ -5892,7 +6053,7 @@ import {
     cancelLongPress(e.pointerId, 'connect-target', e);
     if(!connectTargetTapMoved(e)){
       suppressNextConnectClick(targetNodeId);
-      completeConnectToBlock(targetNodeId, e);
+      completeBlockTargetingToBlock(targetNodeId, e);
     }
     clearConnectTargetTap(e.pointerId);
     clearPointerGestureOwner(e.pointerId);
@@ -5903,7 +6064,7 @@ import {
     clearPointerGestureOwner(e.pointerId);
   }, true);
 
-  nodeLayer.addEventListener('click', e => { const detailButton = e.target.closest('[data-action="document-detail"]'); if(detailButton){ const nodeEl = detailButton.closest('.map-node'); const node = nodeEl ? byId(nodeEl.dataset.id) : null; if(node) openDocumentDetail(node); e.stopPropagation(); return; } const el = e.target.closest('.map-node'); if(!el) return; if(consumeSuppressedConnectClick(el.dataset.id)){ e.preventDefault(); e.stopPropagation(); return; } logInputDebug('tap', inputDebugState.lastPointer, {mode:'node', target:el}); if(connectFrom){ e.preventDefault(); e.stopPropagation(); completeConnectToBlock(el.dataset.id, e); return; } if(shouldToggleSelection(e)) toggleNodeSelection(el.dataset.id, 'toggle-node', e); else select(el.dataset.id); });
+  nodeLayer.addEventListener('click', e => { const detailButton = e.target.closest('[data-action="document-detail"]'); if(detailButton){ const nodeEl = detailButton.closest('.map-node'); const node = nodeEl ? byId(nodeEl.dataset.id) : null; if(node) openDocumentDetail(node); e.stopPropagation(); return; } const el = e.target.closest('.map-node'); if(!el) return; if(consumeSuppressedConnectClick(el.dataset.id)){ e.preventDefault(); e.stopPropagation(); return; } logInputDebug('tap', inputDebugState.lastPointer, {mode:'node', target:el}); if(isBlockTargetingActive()){ e.preventDefault(); e.stopPropagation(); completeBlockTargetingToBlock(el.dataset.id, e); return; } if(shouldToggleSelection(e)) toggleNodeSelection(el.dataset.id, 'toggle-node', e); else select(el.dataset.id); });
   edgeLabelLayer.addEventListener('click', e => { const lab = e.target.closest('.edge-label'); if(!lab) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'edge', target:lab}); if(shouldToggleSelection(e)) toggleEdgeSelection(lab.dataset.edgeId, 'toggle-line', e); else selectEdge(lab.dataset.edgeId); });
   edgeLayer.addEventListener('click', e => { const g = e.target.closest('g.edge-group'); if(!g) return; logInputDebug('tap', inputDebugState.lastPointer, {mode:'edge', target:g}); if(shouldToggleSelection(e)) toggleEdgeSelection(g.dataset.edgeId, 'toggle-line', e); else selectEdge(g.dataset.edgeId); });
   nodeLayer.addEventListener('focusin', e => { const field = e.target.dataset.field, el = e.target.closest('.map-node'); if(!field || !el) return; beginTextEdit(el.dataset.id, field); });
@@ -6160,7 +6321,7 @@ import {
     }
   });
   document.addEventListener('click', e => { if(!e.target.closest('.menu')) closeMenu(); if(!e.target.closest('#shelfDelete')) clearEdgeDeleteArm(); });
-  document.addEventListener('selectionchange', () => { if(gestureLockReasons.size > 0 || !!connectFrom) clearGestureSelection(); });
+  document.addEventListener('selectionchange', () => { if(gestureLockReasons.size > 0 || isBlockTargetingActive()) clearGestureSelection(); });
   document.addEventListener('keydown', e => {
     if(e.key === 'Escape'){
       if(reviewMode.active && !isTextEditingActive()){
@@ -6180,9 +6341,9 @@ import {
       }
       closeMenu();
       clearEdgeDeleteArm();
-      if(connectFrom){
+      if(isBlockTargetingActive()){
         e.preventDefault();
-        cancelConnect({announce:'Connection canceled.'});
+        cancelBlockTargeting({announce:'Connection canceled.'});
         return;
       }
       if(multiSelectMode){
@@ -6336,7 +6497,7 @@ import {
   document.getElementById('btnExport').addEventListener('click', () => { cancelPlacementMode('tool'); exportWorkspace(); });
   importFileInput.addEventListener('change', e => importMap(e.target.files?.[0]));
   document.getElementById('btnResetMap').addEventListener('click', () => { cancelPlacementMode('tool'); resetMap(); });
-  document.getElementById('cancelConnect').addEventListener('click', cancelConnect);
+  cancelConnectButton.addEventListener('click', () => cancelBlockTargeting({announce:'Connection canceled.'}));
   documentPickerClose.addEventListener('click', closeDocumentPicker);
   documentDetailClose.addEventListener('click', closeDocumentDetail);
   documentPickerList.addEventListener('click', e => {
@@ -6384,6 +6545,8 @@ import {
       {type:'section', label:'Line route'}, {type:'edgeShapes'}
     ], {type:'edge', id:selectedEdgeId});
   });
+  shelfChangeSource.addEventListener('click', () => selectedEdgeId && startReconnect(selectedEdgeId, 'change-source'));
+  shelfChangeTarget.addEventListener('click', () => selectedEdgeId && startReconnect(selectedEdgeId, 'change-target'));
   shelfFromPort.addEventListener('click', () => {
     if(!selectedEdgeId) return;
     openMenuFromButton(shelfFromPort, 'Source connection side', [
