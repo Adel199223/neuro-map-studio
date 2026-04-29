@@ -245,9 +245,14 @@ export function latestAttemptsByCard(attempts = [], cardIds = []) {
   attempts.forEach((attempt, order) => {
     if (validIds.size && !validIds.has(attempt.cardId)) return;
     const time = parseTime(attempt.reviewedAt);
+    const attemptCount = Math.max(1, Number(attempt.attemptCount) || 1);
     const existing = latest.get(attempt.cardId);
-    if (!existing || time > existing.__time || (time === existing.__time && order > existing.__order)) {
-      latest.set(attempt.cardId, { ...attempt, __time: time, __order: order });
+    if (
+      !existing ||
+      attemptCount > existing.__attemptCount ||
+      (attemptCount === existing.__attemptCount && (time > existing.__time || (time === existing.__time && order > existing.__order)))
+    ) {
+      latest.set(attempt.cardId, { ...attempt, __attemptCount: attemptCount, __time: time, __order: order });
     }
   });
   return latest;

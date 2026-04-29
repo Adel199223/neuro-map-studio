@@ -1487,15 +1487,23 @@ import {
     const time = Date.parse(attempt?.reviewedAt || '');
     return Number.isFinite(time) ? time : 0;
   }
+  function reviewAttemptCount(attempt){
+    return Math.max(1, Number(attempt?.attemptCount) || 1);
+  }
   function latestReviewAttemptsByCard(cardIds=null){
     const validIds = cardIds ? new Set(cardIds) : null;
     const latest = new Map();
     currentReviewAttempts().forEach((attempt, order) => {
       if(validIds && !validIds.has(attempt.cardId)) return;
       const time = reviewAttemptTime(attempt);
+      const attemptCount = reviewAttemptCount(attempt);
       const existing = latest.get(attempt.cardId);
-      if(!existing || time > existing.__time || (time === existing.__time && order > existing.__order)){
-        latest.set(attempt.cardId, Object.assign({}, attempt, {__time:time, __order:order}));
+      if(
+        !existing ||
+        attemptCount > existing.__attemptCount ||
+        (attemptCount === existing.__attemptCount && (time > existing.__time || (time === existing.__time && order > existing.__order)))
+      ){
+        latest.set(attempt.cardId, Object.assign({}, attempt, {__attemptCount:attemptCount, __time:time, __order:order}));
       }
     });
     return latest;
