@@ -118,9 +118,11 @@ function metadata(value: unknown): NeuroMapMetadata | undefined {
   return isRecord(value) ? { ...value } : undefined;
 }
 
-function positiveInteger(value: unknown): number | undefined {
-  const numeric = Math.max(1, Math.floor(Number(value) || 0));
-  return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
+function optionalPositiveInteger(value: unknown): number | undefined {
+  if (value === null || value === undefined) return undefined;
+  if (typeof value === 'string' && !value.trim()) return undefined;
+  const numeric = Number(value);
+  return Number.isInteger(numeric) && numeric > 0 ? numeric : undefined;
 }
 
 function optionalNumber(value: unknown): number | undefined {
@@ -295,31 +297,48 @@ function matchesRuntimeScope(value: unknown, pageId?: string, mapViewId?: string
   return true;
 }
 
+type RuntimeAttemptDropReason = 'missing-card-id' | 'invalid-rating' | 'missing-reviewed-at';
+
+interface RuntimeAttemptNormalizationResult {
+  attempt: NeuroMapReviewAttempt | null;
+  droppedReason?: RuntimeAttemptDropReason;
+}
+
 function normalizeRuntimeAttempt(
   value: unknown,
   index: number,
   pageId?: string,
   mapViewId?: string,
-): NeuroMapReviewAttempt | null {
-  if (!isRecord(value) || !matchesRuntimeScope(value, pageId, mapViewId)) return null;
-  if (!NEURO_MAP_REVIEW_RATINGS.includes(value.rating as NeuroMapReviewAttempt['rating'])) return null;
+): RuntimeAttemptNormalizationResult {
+  if (!isRecord(value) || !matchesRuntimeScope(value, pageId, mapViewId)) {
+    return { attempt: null };
+  }
+  const cardId = optionalString(value.cardId);
+  if (!cardId) return { attempt: null, droppedReason: 'missing-card-id' };
+  if (!NEURO_MAP_REVIEW_RATINGS.includes(value.rating as NeuroMapReviewAttempt['rating'])) {
+    return { attempt: null, droppedReason: 'invalid-rating' };
+  }
+  const reviewedAt = optionalString(value.reviewedAt);
+  if (!reviewedAt) return { attempt: null, droppedReason: 'missing-reviewed-at' };
   const scopedPageId = optionalString(value.pageId) ?? pageId;
   const scopedMapViewId = optionalString(value.mapViewId) ?? mapViewId;
   return {
-    id: clean(value.id, `runtime-review-attempt-${index}`),
-    cardId: clean(value.cardId),
-    rating: value.rating as NeuroMapReviewAttempt['rating'],
-    reviewedAt: clean(value.reviewedAt),
-    attemptCount: positiveInteger(value.attemptCount),
-    sessionId: optionalString(value.sessionId),
-    cardType: normalizeReviewCardType(value.cardType),
-    pageId: scopedPageId,
-    mapViewId: scopedMapViewId,
-    metadata: runtimeReviewMetadata(value.metadata, {
-      source: 'runtime-review-attempt',
+    attempt: {
+      id: clean(value.id, `runtime-review-attempt-${index}`),
+      cardId,
+      rating: value.rating as NeuroMapReviewAttempt['rating'],
+      reviewedAt,
+      attemptCount: optionalPositiveInteger(value.attemptCount),
+      sessionId: optionalString(value.sessionId),
+      cardType: normalizeReviewCardType(value.cardType),
       pageId: scopedPageId,
       mapViewId: scopedMapViewId,
-    }),
+      metadata: runtimeReviewMetadata(value.metadata, {
+        source: 'runtime-review-attempt',
+        pageId: scopedPageId,
+        mapViewId: scopedMapViewId,
+      }),
+    },
   };
 }
 
@@ -386,18 +405,29 @@ export function selectRuntimeMapViewFromPageState(
 
 export function normalizeRuntimeReviewState(input: NormalizeRuntimeReviewStateInput): NeuroMapReviewState | undefined {
   const review = isRecord(input.review) ? input.review : {};
-  const attempts = Array.isArray(review.attempts)
-    ? review.attempts.flatMap((attempt, index) =>
-        normalizeRuntimeAttempt(attempt, index, input.pageId, input.mapViewId) ?? [],
+  const attemptResults = Array.isArray(review.attempts)
+    ? review.attempts.map((attempt, index) =>
+        normalizeRuntimeAttempt(attempt, index, input.pageId, input.mapViewId),
       )
     : [];
+  const attempts = attemptResults.flatMap((result) => (result.attempt ? [result.attempt] : []));
+  const droppedAttemptReasons = attemptResults.flatMap((result) =>
+    result.droppedReason ? [result.droppedReason] : [],
+  );
   const sessions = Array.isArray(review.sessions)
     ? review.sessions.flatMap((session, index) =>
         normalizeRuntimeSession(session, index, input.pageId, input.mapViewId) ?? [],
       )
     : [];
   const cards = input.cards?.length ? [...input.cards] : undefined;
-  if (!cards?.length && !attempts.length && !sessions.length && !isRecord(review.metadata) && !input.metadata) {
+  if (
+    !cards?.length &&
+    !attempts.length &&
+    !sessions.length &&
+    !droppedAttemptReasons.length &&
+    !isRecord(review.metadata) &&
+    !input.metadata
+  ) {
     return undefined;
   }
   return {
@@ -410,6 +440,12 @@ export function normalizeRuntimeReviewState(input: NormalizeRuntimeReviewStateIn
       pageId: input.pageId,
       mapViewId: input.mapViewId,
       reviewMetadata: metadata(review.metadata),
+      ...(droppedAttemptReasons.length
+        ? {
+            droppedAttemptCount: droppedAttemptReasons.length,
+            droppedAttemptReasons: Array.from(new Set(droppedAttemptReasons)),
+          }
+        : {}),
     }),
   };
 }

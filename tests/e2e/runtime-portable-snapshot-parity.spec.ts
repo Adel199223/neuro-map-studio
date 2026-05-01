@@ -11,6 +11,10 @@ import {
   validatePortableSnapshotShape,
 } from '../../src/features/learning-map/portableSnapshot';
 import {
+  buildPortableReviewNextQueue,
+  getPortableReviewSummary,
+} from '../../src/features/learning-map/portableReview';
+import {
   buildPortableBundleFromRuntimePageStates,
   buildPortableSnapshotFromRuntimePageState,
   buildPortableSnapshotsFromRuntimePageState,
@@ -34,6 +38,10 @@ const root = resolve(testDirectory, '../..');
 
 function readSource(relativePath: string): string {
   return readFileSync(resolve(root, relativePath), 'utf8');
+}
+
+function stableSerialized(value: unknown): string {
+  return JSON.stringify(value);
 }
 
 test.describe('runtime portable snapshot parity fixtures', () => {
@@ -126,8 +134,12 @@ test.describe('runtime portable snapshot parity fixtures', () => {
       cards: runtimeReviewCards,
     });
 
-    expect(review?.cards).toHaveLength(3);
-    expect(review?.attempts?.map((attempt) => attempt.id)).toEqual(['attempt-main-missed']);
+    expect(review?.cards).toHaveLength(4);
+    expect(review?.attempts?.map((attempt) => attempt.id)).toEqual([
+      'attempt-main-missed',
+      'attempt-main-almost',
+      'attempt-main-got-it-no-count',
+    ]);
     expect(review?.attempts?.[0]).toMatchObject({
       cardId: 'page-main:block:runtime-core',
       rating: 'missed',
@@ -135,11 +147,55 @@ test.describe('runtime portable snapshot parity fixtures', () => {
       pageId: 'runtime-map-page',
       mapViewId: 'page-main',
     });
+    expect(review?.attempts?.find((attempt) => attempt.id === 'attempt-main-got-it-no-count')?.attemptCount)
+      .toBeUndefined();
+    expect(review?.metadata?.runtime).toMatchObject({
+      droppedAttemptCount: 3,
+      droppedAttemptReasons: ['missing-card-id', 'invalid-rating', 'missing-reviewed-at'],
+    });
     expect(review?.sessions?.map((session) => session.id)).toEqual(['session-main']);
     expect(review?.sessions?.[0].metadata?.runtime).toMatchObject({
       pageId: 'runtime-map-page',
       mapViewId: 'page-main',
     });
+  });
+
+  test('runtime-converted review summary matches portable review helpers', () => {
+    const snapshot = buildPortableSnapshotFromRuntimePageState({
+      pageState: runtimeSingleMapPageState,
+      page: runtimePageRecord,
+      documents: runtimeDocuments,
+      reviewCards: runtimeReviewCards,
+    });
+    const summary = getPortableReviewSummary(snapshot.review?.cards ?? [], snapshot.review?.attempts ?? []);
+
+    expect(summary).toEqual({
+      totalCards: 4,
+      reviewedCards: 3,
+      weakCards: 2,
+      missedCards: 1,
+      almostCards: 1,
+      newCards: 1,
+      unreviewedCards: 1,
+      priorityCards: 3,
+    });
+  });
+
+  test('runtime-converted Review Next queue orders weak cards before new cards', () => {
+    const snapshot = buildPortableSnapshotFromRuntimePageState({
+      pageState: runtimeSingleMapPageState,
+      page: runtimePageRecord,
+      documents: runtimeDocuments,
+      reviewCards: runtimeReviewCards,
+    });
+    const queue = buildPortableReviewNextQueue(snapshot.review?.cards ?? [], snapshot.review?.attempts ?? []);
+
+    expect(queue.map((card) => card.id)).toEqual([
+      'page-main:block:runtime-core',
+      'page-main:relationship:runtime-rel-core-question',
+      'page-main:neighbor:runtime-core',
+    ]);
+    expect(queue.map((card) => card.id)).not.toContain('page-main:source:runtime-core');
   });
 
   test('unknown runtime metadata is retained without invented timestamps', () => {
@@ -214,6 +270,46 @@ test.describe('runtime portable snapshot parity fixtures', () => {
     expect(bundle.snapshots[0].documents?.map((document) => document.documentId)).toEqual([
       'doc-runtime-source',
     ]);
+  });
+
+  test('runtime conversion helpers do not mutate source fixtures', () => {
+    const before = stableSerialized({
+      runtimeSingleMapPageState,
+      runtimeMultiMapPageState,
+      runtimeWorkspaceBackupFixture,
+    });
+
+    buildPortableSnapshotFromRuntimePageState({
+      pageState: runtimeSingleMapPageState,
+      page: runtimePageRecord,
+      documents: runtimeDocuments,
+      reviewCards: runtimeReviewCards,
+    });
+    buildPortableSnapshotsFromRuntimePageState({
+      pageState: runtimeMultiMapPageState,
+      page: runtimePageRecord,
+      documents: runtimeDocuments,
+      reviewCards: runtimeReviewCards,
+    });
+    buildPortableBundleFromRuntimePageStates({
+      exportedAt: runtimeWorkspaceBackupFixture.exportedAt,
+      pageStates: runtimeWorkspaceBackupFixture.pageStates,
+      pages: runtimeWorkspaceBackupFixture.pages,
+      documents: runtimeWorkspaceBackupFixture.documents,
+      pageDocumentLinks: runtimeWorkspaceBackupFixture.pageDocumentLinks,
+      source: {
+        app: runtimeWorkspaceBackupFixture.app.name,
+        version: runtimeWorkspaceBackupFixture.app.version,
+        metadata: { storage: runtimeWorkspaceBackupFixture.storage },
+      },
+      metadata: { schemaVersion: runtimeWorkspaceBackupFixture.schemaVersion },
+    });
+
+    expect(stableSerialized({
+      runtimeSingleMapPageState,
+      runtimeMultiMapPageState,
+      runtimeWorkspaceBackupFixture,
+    })).toBe(before);
   });
 
   test('Accessible Reader graph preview keeps runtime layout outside graph semantics', () => {
