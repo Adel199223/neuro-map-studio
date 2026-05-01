@@ -183,6 +183,20 @@ Stage 5A1 introduces pure TypeScript helpers behind this contract without changi
 
 This helper baseline has no DOM, IndexedDB, localStorage, fetch, backend, or Accessible Reader imports. `mindmap.html`, `review-summary.js`, storage keys, backup/import behavior, routes, and UI remain the runtime sources of truth until a later approved slice wires modules into the product.
 
+### Stage 5A3 Runtime Parity Fixtures
+
+Stage 5A3 adds pure runtime-shape adapters and fixtures so the current saved map page-state data can be represented by the portable contract before the monolithic runtime is modularized.
+
+| File | Purpose |
+| --- | --- |
+| `src/features/learning-map/runtimePortableSnapshot.ts` | Pure helpers that read current runtime page-state envelopes, select inner map views, preserve review attempts/sessions, and build portable snapshots or bundles. |
+| `tests/fixtures/learning-map/runtimePortableFixtures.ts` | Representative saved runtime page-state, multi-map page-state, backup-like, document-link, review, and invalid-relationship fixtures. |
+| `tests/e2e/runtime-portable-snapshot-parity.spec.ts` | Pure Playwright-runner tests proving runtime data can reach the portable contract without layout, relationship, document, review, or metadata loss. |
+
+The runtime source shape remains `{ kind: "map-workspace", workspace, starterHidden, review }`, with inner map views in `workspace.pages[]` and active view selection through `workspace.activePageId`. Stage 5A3 does not generate review cards from `mindmap.js`; it preserves persisted review attempts and sessions, and accepts materialized cards only as explicit input for fixtures or future adapters.
+
+`mindmap.js` remains plain browser JavaScript and is not wired to these helpers. Accessible Reader remains read-only, and the adapter boundary remains preview/test-only.
+
 ### `NeuroMapSnapshot`
 
 | Field | Required | Notes |
@@ -315,8 +329,8 @@ Do not convert automatically:
 Recommended next code slices:
 
 1. Stage 5A1: extract pure NeuroMap data, review, and model helpers behind this contract. This baseline now lives in `src/features/learning-map/portable*.ts` with fixture coverage and no runtime wiring.
-2. Stage 5A2: split `mindmap.html` CSS, runtime, rendering, input, and review modules after the pure contract is stable. Keep behavior unchanged.
-3. Stage 5A3: expand compatibility adapter fixture tests using representative NeuroMap and Accessible Reader fixture data. Keep adapters pure and no-op with respect to storage.
+2. Stage 5A2: externalize `mindmap.html` CSS and the existing browser runtime into `mindmap.css` and `mindmap.js`. Keep behavior unchanged and leave `mindmap.js` monolithic.
+3. Stage 5A3: harden runtime-to-portable snapshot parity fixtures using representative saved page-state and backup-like data. Keep adapters pure and no-op with respect to storage.
 4. Stage 5A4: optionally refactor Accessible Reader graph/workspace boundaries if integration becomes likely. Keep Accessible Reader behavior intact.
 5. Later only: actual integration, host UI decisions, backend persistence, and migration plans.
 
@@ -346,4 +360,4 @@ Accessible Reader should remain read-only for now. If integration becomes likely
 
 ## Recommendation
 
-Proceed next with Stage 5A1 pure model/review extraction. Still do the external CSS/JS split, but only as Stage 5A2 after the contract-facing helpers exist. Keep Accessible Reader read-only until adapter fixture tests prove what can round-trip safely. No Stage 3B3 live merge remains pending; it is already on Neuro Map Studio `main`.
+After Stage 5A3, keep Accessible Reader read-only and use the parity fixtures as the guardrail for any later `mindmap.js` modularization. The next implementation slice should either close review gaps found in the runtime parity fixtures or begin a behavior-preserving runtime module split; actual integration, backend persistence, and host UI decisions remain later-only work.

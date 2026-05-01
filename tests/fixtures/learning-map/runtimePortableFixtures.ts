@@ -1,0 +1,378 @@
+import type { NeuroMapReviewCard } from '../../../src/features/learning-map/portableContract';
+import type { PortableDocumentSource } from '../../../src/features/learning-map/portableSnapshot';
+
+export const runtimeDocuments: PortableDocumentSource[] = [
+  {
+    id: 'doc-runtime-source',
+    documentId: 'doc-runtime-source',
+    title: 'Runtime source note',
+    sourceLabel: 'Imported workspace source',
+    type: 'note',
+    urlOrPath: 'workspace://runtime-source',
+    tags: ['runtime', 'evidence'],
+    metadata: { preservedDocumentField: 'document-metadata' },
+  },
+  {
+    id: 'doc-unlinked',
+    documentId: 'doc-unlinked',
+    title: 'Unlinked source',
+    sourceLabel: 'Library',
+    type: 'web',
+  },
+];
+
+export const runtimePageRecord = {
+  id: 'runtime-map-page',
+  projectId: 'runtime-project',
+  title: 'Runtime map page',
+  type: 'map',
+  createdAt: '2026-02-01T10:00:00.000Z',
+  updatedAt: '2026-02-02T10:00:00.000Z',
+};
+
+export const runtimeReviewCards: NeuroMapReviewCard[] = [
+  {
+    id: 'page-main:block:runtime-core',
+    type: 'block',
+    prompt: 'Explain: Runtime core idea',
+    answer: 'Current page-state data should fit the portable contract.',
+    sourceBlockIds: ['runtime-core'],
+    metadata: { fixtureCard: 'provided-by-test' },
+  },
+  {
+    id: 'page-main:relationship:runtime-rel-core-question',
+    type: 'relationship',
+    prompt: 'What connects Runtime core idea to What should survive?',
+    answer: 'The relationship label, route, strength, and ports should survive.',
+    sourceBlockIds: ['runtime-core', 'runtime-question'],
+    sourceRelationshipIds: ['runtime-rel-core-question'],
+  },
+  {
+    id: 'page-main:source:runtime-core',
+    type: 'source',
+    prompt: 'What source supports Runtime core idea?',
+    answer: 'Runtime source note',
+    sourceBlockIds: ['runtime-core', 'runtime-document'],
+    sourceRelationshipIds: ['runtime-rel-document-core'],
+  },
+];
+
+export const runtimeMapGraph = {
+  version: 19,
+  view: { x: 44, y: -22, scale: 1.1 },
+  nodes: [
+    {
+      id: 'runtime-core',
+      title: 'Runtime core idea',
+      body: 'Current page-state data should fit the portable contract.',
+      group: 'blue',
+      shape: 'card',
+      importance: 3,
+      x: -80,
+      y: -40,
+      w: 300,
+      h: 160,
+      tag: 'core',
+      nodeType: 'concept',
+      metadata: { ignoredByCurrentMap: true },
+    },
+    {
+      id: 'runtime-question',
+      title: 'What should survive?',
+      body: 'Layout, ports, review attempts, and document references.',
+      group: 'amber',
+      shape: 'round',
+      importance: 2,
+      x: 310,
+      y: -20,
+      w: 310,
+      h: 160,
+      tag: 'question',
+      nodeType: 'question',
+    },
+    {
+      id: 'runtime-evidence',
+      title: 'Evidence block',
+      body: 'An evidence block connected to the core idea.',
+      group: 'green',
+      shape: 'note',
+      importance: 2,
+      x: -50,
+      y: 240,
+      w: 300,
+      h: 145,
+      tag: 'evidence',
+      nodeType: 'evidence',
+    },
+    {
+      id: 'runtime-document',
+      title: 'Runtime source note',
+      body: 'Source metadata block.',
+      group: 'violet',
+      shape: 'note',
+      importance: 2,
+      x: -390,
+      y: 235,
+      w: 300,
+      h: 145,
+      tag: 'document',
+      nodeType: 'document',
+      documentId: 'doc-runtime-source',
+    },
+  ],
+  edges: [
+    {
+      id: 'runtime-rel-core-question',
+      from: 'runtime-core',
+      to: 'runtime-question',
+      relation: 'causes',
+      strength: 4,
+      shape: 'curve',
+      label: 'asks',
+      fromPort: 'right',
+      toPort: 'left',
+    },
+    {
+      id: 'runtime-rel-evidence-core',
+      from: 'runtime-evidence',
+      to: 'runtime-core',
+      relation: 'evidence',
+      strength: 3,
+      shape: 'straight',
+      label: 'supports',
+      fromPort: 'top',
+      toPort: 'bottom',
+    },
+    {
+      id: 'runtime-rel-document-core',
+      from: 'runtime-document',
+      to: 'runtime-core',
+      relation: 'custom',
+      strength: 2,
+      shape: 'elbow',
+      label: 'source for',
+      fromPort: 'right',
+      toPort: 'left',
+    },
+  ],
+};
+
+export const runtimeSingleMapPageState = {
+  id: 'page-state-runtime-map-page',
+  pageId: 'runtime-map-page',
+  pageType: 'map',
+  stateVersion: 1,
+  createdAt: '2026-02-01T10:00:00.000Z',
+  updatedAt: '2026-02-02T10:00:00.000Z',
+  metadata: { preservedPageStateField: 'page-state-metadata' },
+  data: {
+    kind: 'map-workspace',
+    starterHidden: true,
+    metadata: { preservedDataField: 'data-metadata' },
+    workspace: {
+      version: 19,
+      activePageId: 'page-main',
+      metadata: { preservedWorkspaceField: 'workspace-metadata' },
+      pages: [
+        {
+          id: 'page-main',
+          title: 'Runtime main map',
+          map: runtimeMapGraph,
+        },
+      ],
+    },
+    review: {
+      version: 1,
+      metadata: { preservedReviewField: 'review-metadata' },
+      attempts: [
+        {
+          id: 'attempt-main-missed',
+          cardId: 'page-main:block:runtime-core',
+          pageId: 'runtime-map-page',
+          mapViewId: 'page-main',
+          cardType: 'block',
+          rating: 'missed',
+          reviewedAt: '2026-02-03T10:00:00.000Z',
+          attemptCount: 1,
+          metadata: { preservedAttemptField: 'attempt-metadata' },
+        },
+        {
+          id: 'attempt-other-view',
+          cardId: 'secondary-map:block:secondary-core',
+          pageId: 'runtime-map-page',
+          mapViewId: 'secondary-map',
+          cardType: 'block',
+          rating: 'almost',
+          reviewedAt: '2026-02-04T10:00:00.000Z',
+          attemptCount: 1,
+        },
+        {
+          id: 'attempt-other-page',
+          cardId: 'page-main:block:runtime-core',
+          pageId: 'other-page',
+          mapViewId: 'page-main',
+          cardType: 'block',
+          rating: 'got-it',
+          reviewedAt: '2026-02-05T10:00:00.000Z',
+          attemptCount: 2,
+        },
+      ],
+      sessions: [
+        {
+          id: 'session-main',
+          pageId: 'runtime-map-page',
+          mapViewId: 'page-main',
+          startedAt: '2026-02-03T10:00:00.000Z',
+          completedAt: '2026-02-03T10:05:00.000Z',
+          reviewedCount: 1,
+          gotIt: 0,
+          almost: 0,
+          missed: 1,
+          cardIds: ['page-main:block:runtime-core'],
+          mode: 'next',
+          filter: 'all',
+          metadata: { preservedSessionField: 'session-metadata' },
+        },
+        {
+          id: 'session-other-view',
+          pageId: 'runtime-map-page',
+          mapViewId: 'secondary-map',
+          startedAt: '2026-02-04T10:00:00.000Z',
+          reviewedCount: 1,
+          gotIt: 0,
+          almost: 1,
+          missed: 0,
+          cardIds: ['secondary-map:block:secondary-core'],
+          mode: 'weak',
+          filter: 'block',
+        },
+      ],
+    },
+  },
+};
+
+export const runtimeMultiMapPageState = {
+  ...runtimeSingleMapPageState,
+  data: {
+    ...runtimeSingleMapPageState.data,
+    workspace: {
+      ...runtimeSingleMapPageState.data.workspace,
+      activePageId: 'secondary-map',
+      pages: [
+        runtimeSingleMapPageState.data.workspace.pages[0],
+        {
+          id: 'secondary-map',
+          title: 'Secondary runtime map',
+          map: {
+            version: 19,
+            view: { x: -12, y: 18, scale: 0.9 },
+            nodes: [
+              {
+                id: 'secondary-core',
+                title: 'Secondary idea',
+                body: 'A second inner map view in the same runtime page state.',
+                group: 'rose',
+                shape: 'pill',
+                importance: 2,
+                x: 20,
+                y: 30,
+                w: 280,
+                h: 140,
+                tag: 'secondary',
+                nodeType: 'concept',
+              },
+            ],
+            edges: [],
+          },
+        },
+      ],
+    },
+  },
+};
+
+export const runtimeInvalidRelationshipPageState = {
+  ...runtimeSingleMapPageState,
+  data: {
+    ...runtimeSingleMapPageState.data,
+    workspace: {
+      ...runtimeSingleMapPageState.data.workspace,
+      pages: [
+        {
+          id: 'page-main',
+          title: 'Runtime map with invalid relationship',
+          map: {
+            ...runtimeMapGraph,
+            edges: [
+              ...runtimeMapGraph.edges,
+              {
+                id: 'runtime-rel-missing-target',
+                from: 'runtime-core',
+                to: 'missing-block',
+                relation: 'contrast',
+                strength: 1,
+                shape: 'arc',
+                label: 'bad endpoint',
+                fromPort: 'left',
+                toPort: 'right',
+              },
+            ],
+          },
+        },
+      ],
+    },
+  },
+};
+
+export const runtimeWorkspaceBackupFixture = {
+  schemaVersion: 1,
+  exportedAt: '2026-02-06T10:00:00.000Z',
+  app: { name: 'Neuro Map Studio', version: '0.1.0' },
+  storage: {
+    dbName: 'neuro-map-studio-local-workspace',
+    dbVersion: 2,
+    pageStateVersion: 1,
+  },
+  workspace: {
+    id: 'local-workspace',
+    title: 'Runtime backup workspace',
+    projectOrder: ['runtime-project'],
+    currentProjectId: 'runtime-project',
+  },
+  projects: [
+    {
+      id: 'runtime-project',
+      title: 'Runtime project',
+      description: 'Fixture project for runtime parity.',
+    },
+  ],
+  documents: runtimeDocuments,
+  pages: [
+    runtimePageRecord,
+    {
+      id: 'notes-page',
+      projectId: 'runtime-project',
+      title: 'Notes page',
+      type: 'notes',
+      createdAt: '2026-02-01T10:00:00.000Z',
+      updatedAt: '2026-02-01T10:00:00.000Z',
+    },
+  ],
+  pageDocumentLinks: [
+    {
+      id: 'link-runtime-map-source',
+      pageId: 'runtime-map-page',
+      documentId: 'doc-runtime-source',
+      relationship: 'source',
+    },
+  ],
+  pageStates: [
+    runtimeSingleMapPageState,
+    {
+      id: 'page-state-notes-page',
+      pageId: 'notes-page',
+      pageType: 'notes',
+      stateVersion: 1,
+      data: { kind: 'notes-editor', body: 'Not a map page.' },
+    },
+  ],
+};

@@ -547,6 +547,16 @@ export function validatePortableSnapshotShape(input: unknown): PortableSnapshotV
     });
   }
 
+  const runtimeMetadata = isRecord(input.metadata) && isRecord(input.metadata.runtime)
+    ? input.metadata.runtime
+    : {};
+  if (Array.isArray(runtimeMetadata.droppedRelationshipIds) && runtimeMetadata.droppedRelationshipIds.length) {
+    const ids = runtimeMetadata.droppedRelationshipIds.map((id) => clean(id)).filter(Boolean);
+    if (ids.length) {
+      warnings.push(`Runtime normalization dropped relationship(s) with invalid endpoints: ${ids.join(', ')}.`);
+    }
+  }
+
   return { valid: errors.length === 0, errors, warnings };
 }
 
