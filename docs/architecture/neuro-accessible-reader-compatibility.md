@@ -170,6 +170,19 @@ Shared defaults:
 - Metadata: use `metadata` for unknown host fields and provenance, but not for core layout.
 - Review state: store separately from graph semantics so stale mastery can be detected.
 
+### Stage 5A1 Helper Baseline
+
+Stage 5A1 introduces pure TypeScript helpers behind this contract without changing product runtime behavior:
+
+| File | Purpose |
+| --- | --- |
+| `src/features/learning-map/portableContract.ts` | Serializable contract types, version constants, review rating/filter unions, and shared metadata shapes. |
+| `src/features/learning-map/portableSnapshot.ts` | Pure snapshot normalization, map-state snapshot building through `workspaceCore.normalizeMap`, validation, summaries, document refs, and valid relationship refs. |
+| `src/features/learning-map/portableReview.ts` | Pure review helpers for latest-attempt selection, weak-card queues, Review next ordering, card-type filters, summary counts, and rating vocabulary preview mapping. |
+| `src/features/learning-map/portableAdapters.ts` | Preview-only Accessible Reader-shaped graph data from a NeuroMap snapshot, with layout and relationship route/port metadata kept outside graph semantics. |
+
+This helper baseline has no DOM, IndexedDB, localStorage, fetch, backend, or Accessible Reader imports. `mindmap.html`, `review-summary.js`, storage keys, backup/import behavior, routes, and UI remain the runtime sources of truth until a later approved slice wires modules into the product.
+
 ### `NeuroMapSnapshot`
 
 | Field | Required | Notes |
@@ -301,9 +314,9 @@ Do not convert automatically:
 
 Recommended next code slices:
 
-1. Stage 5A1: extract pure NeuroMap data, review, and model helpers behind this contract. Reuse and expand the existing `src/features/learning-map/*` helpers where practical, and cover with unit tests plus existing e2e safety checks.
+1. Stage 5A1: extract pure NeuroMap data, review, and model helpers behind this contract. This baseline now lives in `src/features/learning-map/portable*.ts` with fixture coverage and no runtime wiring.
 2. Stage 5A2: split `mindmap.html` CSS, runtime, rendering, input, and review modules after the pure contract is stable. Keep behavior unchanged.
-3. Stage 5A3: create adapter fixture tests using representative NeuroMap and Accessible Reader fixture data. Keep adapters pure and no-op with respect to storage.
+3. Stage 5A3: expand compatibility adapter fixture tests using representative NeuroMap and Accessible Reader fixture data. Keep adapters pure and no-op with respect to storage.
 4. Stage 5A4: optionally refactor Accessible Reader graph/workspace boundaries if integration becomes likely. Keep Accessible Reader behavior intact.
 5. Later only: actual integration, host UI decisions, backend persistence, and migration plans.
 

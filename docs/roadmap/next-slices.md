@@ -4,10 +4,10 @@ These are small, high-leverage directions to consider after the current main bra
 
 ## Compatibility-Guided Modernization
 
-- Stage 5A0: document the NeuroMap and Accessible Reader compatibility audit and shared contract before moving code.
-- Stage 5A1: extract pure NeuroMap data, review, and model helpers behind the shared contract.
-- Stage 5A2: split `mindmap.html` CSS, JS, and runtime modules after the pure contract helpers exist; do not rewrite the map in React.
-- Stage 5A3: add compatibility adapter fixture tests with representative NeuroMap and Accessible Reader data.
+- Stage 5A0: compatibility audit and shared contract are on main.
+- Stage 5A1: extract pure NeuroMap contract, data/model, review, and preview adapter helpers behind the shared contract with fixture coverage; keep runtime behavior unchanged.
+- Stage 5A2: split `mindmap.html` CSS, JS, and runtime modules after the pure helper baseline exists; do not rewrite the map in React.
+- Stage 5A3: expand compatibility adapter fixture tests with representative NeuroMap and Accessible Reader data.
 - Stage 5A4: only if integration becomes likely, prepare targeted Accessible Reader graph/workspace boundaries while keeping Accessible Reader read-only until explicitly approved.
 - Later only: actual integration, host UI decisions, backend persistence, and migration planning.
 
