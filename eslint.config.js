@@ -5,7 +5,15 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'playwright-report', 'test-results', 'public/prototypes/**/*.html'] },
+  {
+    ignores: [
+      'dist',
+      'playwright-report',
+      'test-results',
+      'public/prototypes/**/*.html',
+      'public/prototypes/current/mindmap.js',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

@@ -37,6 +37,8 @@ const required = [
   'public/prototypes/current/workspace-store.js',
   'public/prototypes/current/page.html',
   'public/prototypes/current/mindmap.html',
+  'public/prototypes/current/mindmap.css',
+  'public/prototypes/current/mindmap.js',
   'public/prototypes/current/lesson.html',
   'scripts/review-package-config.mjs',
   'scripts/create-review-zip.mjs',
@@ -48,6 +50,7 @@ const required = [
   'src/features/learning-map/types.ts',
   'src/data/simonDixonSeed.ts',
   'tests/e2e/prototype.spec.ts',
+  'tests/e2e/mindmap-runtime-extraction.spec.ts',
   'tests/e2e/workspace-core.spec.ts',
 ];
 
@@ -78,6 +81,23 @@ function expectEither(file, snippets, label) {
   const source = read(file);
   if (!snippets.some((snippet) => source.includes(snippet))) {
     errors.push(`${file} is missing expected content for ${label}: ${snippets.join(' OR ')}`);
+  }
+}
+
+function expectNoLargeInlineBlocks(file, tagName, { maxBytes, maxLines }) {
+  const source = read(file);
+  const pattern = new RegExp(`<${tagName}(?![^>]*\\bsrc=)[^>]*>([\\s\\S]*?)<\\/${tagName}>`, 'gi');
+
+  for (const match of source.matchAll(pattern)) {
+    const body = match[1] ?? '';
+    const byteCount = Buffer.byteLength(body, 'utf8');
+    const lineCount = body.split('\n').length;
+
+    if (byteCount > maxBytes || lineCount > maxLines) {
+      errors.push(
+        `${file} contains a large inline <${tagName}> block (${lineCount} lines, ${byteCount} bytes). Use external files for map runtime assets.`,
+      );
+    }
   }
 }
 
@@ -278,22 +298,49 @@ expectIncludes('public/prototypes/current/page.html', [
 ]);
 
 expectIncludes('public/prototypes/current/mindmap.html', [
+  './mindmap.css',
+  'type="module" src="./mindmap.js"',
   'Sources &amp; blocks',
   'placementOverlay',
   'workbenchAddConcept',
   'workbenchAddQuestion',
   'workbenchAddEvidence',
   'workbenchAddDocument',
-  'data-workbench-document-id',
-  'documentId',
   'selectionShelf',
   'toast',
   'zoomDock',
+]);
+expectNoLargeInlineBlocks('public/prototypes/current/mindmap.html', 'style', { maxBytes: 10_000, maxLines: 120 });
+expectNoLargeInlineBlocks('public/prototypes/current/mindmap.html', 'script', { maxBytes: 20_000, maxLines: 240 });
+expectEither('public/prototypes/current/mindmap.html', ['btnResetView', 'Reset to 100 percent'], 'reset view control');
+
+expectIncludes('public/prototypes/current/mindmap.css', [
+  ':root',
+  '.map-node',
+  '.edge-group',
+  '.connection-port',
+  '.map-workbench',
+  '.selection-shelf',
+  '.review-panel',
+  '.input-debug',
+  '.placement-overlay',
+  '@media (pointer:coarse)',
+  '@media print',
+]);
+
+expectIncludes('public/prototypes/current/mindmap.js', [
+  './workspace-store.js',
+  'data-workbench-document-id',
+  'documentId',
   'debugInput',
   'savePageState',
   'runtimePageId',
+  'buildReviewNextCards',
+  'buildWeakReviewCards',
+  'insertBlockBetweenRelationship',
+  'startConnect',
+  'reconnectTarget',
 ]);
-expectEither('public/prototypes/current/mindmap.html', ['btnResetView', 'Reset to 100 percent'], 'reset view control');
 
 expectIncludes('public/prototypes/current/lesson.html', [
   'glossary',
