@@ -195,7 +195,7 @@ Stage 5A3 adds pure runtime-shape adapters and fixtures so the current saved map
 
 The runtime source shape remains `{ kind: "map-workspace", workspace, starterHidden, review }`, with inner map views in `workspace.pages[]` and active view selection through `workspace.activePageId`. Stage 5A3 does not generate review cards from `mindmap.js`; it preserves persisted review attempts and sessions, and accepts materialized cards only as explicit input for fixtures or future adapters.
 
-The Stage 5A3 hardening pass covers runtime-converted review summary and Review Next ordering, safe invalid-attempt filtering, and input immutability without wiring the helpers into the browser runtime.
+The Stage 5A3 hardening passes cover runtime-converted review summary and Review Next ordering, safe invalid-attempt filtering, input immutability, and optional `attemptCount` preservation through final portable snapshot normalization without wiring the helpers into the browser runtime.
 
 `mindmap.js` remains plain browser JavaScript and is not wired to these helpers. Accessible Reader remains read-only, and the adapter boundary remains preview/test-only.
 

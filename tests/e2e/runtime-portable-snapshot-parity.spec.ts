@@ -181,6 +181,25 @@ test.describe('runtime portable snapshot parity fixtures', () => {
     });
   });
 
+  test('runtime final portable snapshot keeps missing attemptCount optional', () => {
+    const snapshot = buildPortableSnapshotFromRuntimePageState({
+      pageState: runtimeSingleMapPageState,
+      page: runtimePageRecord,
+      documents: runtimeDocuments,
+      reviewCards: runtimeReviewCards,
+    });
+    const gotItAttempt = snapshot.review?.attempts?.find(
+      (attempt) => attempt.id === 'attempt-main-got-it-no-count',
+    );
+
+    expect(gotItAttempt).toMatchObject({
+      cardId: 'page-main:source:runtime-core',
+      rating: 'got-it',
+      reviewedAt: '2026-02-03T10:04:00.000Z',
+    });
+    expect(gotItAttempt?.attemptCount).toBeUndefined();
+  });
+
   test('runtime-converted Review Next queue orders weak cards before new cards', () => {
     const snapshot = buildPortableSnapshotFromRuntimePageState({
       pageState: runtimeSingleMapPageState,

@@ -115,9 +115,11 @@ function finiteNumber(value: unknown, fallback: number): number {
   return Number.isFinite(numeric) ? numeric : fallback;
 }
 
-function positiveInteger(value: unknown): number | undefined {
-  const numeric = Math.max(1, Math.floor(Number(value) || 0));
-  return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
+function optionalPositiveInteger(value: unknown): number | undefined {
+  if (value === null || value === undefined) return undefined;
+  if (typeof value === 'string' && !value.trim()) return undefined;
+  const numeric = Number(value);
+  return Number.isInteger(numeric) && numeric > 0 ? numeric : undefined;
 }
 
 function optionalFiniteNumber(value: unknown): number | undefined {
@@ -293,7 +295,7 @@ function normalizeReviewAttempt(value: unknown, index: number): NeuroMapReviewAt
     cardId: clean(record.cardId),
     rating: rating as NeuroMapReviewAttempt['rating'],
     reviewedAt: clean(record.reviewedAt),
-    attemptCount: positiveInteger(record.attemptCount),
+    attemptCount: optionalPositiveInteger(record.attemptCount),
     sessionId: optionalString(record.sessionId),
     cardType,
     pageId: optionalString(record.pageId),

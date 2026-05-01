@@ -66,12 +66,31 @@ test.describe('learning-map portable contract helpers', () => {
       ],
       relationships: [],
       layout: { view: { x: 0, y: 0, scale: 1 }, blockLayouts: {} },
+      review: {
+        attempts: [
+          {
+            id: 'missing-count',
+            cardId: 'card-without-count',
+            rating: 'got-it',
+            reviewedAt: '2026-01-05T10:00:00.000Z',
+          },
+          {
+            id: 'valid-count',
+            cardId: 'card-with-count',
+            rating: 'almost',
+            reviewedAt: '2026-01-05T10:05:00.000Z',
+            attemptCount: '2',
+          },
+        ],
+      },
     });
 
     expect(normalized.createdAt).toBeUndefined();
     expect(normalized.updatedAt).toBeUndefined();
     expect(normalized.blocks[0].createdAt).toBeUndefined();
-    expect(normalized.review).toBeUndefined();
+    expect(normalized.review?.attempts?.find((attempt) => attempt.id === 'missing-count')?.attemptCount)
+      .toBeUndefined();
+    expect(normalized.review?.attempts?.find((attempt) => attempt.id === 'valid-count')?.attemptCount).toBe(2);
   });
 
   test('invalid relationship endpoints are reported and excluded from valid relationship refs', () => {
