@@ -59,8 +59,56 @@ test.describe('mindmap runtime asset extraction', () => {
       'insertBlockBetweenRelationship',
       'reconnectTarget',
       'startConnect',
+      './mindmapConstants.js',
+      './mindmapDomUtils.js',
+      './mindmapGeometry.js',
     ]) {
       expect(js).toContain(marker);
+    }
+  });
+
+  test('low-risk runtime modules are imported by the entrypoint', () => {
+    const html = readSource('public/prototypes/current/mindmap.html');
+    const js = readSource('public/prototypes/current/mindmap.js');
+    const constants = readSource('public/prototypes/current/mindmapConstants.js');
+    const domUtils = readSource('public/prototypes/current/mindmapDomUtils.js');
+    const geometry = readSource('public/prototypes/current/mindmapGeometry.js');
+
+    expect(html).toContain('<script type="module" src="./mindmap.js"></script>');
+    expect(html).not.toContain('src="./mindmapConstants.js"');
+    expect(html).not.toContain('src="./mindmapDomUtils.js"');
+    expect(html).not.toContain('src="./mindmapGeometry.js"');
+
+    for (const marker of ['./mindmapConstants.js', './mindmapDomUtils.js', './mindmapGeometry.js']) {
+      expect(js).toContain(marker);
+    }
+
+    for (const marker of [
+      'export const relationStyles',
+      'export const defaultMap',
+      'export const REVIEW_RATING_LABELS',
+      'export const PORT_OUTSET',
+    ]) {
+      expect(constants).toContain(marker);
+    }
+
+    for (const marker of [
+      'export function clean',
+      'export function cloneJson',
+      'export function escapeHtml',
+      'export function isCanvasGestureBlockedTarget',
+    ]) {
+      expect(domUtils).toContain(marker);
+    }
+
+    for (const marker of [
+      './mindmapConstants.js',
+      'export function clamp',
+      'export function rectsOverlap',
+      'export function portPoint',
+      'export function edgeGeometry',
+    ]) {
+      expect(geometry).toContain(marker);
     }
   });
 

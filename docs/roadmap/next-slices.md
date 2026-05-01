@@ -8,8 +8,9 @@ These are small, high-leverage directions to consider after the current main bra
 - Stage 5A1: extract pure NeuroMap contract, data/model, review, and preview adapter helpers behind the shared contract with fixture coverage; keep runtime behavior unchanged.
 - Stage 5A2: externalize the `mindmap.html` stylesheet and existing browser runtime into `mindmap.css` and `mindmap.js`; keep routes, behavior, storage, and GitHub Pages deployment unchanged.
 - Stage 5A3: add runtime-to-portable snapshot parity fixtures for saved map page-state and backup-like data; keep helpers pure and leave `mindmap.js` unwired.
-- Later modernization: split the monolithic `mindmap.js` into focused runtime modules only after asset extraction and runtime parity fixtures stay stable; do not rewrite the map in React.
-- Stage 5A4: only if integration becomes likely, prepare targeted Accessible Reader graph/workspace boundaries while keeping Accessible Reader read-only until explicitly approved.
+- Stage 5A4: split only low-risk `mindmap.js` constants, string/DOM-target utilities, and geometry helpers into sibling modules while keeping `mindmap.js` as the browser entrypoint and preserving behavior.
+- Later modernization: continue splitting `mindmap.js` one subsystem at a time, such as review, storage/autosave, gestures, rendering, or placement; do not rewrite the map in React.
+- Stage 5A5 or later: only if integration becomes likely, prepare targeted Accessible Reader graph/workspace boundaries while keeping Accessible Reader read-only until explicitly approved.
 - Later only: actual integration, host UI decisions, backend persistence, and migration planning.
 
 ## Source And Document Workflow

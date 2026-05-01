@@ -6,7 +6,7 @@
 - Repo: `https://github.com/Adel199223/neuro-map-studio`
 - Local WSL path: `/home/fa507/dev/neuro-map-studio-codex`
 - Source-of-truth branch: `main`
-- Latest shipped feature baseline: Stage 5A3 runtime-to-portable snapshot parity fixtures on top of Stage 5A2 mindmap runtime CSS/JS extraction, Stage 5A1 pure portable contract/model/review helpers, and the Stage 5A0 compatibility audit. For the exact current commit, run `git rev-parse main`.
+- Latest shipped feature baseline: Stage 5A4 low-risk `mindmap.js` module split on top of Stage 5A3 runtime-to-portable snapshot parity fixtures, Stage 5A2 mindmap runtime CSS/JS extraction, Stage 5A1 pure portable contract/model/review helpers, and the Stage 5A0 compatibility audit. For the exact current commit, run `git rev-parse main`.
 - Previous Stage 3A2 baseline retained for doctor checks: `7b062803a309b21daeda74e11a6b0183931d0f58`
 - Remote source of truth: `origin/main`.
 
@@ -19,7 +19,7 @@ Primary surfaces:
 - Root workspace dashboard in `src/App.tsx`
 - Project hub at `public/prototypes/current/project.html`
 - Dynamic page runtime at `public/prototypes/current/page.html?pageId=<id>`
-- Map editor route at `public/prototypes/current/mindmap.html?pageId=<id>`, with the prototype stylesheet in `public/prototypes/current/mindmap.css` and the existing browser runtime script in `public/prototypes/current/mindmap.js`
+- Map editor route at `public/prototypes/current/mindmap.html?pageId=<id>`, with the prototype stylesheet in `public/prototypes/current/mindmap.css`, the browser entrypoint in `public/prototypes/current/mindmap.js`, and low-risk constants/string/geometry helpers in sibling `mindmap*.js` modules
 - Lesson runtime at `public/prototypes/current/lesson.html?pageId=<id>`
 - IndexedDB store at `public/prototypes/current/workspace-store.js`
 
@@ -66,4 +66,4 @@ git switch -c task-specific-branch
 
 Read `AGENTS.md`, `CODEX_PROMPT.md`, `docs/product/current-state.md`, and `docs/architecture/local-first-workspace.md` before planning larger changes.
 
-For compatibility-guided modernization, also read `docs/architecture/neuro-accessible-reader-compatibility.md`. Stage 5A1 helper work stays pure TypeScript under `src/features/learning-map/`; Stage 5A2 keeps `mindmap.html` as the route shell while externalizing only `mindmap.css` and `mindmap.js`; Stage 5A3 adds `runtimePortableSnapshot.ts` and runtime parity fixtures that prove saved map page-state data can be represented by the portable contract. The runtime script is still plain browser JavaScript, not wired to the helper baseline, and Accessible Reader remains read-only unless explicitly approved.
+For compatibility-guided modernization, also read `docs/architecture/neuro-accessible-reader-compatibility.md`. Stage 5A1 helper work stays pure TypeScript under `src/features/learning-map/`; Stage 5A2 keeps `mindmap.html` as the route shell while externalizing only `mindmap.css` and `mindmap.js`; Stage 5A3 adds `runtimePortableSnapshot.ts` and runtime parity fixtures that prove saved map page-state data can be represented by the portable contract. Stage 5A4 keeps `mindmap.js` as the runtime entrypoint while extracting only low-risk constants, string/DOM-target utilities, and geometry helpers. The runtime is still plain browser JavaScript, not wired to the Stage 5A1/5A3 helper baseline, and Accessible Reader remains read-only unless explicitly approved.

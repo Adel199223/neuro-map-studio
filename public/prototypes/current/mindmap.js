@@ -9,6 +9,52 @@ import {
   savePageState,
   setCurrentProject,
 } from './workspace-store.js';
+import {
+  DEBUG_INPUT_KEY,
+  EDGE_HIT_WIDTH,
+  EDGE_HIT_WIDTH_COARSE,
+  LONG_PRESS_DELAY,
+  LONG_PRESS_MOVE,
+  MAP_HISTORY_LIMIT,
+  MARQUEE_MIN_SIZE,
+  NUDGE_LARGE_STEP,
+  NUDGE_STEP,
+  PORT_TAP_MOVE,
+  RECENT_DRAG_CONTEXTMENU_MS,
+  RECENT_LONG_PRESS_MENU_MS,
+  REVIEW_CARD_TYPE_LABELS,
+  REVIEW_FILTER_LABELS,
+  REVIEW_RATING_LABELS,
+  REVIEW_SESSION_MODES,
+  REVIEW_STATE_VERSION,
+  colors,
+  defaultMap,
+  edgeShapes,
+  nodeTypes,
+  oppositePort,
+  portLabels,
+  ports,
+  relationStyles,
+  shapes,
+  sizePresets,
+} from './mindmapConstants.js';
+import {
+  clean,
+  cloneJson,
+  escapeHtml,
+  isCanvasGestureBlockedTarget,
+  isEditingElement,
+  isTouchGesturePointer,
+  isTouchLikePointer,
+} from './mindmapDomUtils.js';
+import {
+  clamp,
+  distance,
+  edgeGeometry,
+  marqueeRectFromPoints,
+  portPoint,
+  rectsOverlap,
+} from './mindmapGeometry.js';
 
 (function(){
   'use strict';
@@ -145,65 +191,6 @@ import {
   const workspaceKey = CURRENT_MAP_WORKSPACE_STORAGE_KEY;
   const legacyStorageKeys = LEGACY_MAP_WORKSPACE_STORAGE_KEYS;
   const cssZoomOK = !!(document.documentElement && 'zoom' in document.documentElement.style);
-  const colors = ['blue','amber','green','rose','violet'];
-  const shapes = ['card','round','pill','note','oval'];
-  const nodeTypes = ['concept','question','evidence','document'];
-  const sizePresets = {
-    small:{w:220,h:118}, normal:{w:268,h:145}, large:{w:330,h:185}, wide:{w:390,h:145}, tall:{w:260,h:230}
-  };
-  const relationStyles = {
-    causes:{label:'causes', color:'#8b6d42', dash:'', base:2.0, marker:false, note:'one idea produces another'},
-    funds:{label:'funds', color:'#b68234', dash:'', base:2.2, marker:false, note:'money flows into a player'},
-    controls:{label:'controls', color:'#6e5aa8', dash:'', base:2.1, marker:false, note:'leverage shapes behavior'},
-    benefits:{label:'benefits', color:'#4f8a52', dash:'', base:2.1, marker:false, note:'value flows upward'},
-    costs:{label:'costs', color:'#ad5f58', dash:'', base:2.1, marker:false, note:'burden lands on someone'},
-    loop:{label:'loop', color:'#9a7449', dash:'8 7', base:2.2, marker:false, note:'feedback cycle'},
-    exit:{label:'exit', color:'#2f7f7a', dash:'2 6', base:2.2, marker:false, note:'practical alternative'},
-    evidence:{label:'evidence', color:'#557b88', dash:'6 5', base:1.7, marker:false, note:'example or support'},
-    contrast:{label:'contrast', color:'#77736d', dash:'10 4 2 4', base:1.8, marker:false, note:'opposite or tension'}
-  };
-  const edgeShapes = ['curve','straight','elbow','arc'];
-  const ports = ['auto','top','right','bottom','left'];
-  const portLabels = {auto:'auto', top:'top', right:'right', bottom:'bottom', left:'left'};
-  const oppositePort = {top:'bottom', right:'left', bottom:'top', left:'right', auto:'auto'};
-  const NUDGE_STEP = 12;
-  const NUDGE_LARGE_STEP = 48;
-
-  const defaultMap = {
-    version:20,
-    view:{x:0,y:0,scale:1},
-    nodes:[
-      {id:'core', title:'Core claim', body:'Modern politics sits underneath debt, cheap capital, assets, institutions, and attention.', group:'blue', shape:'card', importance:3, x:-120, y:-40, w:310, h:168, tag:'anchor'},
-      {id:'money', title:'Money starts as debt', body:'Loans, deficits, bonds, and refinancing create new claims that must be serviced.', group:'blue', shape:'round', importance:3, x:-620, y:-40, w:285, h:162, tag:'money'},
-      {id:'dependence', title:'Debt creates dependence', body:'Households, firms, and states need lenders, income, buyers, and rollover.', group:'amber', shape:'card', importance:3, x:-380, y:190, w:285, h:162, tag:'loop'},
-      {id:'cheap', title:'Cheap capital buys assets', body:'Best-connected institutions can buy property, companies, infrastructure, and securities first.', group:'green', shape:'card', importance:3, x:-50, y:190, w:305, h:174, tag:'capital'},
-      {id:'assets', title:'Assets become leverage', body:'Ownership brings cash flow, collateral, board influence, votes, lobbying power, and reach.', group:'green', shape:'card', importance:3, x:310, y:120, w:305, h:178, tag:'assets'},
-      {id:'policy', title:'Policy follows leverage', body:'Spending, regulation, bailouts, military budgets, and crisis design favor capital networks.', group:'amber', shape:'note', importance:3, x:310, y:-170, w:315, h:174, tag:'policy'},
-      {id:'public', title:'The public pays', body:'Inflation, taxes, rent, wage pressure, debt service, and insecurity land on ordinary people.', group:'rose', shape:'round', importance:2, x:-50, y:-315, w:310, h:168, tag:'costs'},
-      {id:'assetmgr', title:'Asset managers allocate flows', body:'Pensions, ETFs, insurance pools, and proxy votes concentrate influence over companies.', group:'green', shape:'pill', importance:2, x:-50, y:475, w:320, h:160, tag:'players'},
-      {id:'government', title:'Government is the visible tool', body:'It borrows, spends, regulates, bails out, funds war, collects tax, and absorbs blame.', group:'amber', shape:'note', importance:2, x:-625, y:-315, w:305, h:168, tag:'state'},
-      {id:'crises', title:'Crises speed up transfer', body:'Wars, bailouts, and reconstruction move public debt into private contracts and assets.', group:'rose', shape:'card', importance:2, x:-925, y:-110, w:300, h:166, tag:'crisis'},
-      {id:'media', title:'Narrative manages attention', body:'Media and algorithms shape what people fear, hate, support, or ignore.', group:'blue', shape:'oval', importance:1, x:-760, y:275, w:340, h:170, tag:'attention'},
-      {id:'bitcoin', title:'Scarce assets support exit', body:'Gold or self-custodied Bitcoin can reduce dependence on bank custody and fiat debt.', group:'green', shape:'pill', importance:2, x:310, y:460, w:315, h:154, tag:'exit'},
-      {id:'exit', title:'Practical exit path', body:'Reduce bad debt. Own useful assets. Self-custody where possible. Buy local. Build community.', group:'green', shape:'round', importance:3, x:-380, y:675, w:345, h:165, tag:'action'}
-    ],
-    edges:[
-      {id:'e1', from:'core', to:'money', relation:'evidence', strength:3, shape:'curve', label:'start here'},
-      {id:'e2', from:'money', to:'dependence', relation:'causes', strength:5, shape:'curve', label:'creates'},
-      {id:'e3', from:'dependence', to:'cheap', relation:'causes', strength:4, shape:'curve', label:'enables'},
-      {id:'e4', from:'cheap', to:'assets', relation:'benefits', strength:5, shape:'curve', label:'buys'},
-      {id:'e5', from:'assets', to:'policy', relation:'controls', strength:5, shape:'curve', label:'shapes'},
-      {id:'e6', from:'policy', to:'money', relation:'loop', strength:5, shape:'curve', label:'more debt'},
-      {id:'e7', from:'policy', to:'public', relation:'costs', strength:4, shape:'curve', label:'cost shifts'},
-      {id:'e8', from:'assetmgr', to:'cheap', relation:'controls', strength:4, shape:'curve', label:'allocates'},
-      {id:'e9', from:'government', to:'policy', relation:'funds', strength:4, shape:'curve', label:'spends'},
-      {id:'e10', from:'crises', to:'government', relation:'causes', strength:4, shape:'curve', label:'justifies'},
-      {id:'e11', from:'crises', to:'public', relation:'costs', strength:4, shape:'curve', label:'burden'},
-      {id:'e12', from:'media', to:'policy', relation:'controls', strength:3, shape:'curve', label:'attention'},
-      {id:'e13', from:'dependence', to:'exit', relation:'exit', strength:4, shape:'arc', label:'respond'},
-      {id:'e14', from:'bitcoin', to:'exit', relation:'exit', strength:3, shape:'curve', label:'tool'}
-    ]
-  };
 
   let workspace = loadWorkspaceFallback();
   let data = activePage().map;
@@ -274,32 +261,6 @@ import {
     maskEdgeLabelIds:new Set()
   };
 
-  const DEBUG_INPUT_KEY = 'neuro-map-studio:debug-input';
-  const REVIEW_STATE_VERSION = 1;
-  const REVIEW_RATING_LABELS = {'got-it':'Got it', almost:'Almost', missed:'Missed'};
-  const REVIEW_CARD_TYPE_LABELS = {
-    block:'Block recall',
-    relationship:'Relationship line recall',
-    neighbor:'Connected blocks recall',
-    source:'Source or evidence recall'
-  };
-  const REVIEW_FILTER_LABELS = {
-    all:'All',
-    block:'Blocks',
-    relationship:'Relationships',
-    neighbor:'Connected blocks',
-    source:'Sources/evidence'
-  };
-  const REVIEW_SESSION_MODES = new Set(['normal', 'weak', 'next']);
-  const MAP_HISTORY_LIMIT = 100;
-  const LONG_PRESS_DELAY = 450;
-  const LONG_PRESS_MOVE = 10;
-  const MARQUEE_MIN_SIZE = 8;
-  const PORT_TAP_MOVE = 14;
-  const EDGE_HIT_WIDTH = 32;
-  const EDGE_HIT_WIDTH_COARSE = 40;
-  const RECENT_LONG_PRESS_MENU_MS = 900;
-  const RECENT_DRAG_CONTEXTMENU_MS = 700;
   const inputDebugState = {
     enabled: (() => {
       try{
@@ -1597,25 +1558,11 @@ import {
   function edgeId(){ return 'edge-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7); }
   function byId(nodeId){ return data.nodes.find(n => n.id === nodeId); }
   function edgeById(eid){ return data.edges.find(e => e.id === eid); }
-  function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
-  function clean(s){ return String(s || '').replace(/\s+/g,' ').trim(); }
-  function cloneJson(value){ return JSON.parse(JSON.stringify(value)); }
-  function escapeHtml(value){
-    return String(value ?? '').replace(/[&<>"']/g, char => ({
-      '&':'&amp;',
-      '<':'&lt;',
-      '>':'&gt;',
-      '"':'&quot;',
-      "'":'&#39;'
-    })[char]);
-  }
   function stageCoords(clientX, clientY){
     const r = stage.getBoundingClientRect();
     return {x:clientX - r.left, y:clientY - r.top};
   }
   function worldToStage(x, y){ return {x:view.x + x * view.scale, y:view.y + y * view.scale}; }
-  function isTouchLikePointer(e){ return e.pointerType === 'touch' || e.pointerType === 'pen'; }
-  function isTouchGesturePointer(e){ return e.pointerType === 'touch'; }
   function menuPointFromButton(button){
     const rect = button.getBoundingClientRect();
     return {x:rect.left + rect.width / 2, y:rect.bottom + 8};
@@ -1626,9 +1573,6 @@ import {
     if(selectedNodeIds.size) return 'node';
     return 'selection';
   }
-  function isEditingElement(element){
-    return !!element?.closest?.('[contenteditable],input,textarea,select');
-  }
   function isTextEditingActive(){
     return isEditingElement(document.activeElement);
   }
@@ -1638,16 +1582,6 @@ import {
     if(!active || active === document.body || active === stage) return true;
     if(active.closest?.('#stage') && !active.closest?.('input,textarea,select,[contenteditable]')) return true;
     return hasMapSelection();
-  }
-  function isCanvasGestureBlockedTarget(target){
-    return !!target?.closest?.('.map-node,.toolbar,.zoom-dock,.side-panel,.review-panel,.map-workbench,.selection-shelf,.connect-banner,.input-debug,.menu,.document-picker,.document-detail-card,.placement-overlay,.placement-ghost,.edge-label,g.edge-group');
-  }
-  function marqueeRectFromPoints(start, current){
-    const left = Math.min(start.x, current.x);
-    const top = Math.min(start.y, current.y);
-    const right = Math.max(start.x, current.x);
-    const bottom = Math.max(start.y, current.y);
-    return {left, top, right, bottom, width:right - left, height:bottom - top};
   }
   function updateMarqueeBox(rect){
     if(!selectionMarquee || !rect) return;
@@ -1960,10 +1894,6 @@ import {
     const rect = element.getBoundingClientRect();
     if(rect.width <= 0 || rect.height <= 0) return null;
     return {left:rect.left, top:rect.top, right:rect.right, bottom:rect.bottom, width:rect.width, height:rect.height};
-  }
-  function rectsOverlap(a, b, margin=0){
-    if(!a || !b) return false;
-    return a.left < b.right + margin && a.right > b.left - margin && a.top < b.bottom + margin && a.bottom > b.top - margin;
   }
   function rectToStage(rect, stageRect=null){
     if(!rect) return null;
@@ -2974,7 +2904,6 @@ import {
     if(shouldSave) save('View saved');
   }
   function midpoint(a, b){ return {x:(a.x + b.x) / 2, y:(a.y + b.y) / 2}; }
-  function distance(a, b){ return Math.hypot(b.x - a.x, b.y - a.y); }
   function createTouchGestureState(){
     const points = [...activeTouchPoints.values()];
     if(points.length < 2) return null;
@@ -3300,67 +3229,6 @@ import {
       });
       nodeLayer.appendChild(el);
     });
-  }
-  function autoPort(rect, target){
-    const dx = target.cx - rect.cx, dy = target.cy - rect.cy;
-    if(Math.abs(dx / Math.max(1, rect.w)) > Math.abs(dy / Math.max(1, rect.h))) return dx >= 0 ? 'right' : 'left';
-    return dy >= 0 ? 'bottom' : 'top';
-  }
-  const PORT_OUTSET = 6;
-  function sideVector(side){
-    if(side === 'top') return {x:0,y:-1};
-    if(side === 'right') return {x:1,y:0};
-    if(side === 'bottom') return {x:0,y:1};
-    if(side === 'left') return {x:-1,y:0};
-    return {x:0,y:0};
-  }
-  function portPoint(rect, port, target){
-    const side = port && port !== 'auto' ? port : autoPort(rect, target);
-    if(side === 'top') return {cx:rect.cx, cy:rect.y - PORT_OUTSET, side};
-    if(side === 'right') return {cx:rect.x + rect.w + PORT_OUTSET, cy:rect.cy, side};
-    if(side === 'bottom') return {cx:rect.cx, cy:rect.y + rect.h + PORT_OUTSET, side};
-    if(side === 'left') return {cx:rect.x - PORT_OUTSET, cy:rect.cy, side};
-    return {cx:rect.cx, cy:rect.cy, side:'center'};
-  }
-  function cubicPoint(a,c1,c2,b,t=.5){
-    const mt = 1-t;
-    return {
-      x: mt*mt*mt*a.cx + 3*mt*mt*t*c1.x + 3*mt*t*t*c2.x + t*t*t*b.cx,
-      y: mt*mt*mt*a.cy + 3*mt*mt*t*c1.y + 3*mt*t*t*c2.y + t*t*t*b.cy
-    };
-  }
-  function quadPoint(a,c,b,t=.5){
-    const mt = 1-t;
-    return {x:mt*mt*a.cx + 2*mt*t*c.x + t*t*b.cx, y:mt*mt*a.cy + 2*mt*t*c.y + t*t*b.cy};
-  }
-  function edgeGeometry(a,b,shape){
-    const dx = b.cx-a.cx, dy = b.cy-a.cy;
-    const dist = Math.max(1, Math.hypot(dx, dy));
-    const mx = (a.cx+b.cx)/2, my = (a.cy+b.cy)/2;
-    const av = sideVector(a.side), bv = sideVector(b.side);
-    if(shape === 'straight') return {d:`M ${a.cx} ${a.cy} L ${b.cx} ${b.cy}`, mid:{x:mx,y:my}};
-    if(shape === 'elbow'){
-      const lead = clamp(dist * .12, 18, 58);
-      const a1 = {x:a.cx + av.x*lead, y:a.cy + av.y*lead};
-      const b1 = {x:b.cx + bv.x*lead, y:b.cy + bv.y*lead};
-      const horizontalFirst = (a.side === 'left' || a.side === 'right');
-      if(horizontalFirst){
-        const xMid = (a1.x + b1.x) / 2;
-        return {d:`M ${a.cx} ${a.cy} L ${a1.x} ${a1.y} L ${xMid} ${a1.y} L ${xMid} ${b1.y} L ${b1.x} ${b1.y} L ${b.cx} ${b.cy}`, mid:{x:xMid,y:(a1.y+b1.y)/2}};
-      }
-      const yMid = (a1.y + b1.y) / 2;
-      return {d:`M ${a.cx} ${a.cy} L ${a1.x} ${a1.y} L ${a1.x} ${yMid} L ${b1.x} ${yMid} L ${b1.x} ${b1.y} L ${b.cx} ${b.cy}`, mid:{x:(a1.x+b1.x)/2,y:yMid}};
-    }
-    if(shape === 'arc'){
-      const bend = clamp(dist * .10, 8, 54);
-      const nx = -dy / dist, ny = dx / dist;
-      const c = {x:mx + nx*bend, y:my + ny*bend};
-      return {d:`M ${a.cx} ${a.cy} Q ${c.x} ${c.y} ${b.cx} ${b.cy}`, mid:quadPoint(a,c,b,.5)};
-    }
-    const handle = clamp(dist * .28, 32, 150);
-    const c1 = {x:a.cx + av.x*handle, y:a.cy + av.y*handle};
-    const c2 = {x:b.cx + bv.x*handle, y:b.cy + bv.y*handle};
-    return {d:`M ${a.cx} ${a.cy} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${b.cx} ${b.cy}`, mid:cubicPoint(a,c1,c2,b,.5)};
   }
   function edgePath(a,b,shape){ return edgeGeometry(a,b,shape).d; }
   function edgeMid(a,b,shape){ return edgeGeometry(a,b,shape).mid; }

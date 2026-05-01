@@ -62,7 +62,7 @@ The map editor is the central diagram workspace. It preserves canvas-first behav
 - collision-aware automatic placement for port quick-add, paste, duplicate, and document blocks
 - dynamic relationship re-anchoring when connected blocks move
 
-The map runtime still lives at `public/prototypes/current/mindmap.html`. Stage 5A2 keeps that route and behavior intact while externalizing the runtime assets into sibling files: `public/prototypes/current/mindmap.css` for map styles and `public/prototypes/current/mindmap.js` for the existing browser script. This is not a React rewrite, TypeScript conversion, Accessible Reader integration, or full JavaScript modular split.
+The map runtime still lives at `public/prototypes/current/mindmap.html`. Stage 5A2 keeps that route and behavior intact while externalizing the runtime assets into sibling files: `public/prototypes/current/mindmap.css` for map styles and `public/prototypes/current/mindmap.js` for the browser entrypoint. Stage 5A4 begins the JavaScript modularization by moving only low-risk constants, string/DOM-target utilities, and geometry helpers into sibling modules while leaving stateful runtime systems in `mindmap.js`. This is not a React rewrite, TypeScript conversion, Accessible Reader integration, or full JavaScript subsystem split.
 
 The Sources & blocks panel supports:
 

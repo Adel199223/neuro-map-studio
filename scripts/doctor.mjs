@@ -39,6 +39,9 @@ const required = [
   'public/prototypes/current/mindmap.html',
   'public/prototypes/current/mindmap.css',
   'public/prototypes/current/mindmap.js',
+  'public/prototypes/current/mindmapConstants.js',
+  'public/prototypes/current/mindmapDomUtils.js',
+  'public/prototypes/current/mindmapGeometry.js',
   'public/prototypes/current/lesson.html',
   'scripts/review-package-config.mjs',
   'scripts/create-review-zip.mjs',
@@ -330,6 +333,9 @@ expectIncludes('public/prototypes/current/mindmap.css', [
 
 expectIncludes('public/prototypes/current/mindmap.js', [
   './workspace-store.js',
+  './mindmapConstants.js',
+  './mindmapDomUtils.js',
+  './mindmapGeometry.js',
   'data-workbench-document-id',
   'documentId',
   'debugInput',
@@ -340,6 +346,28 @@ expectIncludes('public/prototypes/current/mindmap.js', [
   'insertBlockBetweenRelationship',
   'startConnect',
   'reconnectTarget',
+]);
+
+expectIncludes('public/prototypes/current/mindmapConstants.js', [
+  'export const relationStyles',
+  'export const defaultMap',
+  'export const REVIEW_RATING_LABELS',
+  'export const PORT_OUTSET',
+]);
+
+expectIncludes('public/prototypes/current/mindmapDomUtils.js', [
+  'export function clean',
+  'export function cloneJson',
+  'export function escapeHtml',
+  'export function isCanvasGestureBlockedTarget',
+]);
+
+expectIncludes('public/prototypes/current/mindmapGeometry.js', [
+  './mindmapConstants.js',
+  'export function clamp',
+  'export function rectsOverlap',
+  'export function portPoint',
+  'export function edgeGeometry',
 ]);
 
 expectIncludes('public/prototypes/current/lesson.html', [
