@@ -44,6 +44,7 @@ const required = [
   'public/prototypes/current/mindmapGeometry.js',
   'public/prototypes/current/mindmapReviewHelpers.js',
   'public/prototypes/current/mindmapStorageHelpers.js',
+  'public/prototypes/current/mindmapRelationshipHelpers.js',
   'public/prototypes/current/lesson.html',
   'scripts/review-package-config.mjs',
   'scripts/create-review-zip.mjs',
@@ -340,6 +341,7 @@ expectIncludes('public/prototypes/current/mindmap.js', [
   './mindmapGeometry.js',
   './mindmapReviewHelpers.js',
   './mindmapStorageHelpers.js',
+  './mindmapRelationshipHelpers.js',
   'data-workbench-document-id',
   'documentId',
   'debugInput',
@@ -396,6 +398,17 @@ expectIncludes('public/prototypes/current/mindmapStorageHelpers.js', [
   'export function buildMapPageStatePayload',
   'export function buildWorkspaceExportPayload',
   'export function scheduleAutosave',
+]);
+
+expectIncludes('public/prototypes/current/mindmapRelationshipHelpers.js', [
+  './mindmapConstants.js',
+  './mindmapGeometry.js',
+  'export function findDirectedRelationship',
+  'export function createRelationshipDraft',
+  'export function reverseRelationship',
+  'export function changeRelationshipEndpoint',
+  'export function buildInsertBetweenRelationshipPayload',
+  'export function relationshipReviewCleanupCardIds',
 ]);
 
 expectIncludes('public/prototypes/current/lesson.html', [

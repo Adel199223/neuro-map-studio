@@ -55,12 +55,10 @@ import {
   buildReviewNextCards as buildReviewNextCardsFromAttempts,
   buildWeakReviewCards as buildWeakReviewCardsFromAttempts,
   createMapReviewCards,
-  filterOutRelationshipReviewAttempts,
   filterReviewCards as filterReviewCardsByType,
   latestReviewAttemptsByCard as latestReviewAttemptsByCardFromAttempts,
   normalizeReviewFilter,
   normalizeReviewStore as normalizeReviewStoreData,
-  relationshipReviewCardId as relationshipReviewCardIdForMap,
   reviewCardCountLabel,
   reviewHistoryText as reviewHistoryTextForData,
   reviewId,
@@ -82,6 +80,19 @@ import {
   scheduleAutosave,
   workspaceFromPageStateData,
 } from './mindmapStorageHelpers.js';
+import {
+  buildInsertBetweenRelationshipPayload,
+  changeRelationshipEndpoint,
+  createRelationshipDraft,
+  findDirectedRelationship,
+  isSelfRelationship,
+  patchRelationshipPort,
+  patchRelationshipRelation,
+  patchRelationshipShape,
+  patchRelationshipStrength,
+  relationshipReviewCleanupCardIds,
+  reverseRelationship,
+} from './mindmapRelationshipHelpers.js';
 
 (function(){
   'use strict';
@@ -550,14 +561,12 @@ import {
     return reviewStore.sessions.filter(session => session.pageId === runtimePageId && session.mapViewId === mapViewId);
   }
   function relationshipReviewCardId(edgeId){
-    return relationshipReviewCardIdForMap(currentMapViewId(), edgeId);
+    return relationshipReviewCleanupCardIds(currentMapViewId(), edgeId)[0];
   }
   function clearRelationshipReviewAttempts(edgeId){
-    reviewStore.attempts = filterOutRelationshipReviewAttempts(reviewStore.attempts, {
-      pageId:runtimePageId,
-      mapViewId:currentMapViewId(),
-      edgeId
-    });
+    const mapViewId = currentMapViewId();
+    const cleanupCardIds = new Set(relationshipReviewCleanupCardIds(mapViewId, edgeId));
+    reviewStore.attempts = reviewStore.attempts.filter(attempt => !(attempt.pageId === runtimePageId && attempt.mapViewId === mapViewId && cleanupCardIds.has(attempt.cardId)));
   }
   function latestReviewAttemptsByCard(cardIds=null){
     return latestReviewAttemptsByCardFromAttempts(currentReviewAttempts(), cardIds);
@@ -4188,11 +4197,11 @@ import {
     showToast('Block deleted. Ctrl+Z to undo.');
   }
   function directedEdgeBetween(from, to, excludeEdgeId=''){
-    return data.edges.find(e => e.id !== excludeEdgeId && e.from === from && e.to === to) || null;
+    return findDirectedRelationship(data.edges, from, to, excludeEdgeId);
   }
   function addEdge(from,to,opts={}){
     if(!from || !to || !byId(from) || !byId(to)) return null;
-    if(from === to){
+    if(isSelfRelationship(from, to)){
       showToast(opts.selfToast || 'Choose a different block to connect.');
       return null;
     }
@@ -4203,7 +4212,7 @@ import {
       return existingEdge;
     }
     const before = beginMapCommand();
-    const e = {id:edgeId(), from, to, relation:opts.relation || 'causes', strength:opts.strength || 3, shape:opts.shape || 'curve', fromPort:opts.fromPort || 'auto', toPort:opts.toPort || 'auto', label:opts.label || ''};
+    const e = createRelationshipDraft(from, to, {...opts, createId:edgeId});
     data.edges.push(e);
     applySelectionSnapshot({nodes:[], edges:[e.id]});
     render();
@@ -4219,16 +4228,16 @@ import {
     applySelectionSnapshot({nodes:Array.from(selectedNodeIds), edges:Array.from(selectedEdgeIds).filter(id => id !== edgeId)});
     suppressSelectionShelf = false; render(); commitMapCommand('Deleted line', before, {render:false}); showToast('Line deleted. Ctrl+Z to undo.');
   }
-  function reverseEdge(edgeId){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); const old = e.from; e.from = e.to; e.to = old; const oldPort = e.fromPort; e.fromPort = e.toPort || 'auto'; e.toPort = oldPort || 'auto'; render(); commitMapCommand('Reversed line', before, {render:false}); }
+  function reverseEdge(edgeId){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); Object.assign(e, reverseRelationship(e)); render(); commitMapCommand('Reversed line', before, {render:false}); }
   function removeNodeEdges(nodeId){ const before = beginMapCommand(); data.edges = data.edges.filter(e => e.from !== nodeId && e.to !== nodeId); render(); if(commitMapCommand('Removed connections', before, {render:false})) showToast('Connections removed'); }
   function setNodeColor(nodeId, color){ const n = byId(nodeId); if(!n) return; const before = beginMapCommand(); n.group = color; render(); commitMapCommand('Color changed', before, {render:false}); }
   function setNodeShape(nodeId, shape){ const n = byId(nodeId); if(!n) return; const before = beginMapCommand(); n.shape = shape; render(); commitMapCommand('Shape changed', before, {render:false}); }
   function setNodeImportance(nodeId, val){ const n = byId(nodeId); if(!n) return; const before = beginMapCommand(); n.importance = clamp(Number(val),1,3); render(); commitMapCommand('Importance changed', before, {render:false}); }
   function setNodeSize(nodeId, preset){ const n = byId(nodeId), s = sizePresets[preset]; if(!n || !s) return; const before = beginMapCommand(); n.w = s.w; n.h = s.h; render(); commitMapCommand('Size changed', before, {render:false}); }
-  function setEdgeRelation(edgeId, relation){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); e.relation = relation; render(); commitMapCommand('Line type changed', before, {render:false}); }
-  function setEdgeStrength(edgeId, strength){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); e.strength = clamp(Number(strength),1,5); render(); commitMapCommand('Line strength changed', before, {render:false}); }
-  function setEdgeShape(edgeId, shape){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); e.shape = shape; render(); commitMapCommand('Line route changed', before, {render:false}); }
-  function setEdgePort(edgeId, end, port){ const e = edgeById(edgeId); if(!e || !ports.includes(port)) return; const before = beginMapCommand(); if(end === 'from') e.fromPort = port; else e.toPort = port; render(); if(commitMapCommand('Connection side changed', before, {render:false})) showToast('Connection side changed'); }
+  function setEdgeRelation(edgeId, relation){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); Object.assign(e, patchRelationshipRelation(e, relation)); render(); commitMapCommand('Line type changed', before, {render:false}); }
+  function setEdgeStrength(edgeId, strength){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); Object.assign(e, patchRelationshipStrength(e, strength)); render(); commitMapCommand('Line strength changed', before, {render:false}); }
+  function setEdgeShape(edgeId, shape){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); Object.assign(e, patchRelationshipShape(e, shape)); render(); commitMapCommand('Line route changed', before, {render:false}); }
+  function setEdgePort(edgeId, end, port){ const e = edgeById(edgeId); if(!e || !ports.includes(port)) return; const before = beginMapCommand(); Object.assign(e, patchRelationshipPort(e, end, port)); render(); if(commitMapCommand('Connection side changed', before, {render:false})) showToast('Connection side changed'); }
   function setEdgeLabel(edgeId){ const e = edgeById(edgeId); if(!e) return; const style = relationStyles[e.relation]; const txt = prompt('Short label for this link:', e.label || style.label); if(txt === null) return; const before = beginMapCommand(); e.label = clean(txt); render(); commitMapCommand('Line label changed', before, {render:false}); }
   function relationshipInsertMenuPoint(edge, anchor={}){
     if(anchor.button) return menuPointFromButton(anchor.button);
@@ -4313,39 +4322,8 @@ import {
       options:{includeShelf:true, includeToast:true, margin:18, collisionMargin:28}
     });
   }
-  function makeRelationshipInsertNode(template, placement){
-    const nodeType = nodeTypes.includes(template.nodeType) ? template.nodeType : 'concept';
-    return {
-      id:id(),
-      title:template.title || 'New block',
-      body:template.body || 'Rewrite this in your own words.',
-      group:template.group || 'blue',
-      shape:template.shape || 'card',
-      importance:Number(template.importance) || 2,
-      x:Math.round(placement.x),
-      y:Math.round(placement.y),
-      w:template.w || 268,
-      h:template.h || 145,
-      tag:String(template.tag || (nodeType === 'document' ? 'document' : 'custom')),
-      nodeType,
-      documentId:nodeType === 'document' ? String(template.documentId || '') : ''
-    };
-  }
-  function splitRelationshipEdge(original, from, to){
-    return {
-      id:edgeId(),
-      from,
-      to,
-      relation:original.relation || 'causes',
-      strength:Number(original.strength) || 3,
-      shape:edgeShapes.includes(original.shape) ? original.shape : 'curve',
-      fromPort:'auto',
-      toPort:'auto',
-      label:String(original.label || '')
-    };
-  }
-  function insertBlockBetweenRelationship(edgeId, blockType='concept', options={}){
-    const edge = edgeById(edgeId);
+  function insertBlockBetweenRelationship(relationshipEdgeId, blockType='concept', options={}){
+    const edge = edgeById(relationshipEdgeId);
     if(!edge){ showToast('Relationship not found'); return null; }
     const fromNode = byId(edge.from);
     const toNode = byId(edge.to);
@@ -4362,9 +4340,13 @@ import {
     }
     const before = beginMapCommand();
     const original = cloneJson(edge);
-    const newNode = makeRelationshipInsertNode(template, placement.position);
-    const firstEdge = splitRelationshipEdge(original, original.from, newNode.id);
-    const secondEdge = splitRelationshipEdge(original, newNode.id, original.to);
+    const {node:newNode, firstEdge, secondEdge} = buildInsertBetweenRelationshipPayload({
+      originalEdge:original,
+      template,
+      placement:placement.position,
+      createNodeId:id,
+      createEdgeId:edgeId
+    });
     const edgeIndex = data.edges.findIndex(entry => entry.id === original.id);
     if(edgeIndex < 0){
       showToast('Relationship not found');
@@ -4465,13 +4447,7 @@ import {
       return true;
     }
     const before = beginMapCommand();
-    if(mode === 'change-source'){
-      edge.from = targetNodeId;
-      edge.fromPort = 'auto';
-    }else{
-      edge.to = targetNodeId;
-      edge.toPort = 'auto';
-    }
+    Object.assign(edge, changeRelationshipEndpoint(edge, mode, targetNodeId));
     clearRelationshipReviewAttempts(edge.id);
     applySelectionSnapshot({nodes:[], edges:[edge.id]});
     reconnectTarget = null;

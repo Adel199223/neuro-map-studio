@@ -64,6 +64,7 @@ test.describe('mindmap runtime asset extraction', () => {
       './mindmapGeometry.js',
       './mindmapReviewHelpers.js',
       './mindmapStorageHelpers.js',
+      './mindmapRelationshipHelpers.js',
     ]) {
       expect(js).toContain(marker);
     }
@@ -77,6 +78,7 @@ test.describe('mindmap runtime asset extraction', () => {
     const geometry = readSource('public/prototypes/current/mindmapGeometry.js');
     const reviewHelpers = readSource('public/prototypes/current/mindmapReviewHelpers.js');
     const storageHelpers = readSource('public/prototypes/current/mindmapStorageHelpers.js');
+    const relationshipHelpers = readSource('public/prototypes/current/mindmapRelationshipHelpers.js');
 
     expect(html).toContain('<script type="module" src="./mindmap.js"></script>');
     expect(html).not.toContain('src="./mindmapConstants.js"');
@@ -84,6 +86,7 @@ test.describe('mindmap runtime asset extraction', () => {
     expect(html).not.toContain('src="./mindmapGeometry.js"');
     expect(html).not.toContain('src="./mindmapReviewHelpers.js"');
     expect(html).not.toContain('src="./mindmapStorageHelpers.js"');
+    expect(html).not.toContain('src="./mindmapRelationshipHelpers.js"');
 
     for (const marker of [
       './mindmapConstants.js',
@@ -91,6 +94,7 @@ test.describe('mindmap runtime asset extraction', () => {
       './mindmapGeometry.js',
       './mindmapReviewHelpers.js',
       './mindmapStorageHelpers.js',
+      './mindmapRelationshipHelpers.js',
     ]) {
       expect(js).toContain(marker);
     }
@@ -148,6 +152,18 @@ test.describe('mindmap runtime asset extraction', () => {
       'export function scheduleAutosave',
     ]) {
       expect(storageHelpers).toContain(marker);
+    }
+
+    for (const marker of [
+      './mindmapConstants.js',
+      './mindmapGeometry.js',
+      'export function findDirectedRelationship',
+      'export function reverseRelationship',
+      'export function changeRelationshipEndpoint',
+      'export function buildInsertBetweenRelationshipPayload',
+      'export function relationshipReviewCleanupCardIds',
+    ]) {
+      expect(relationshipHelpers).toContain(marker);
     }
   });
 
