@@ -24,14 +24,11 @@ import {
   REVIEW_FILTER_LABELS,
   REVIEW_RATING_LABELS,
   REVIEW_SESSION_MODES,
-  colors,
-  edgeShapes,
   nodeTypes,
   oppositePort,
   portLabels,
   ports,
   relationStyles,
-  shapes,
   sizePresets,
 } from './mindmapConstants.js';
 import {
@@ -93,6 +90,22 @@ import {
   relationshipReviewCleanupCardIds,
   reverseRelationship,
 } from './mindmapRelationshipHelpers.js';
+import {
+  buildBlockStyleMenuItems,
+  buildCanvasContextMenuItems,
+  buildInsertBetweenMenuItems,
+  buildMenuRowItems,
+  buildNodeContextMenuItems,
+  buildPageMenuItems,
+  buildPortQuickAddMenuItems,
+  buildRelationshipContextMenuItems,
+  buildRelationshipContextMenuTitle,
+  buildRelationshipFromPortMenuItems,
+  buildRelationshipRouteMenuItems,
+  buildRelationshipStrengthMenuItems,
+  buildRelationshipToPortMenuItems,
+  buildRelationshipTypeMenuItems,
+} from './mindmapMenuHelpers.js';
 
 (function(){
   'use strict';
@@ -3641,19 +3654,7 @@ import {
     select(source.id, 'port-quick-add');
     const menuButton = nodeLayer.querySelector(`.map-node[data-id="${CSS.escape(source.id)}"] .connection-port.port-${CSS.escape(side)}`) || button;
     const rect = menuButton.getBoundingClientRect();
-    showMenu(`Add linked block from ${portSideLabel(side)} side`, [
-      {
-        label:'Connect existing block',
-        action:'port-connect-existing',
-        title:'Connect this block to another existing block',
-        ariaLabel:'Connect existing block from this port'
-      },
-      {type:'section', label:'Create new linked block'},
-      {label:'Concept block', action:'port-add-concept'},
-      {label:'Question block', action:'port-add-question'},
-      {label:'Evidence block', action:'port-add-evidence'},
-      {label:'Document block', action:'port-add-document'}
-    ], rect.left + rect.width / 2, rect.bottom + 10, {type:'port', id:source.id, side, trigger:'port-button', source:{target:menuButton}});
+    showMenu(`Add linked block from ${portSideLabel(side)} side`, buildPortQuickAddMenuItems(), rect.left + rect.width / 2, rect.bottom + 10, {type:'port', id:source.id, side, trigger:'port-button', source:{target:menuButton}});
     setActivePortMenuButton(menuButton);
   }
   function clearActivePortMenuButton(){
@@ -4261,12 +4262,7 @@ import {
     const edge = edgeById(edgeId);
     if(!edge){ showToast('Relationship not found'); return; }
     const point = relationshipInsertMenuPoint(edge, anchor);
-    showMenu('Insert block between', [
-      {label:'Concept block', action:'insert-concept'},
-      {label:'Question block', action:'insert-question'},
-      {label:'Evidence block', action:'insert-evidence'},
-      {label:'Document block', action:'insert-document'}
-    ], point.x, point.y, {type:'edge-insert', id:edge.id, trigger:'insert-between', source:anchor.source || inputDebugState.lastPointer});
+    showMenu('Insert block between', buildInsertBetweenMenuItems(), point.x, point.y, {type:'edge-insert', id:edge.id, trigger:'insert-between', source:anchor.source || inputDebugState.lastPointer});
   }
   function relationshipInsertNodeTemplate(blockType, options={}){
     if(blockType === 'document'){
@@ -4587,6 +4583,19 @@ import {
     save(seededReset ? 'Map page reset' : 'Blank map restored');
   }
 
+  function appendMenuButton(container, item){
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.dataset.action = item.action;
+    b.textContent = item.label;
+    if(item.title) b.title = item.title;
+    b.setAttribute('aria-label', item.ariaLabel || item.label);
+    if(item.className) String(item.className).split(/\s+/).filter(Boolean).forEach(className => b.classList.add(className));
+    if(item.borderColor) b.style.borderColor = item.borderColor;
+    if(item.danger) b.classList.add('danger');
+    if(item.disabled) b.disabled = true;
+    container.appendChild(b);
+  }
   function showMenu(title, items, clientX, clientY, context){
     clearActivePortMenuButton();
     if(context?.type === 'canvas' || context?.type === 'page-menu'){
@@ -4606,17 +4615,9 @@ import {
     const heading = document.createElement('div'); heading.className = 'menu-title'; heading.textContent = title; menu.appendChild(heading);
     items.forEach(item => {
       if(item.type === 'section'){ const s = document.createElement('div'); s.className = 'menu-section'; s.textContent = item.label; menu.appendChild(s); return; }
-      if(item.type === 'colors'){ const row = document.createElement('div'); row.className = 'menu-row'; colors.forEach(c => { const b = document.createElement('button'); b.className = `dot-${c}`; b.title = `Color: ${c}`; b.setAttribute('aria-label',`Color: ${c}`); b.dataset.action = 'color-' + c; b.textContent = c[0].toUpperCase(); row.appendChild(b); }); menu.appendChild(row); return; }
-      if(item.type === 'shapes'){ const row = document.createElement('div'); row.className = 'menu-row'; shapes.forEach(s => { const b = document.createElement('button'); b.dataset.action = 'shape-' + s; b.textContent = s; row.appendChild(b); }); menu.appendChild(row); return; }
-      if(item.type === 'sizes'){ const row = document.createElement('div'); row.className = 'menu-row'; Object.keys(sizePresets).forEach(s => { const b = document.createElement('button'); b.dataset.action = 'size-' + s; b.textContent = s; row.appendChild(b); }); menu.appendChild(row); return; }
-      if(item.type === 'importance'){ const row = document.createElement('div'); row.className = 'menu-row'; [1,2,3].forEach(v => { const b = document.createElement('button'); b.dataset.action = 'importance-' + v; b.textContent = '★'.repeat(v); row.appendChild(b); }); menu.appendChild(row); return; }
-      if(item.type === 'relations'){ const row = document.createElement('div'); row.className = 'menu-row'; Object.entries(relationStyles).forEach(([key,r]) => { const b = document.createElement('button'); b.dataset.action = 'relation-' + key; b.style.borderColor = r.color; b.textContent = r.label; row.appendChild(b); }); menu.appendChild(row); return; }
-      if(item.type === 'strengths'){ const row = document.createElement('div'); row.className = 'menu-row'; [1,2,3,4,5].forEach(v => { const b = document.createElement('button'); b.dataset.action = 'strength-' + v; b.textContent = String(v); row.appendChild(b); }); menu.appendChild(row); return; }
-      if(item.type === 'edgeShapes'){ const row = document.createElement('div'); row.className = 'menu-row'; edgeShapes.forEach(s => { const b = document.createElement('button'); b.dataset.action = 'edge-shape-' + s; b.textContent = s; row.appendChild(b); }); menu.appendChild(row); return; }
-      if(item.type === 'fromPorts'){ const row = document.createElement('div'); row.className = 'menu-row'; ports.forEach(s => { const b = document.createElement('button'); b.dataset.action = 'port-from-' + s; b.textContent = portLabels[s]; row.appendChild(b); }); menu.appendChild(row); return; }
-      if(item.type === 'toPorts'){ const row = document.createElement('div'); row.className = 'menu-row'; ports.forEach(s => { const b = document.createElement('button'); b.dataset.action = 'port-to-' + s; b.textContent = portLabels[s]; row.appendChild(b); }); menu.appendChild(row); return; }
-      if(item.type === 'linkedDirs'){ const row = document.createElement('div'); row.className = 'menu-row'; ['top','right','bottom','left'].forEach(s => { const b = document.createElement('button'); b.dataset.action = 'add-linked-' + s; b.textContent = s; row.appendChild(b); }); menu.appendChild(row); return; }
-      const b = document.createElement('button'); b.type = 'button'; b.dataset.action = item.action; b.textContent = item.label; if(item.title) b.title = item.title; b.setAttribute('aria-label', item.ariaLabel || item.label); if(item.danger) b.classList.add('danger'); if(item.disabled) b.disabled = true; menu.appendChild(b);
+      const rowItems = buildMenuRowItems(item.type);
+      if(rowItems.length){ const row = document.createElement('div'); row.className = 'menu-row'; rowItems.forEach(rowItem => appendMenuButton(row, rowItem)); menu.appendChild(row); return; }
+      appendMenuButton(menu, item);
     });
     menu.classList.add('show'); menu.setAttribute('aria-hidden','false');
     const pad = 8, rect = menu.getBoundingClientRect(); let x = clientX, y = clientY;
@@ -4627,54 +4628,24 @@ import {
   function closeMenu(){ clearActivePortMenuButton(); menu.classList.remove('show'); menu.setAttribute('aria-hidden','true'); menuContext = null; }
   function nodeMenu(node, clientX, clientY, extraContext={}){
     const isTarget = connectFrom && connectFrom !== node.id;
-    const documentActions = node.nodeType === 'document' ? [{label:'▣ Open document details', action:'document-details'}] : [];
-    showMenu(node.title || 'Block', [
-      {label:'✎ Edit title', action:'edit-title'}, {label:'☰ Edit body text', action:'edit-body'},
-      ...documentActions,
-      {label:'＋ Add linked block', action:'add-linked-node'}, {type:'section', label:'Add linked block from side'}, {type:'linkedDirs'}, ...(isTarget ? [{label:'⛓ Connect pending source to this', action:'connect-pending'}] : []),
-      {label:'⛓ Start connection from this', action:'start-connect'}, {label:'↳ Create detail map view from this block', action:'page-from-node'}, {label:'⧉ Duplicate block', action:'duplicate'}, {label:'◎ Center on this block', action:'center-node'},
-      {type:'section', label:'Block color'}, {type:'colors'}, {type:'section', label:'Block shape'}, {type:'shapes'}, {type:'section', label:'Block size'}, {type:'sizes'}, {type:'section', label:'Importance'}, {type:'importance'},
-      {label:'⌫ Remove all its connections', action:'remove-edges'}, {label:'Delete block', action:'delete-node', danger:true}
-    ], clientX, clientY, {type:'node', id:node.id, ...extraContext});
+    showMenu(node.title || 'Block', buildNodeContextMenuItems({isDocumentNode:node.nodeType === 'document', canConnectPending:isTarget}), clientX, clientY, {type:'node', id:node.id, ...extraContext});
   }
   function edgeMenu(edge, clientX, clientY, extraContext={}){
     const from = byId(edge.from), to = byId(edge.to), rel = relationStyles[edge.relation] || relationStyles.causes;
-    showMenu(`${from?.title || 'Block'} — ${to?.title || 'Block'}`, [
-      {label:'✎ Rename link label', action:'edge-label'}, {label:'⇄ Reverse direction', action:'edge-reverse'},
-      {label:'Insert block between', action:'edge-insert-between', title:'Insert block between', ariaLabel:'Insert block between'},
-      {label:'Change source', action:'edge-change-source', title:'Change source', ariaLabel:'Change source'},
-      {label:'Change target', action:'edge-change-target', title:'Change target', ariaLabel:'Change target'},
-      {type:'section', label:'Relationship type'}, {type:'relations'},
-      {type:'section', label:'Importance / thickness'}, {type:'strengths'},
-      {type:'section', label:'Line route'}, {type:'edgeShapes'},
-      {type:'section', label:'From-side connection point'}, {type:'fromPorts'},
-      {type:'section', label:'To-side connection point'}, {type:'toPorts'},
-      {label:'Delete this link', action:'edge-delete', danger:true},
-      {type:'section', label:'Current meaning'}, {label:`${rel.label}: ${rel.note}`, action:'noop', disabled:true}
-    ], clientX, clientY, {type:'edge', id:edge.id, ...extraContext});
+    showMenu(
+      buildRelationshipContextMenuTitle({fromTitle:from?.title, toTitle:to?.title}),
+      buildRelationshipContextMenuItems({relationLabel:rel.label, relationNote:rel.note}),
+      clientX,
+      clientY,
+      {type:'edge', id:edge.id, ...extraContext},
+    );
   }
   function canvasMenu(worldPoint, clientX, clientY, extraContext={}){
     const selected = byId(selectedId);
-    showMenu('Canvas space', [
-      {label:'＋ Add free block here', action:'add-free-here'}, {label:'＋↗ Add linked block from selected here', action:'add-linked-here', disabled:!selected},
-      {label:'▣ Add document block here', action:'add-document-block'},
-      {label:'◎ Recenter full map', action:'recenter'}, {label:'1× Reset zoom around selected', action:'reset-view'},
-      {label:focusMode ? '◉ Turn focus mode off' : '◉ Turn focus mode on', action:'toggle-focus'}, {label:'↺ Show remember prompt', action:'toggle-remember'}, {label:'? Show visual code', action:'toggle-legend'},
-      {label:'⌁ Tidy map layout', action:'tidy'}, {label:'＋ Create new map view', action:'new-page'}, {label:'⧉ Duplicate map view', action:'duplicate-page'}, {label:'⇩ Export current map view', action:'export'}, {label:'⇩ Export map workspace backup', action:'export-workspace'}, {label:'⇧ Import map or workspace', action:'import-file'}
-    ], clientX, clientY, {type:'canvas', point:worldPoint, ...extraContext});
+    showMenu('Canvas space', buildCanvasContextMenuItems({hasSelectedBlock:!!selected, focusMode}), clientX, clientY, {type:'canvas', point:worldPoint, ...extraContext});
   }
   function pageMenu(clientX, clientY){
-    const items = [{type:'section', label:'Switch map view'}];
-    workspace.pages.forEach(p => items.push({label:(p.id === workspace.activePageId ? '✓ ' : '') + (p.title || 'Untitled view'), action:'switch-page-' + p.id}));
-    items.push(
-      {type:'section', label:'Create and manage'},
-      {label:'＋ New blank map view', action:'new-page'},
-      {label:'⧉ Duplicate current map view', action:'duplicate-page'},
-      {label:'✎ Rename current map view', action:'rename-page'},
-      {label:'⇩ Export current map view', action:'export'},
-      {label:'⇩ Export all map views', action:'export-workspace'},
-      {label:'Delete current map view', action:'delete-page', danger:true, disabled:workspace.pages.length <= 1}
-    );
+    const items = buildPageMenuItems({pages:workspace.pages, activePageId:workspace.activePageId, canDelete:workspace.pages.length > 1});
     showMenu('Map views', items, clientX || window.innerWidth - 240, clientY || 70, {type:'page-menu'});
   }
   function runMenuAction(ctx, action){
@@ -5346,33 +5317,22 @@ import {
   shelfConnect.addEventListener('click', () => selectedId && startConnect(selectedId));
   shelfStyle.addEventListener('click', () => {
     if(!selectedId) return;
-    openMenuFromButton(shelfStyle, 'Block style', [
-      {type:'section', label:'Block color'}, {type:'colors'},
-      {type:'section', label:'Block shape'}, {type:'shapes'},
-      {type:'section', label:'Block size'}, {type:'sizes'},
-      {type:'section', label:'Importance'}, {type:'importance'}
-    ], {type:'node', id:selectedId});
+    openMenuFromButton(shelfStyle, 'Block style', buildBlockStyleMenuItems(), {type:'node', id:selectedId});
   });
   shelfCenter.addEventListener('click', zoomToSelection);
   shelfFocus.addEventListener('click', toggleFocus);
   shelfLabel.addEventListener('click', () => selectedEdgeId && setEdgeLabel(selectedEdgeId));
   shelfRelation.addEventListener('click', () => {
     if(!selectedEdgeId) return;
-    openMenuFromButton(shelfRelation, 'Relationship type', [
-      {type:'section', label:'Relationship type'}, {type:'relations'}
-    ], {type:'edge', id:selectedEdgeId});
+    openMenuFromButton(shelfRelation, 'Relationship type', buildRelationshipTypeMenuItems(), {type:'edge', id:selectedEdgeId});
   });
   shelfStrength.addEventListener('click', () => {
     if(!selectedEdgeId) return;
-    openMenuFromButton(shelfStrength, 'Importance / thickness', [
-      {type:'section', label:'Importance / thickness'}, {type:'strengths'}
-    ], {type:'edge', id:selectedEdgeId});
+    openMenuFromButton(shelfStrength, 'Importance / thickness', buildRelationshipStrengthMenuItems(), {type:'edge', id:selectedEdgeId});
   });
   shelfRoute.addEventListener('click', () => {
     if(!selectedEdgeId) return;
-    openMenuFromButton(shelfRoute, 'Line route', [
-      {type:'section', label:'Line route'}, {type:'edgeShapes'}
-    ], {type:'edge', id:selectedEdgeId});
+    openMenuFromButton(shelfRoute, 'Line route', buildRelationshipRouteMenuItems(), {type:'edge', id:selectedEdgeId});
   });
   shelfChangeSource.addEventListener('click', () => selectedEdgeId && startReconnect(selectedEdgeId, 'change-source'));
   shelfChangeTarget.addEventListener('click', () => selectedEdgeId && startReconnect(selectedEdgeId, 'change-target'));
@@ -5383,15 +5343,11 @@ import {
   });
   shelfFromPort.addEventListener('click', () => {
     if(!selectedEdgeId) return;
-    openMenuFromButton(shelfFromPort, 'Source connection side', [
-      {type:'section', label:'From-side connection point'}, {type:'fromPorts'}
-    ], {type:'edge', id:selectedEdgeId});
+    openMenuFromButton(shelfFromPort, 'Source connection side', buildRelationshipFromPortMenuItems(), {type:'edge', id:selectedEdgeId});
   });
   shelfToPort.addEventListener('click', () => {
     if(!selectedEdgeId) return;
-    openMenuFromButton(shelfToPort, 'Target connection side', [
-      {type:'section', label:'To-side connection point'}, {type:'toPorts'}
-    ], {type:'edge', id:selectedEdgeId});
+    openMenuFromButton(shelfToPort, 'Target connection side', buildRelationshipToPortMenuItems(), {type:'edge', id:selectedEdgeId});
   });
   shelfReverse.addEventListener('click', () => selectedEdgeId && reverseEdge(selectedEdgeId));
   shelfClear.addEventListener('click', () => clearSelection('toolbar-clear'));

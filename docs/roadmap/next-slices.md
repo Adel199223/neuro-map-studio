@@ -13,6 +13,7 @@ These are small, high-leverage directions to consider after the current main bra
 - Stage 5A6: extract low-risk map storage, serialization, import/export payload, and autosave scheduling helpers into `mindmapStorageHelpers.js`; keep DOM/FileReader/IndexedDB wiring in `mindmap.js`.
 - Stage 5A7: docs-only runtime modernization health check recommends a narrow relationship editing helper split next, with menu/context-menu helpers as the fallback if relationship helpers prove too coupled.
 - Stage 5A8: extract pure relationship data helpers into `mindmapRelationshipHelpers.js` while leaving DOM targeting, menu rendering, prompts, render/save/history wiring, and S Pen/touch flows in `mindmap.js`.
+- Stage 5A9: extract pure menu/context-menu descriptor builders into `mindmapMenuHelpers.js` while leaving menu DOM rendering, positioning, action dispatch, long-press behavior, and S Pen/touch flows in `mindmap.js`.
 - Later modernization: continue splitting `mindmap.js` one subsystem at a time; defer gestures, rendering, runtime contract wiring, and storage side-effect wiring until safer seams are proven.
 - Later only: if integration becomes likely, prepare targeted Accessible Reader graph/workspace boundaries while keeping Accessible Reader read-only until explicitly approved.
 - Later only: actual integration, host UI decisions, backend persistence, and migration planning.

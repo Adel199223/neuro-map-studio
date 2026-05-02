@@ -65,6 +65,7 @@ test.describe('mindmap runtime asset extraction', () => {
       './mindmapReviewHelpers.js',
       './mindmapStorageHelpers.js',
       './mindmapRelationshipHelpers.js',
+      './mindmapMenuHelpers.js',
     ]) {
       expect(js).toContain(marker);
     }
@@ -79,6 +80,7 @@ test.describe('mindmap runtime asset extraction', () => {
     const reviewHelpers = readSource('public/prototypes/current/mindmapReviewHelpers.js');
     const storageHelpers = readSource('public/prototypes/current/mindmapStorageHelpers.js');
     const relationshipHelpers = readSource('public/prototypes/current/mindmapRelationshipHelpers.js');
+    const menuHelpers = readSource('public/prototypes/current/mindmapMenuHelpers.js');
 
     expect(html).toContain('<script type="module" src="./mindmap.js"></script>');
     expect(html).not.toContain('src="./mindmapConstants.js"');
@@ -87,6 +89,7 @@ test.describe('mindmap runtime asset extraction', () => {
     expect(html).not.toContain('src="./mindmapReviewHelpers.js"');
     expect(html).not.toContain('src="./mindmapStorageHelpers.js"');
     expect(html).not.toContain('src="./mindmapRelationshipHelpers.js"');
+    expect(html).not.toContain('src="./mindmapMenuHelpers.js"');
 
     for (const marker of [
       './mindmapConstants.js',
@@ -95,6 +98,7 @@ test.describe('mindmap runtime asset extraction', () => {
       './mindmapReviewHelpers.js',
       './mindmapStorageHelpers.js',
       './mindmapRelationshipHelpers.js',
+      './mindmapMenuHelpers.js',
     ]) {
       expect(js).toContain(marker);
     }
@@ -164,6 +168,16 @@ test.describe('mindmap runtime asset extraction', () => {
       'export function relationshipReviewCleanupCardIds',
     ]) {
       expect(relationshipHelpers).toContain(marker);
+    }
+
+    for (const marker of [
+      './mindmapConstants.js',
+      'export function buildPortQuickAddMenuItems',
+      'export function buildRelationshipContextMenuItems',
+      'export function buildInsertBetweenMenuItems',
+      'export function buildPortSideMenuItems',
+    ]) {
+      expect(menuHelpers).toContain(marker);
     }
   });
 
