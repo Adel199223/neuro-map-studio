@@ -26,7 +26,6 @@ import {
   REVIEW_FILTER_LABELS,
   REVIEW_RATING_LABELS,
   REVIEW_SESSION_MODES,
-  REVIEW_STATE_VERSION,
   colors,
   defaultMap,
   edgeShapes,
@@ -55,6 +54,21 @@ import {
   portPoint,
   rectsOverlap,
 } from './mindmapGeometry.js';
+import {
+  buildReviewNextCards as buildReviewNextCardsFromAttempts,
+  buildWeakReviewCards as buildWeakReviewCardsFromAttempts,
+  createMapReviewCards,
+  filterOutRelationshipReviewAttempts,
+  filterReviewCards as filterReviewCardsByType,
+  latestReviewAttemptsByCard as latestReviewAttemptsByCardFromAttempts,
+  normalizeReviewFilter,
+  normalizeReviewStore as normalizeReviewStoreData,
+  relationshipReviewCardId as relationshipReviewCardIdForMap,
+  reviewCardCountLabel,
+  reviewHistoryText as reviewHistoryTextForData,
+  reviewId,
+  reviewStats as reviewStatsFromData,
+} from './mindmapReviewHelpers.js';
 
 (function(){
   'use strict';
@@ -617,41 +631,8 @@ import {
     }, 1600);
   }
   function documentById(documentId){ return projectDocuments.find(document => document.id === documentId) || null; }
-  function reviewId(prefix){ return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`; }
   function normalizeReviewStore(value={}){
-    const attempts = Array.isArray(value?.attempts) ? value.attempts.flatMap(attempt => {
-      if(!attempt || typeof attempt !== 'object') return [];
-      const rating = REVIEW_RATING_LABELS[attempt.rating] ? attempt.rating : '';
-      if(!rating) return [];
-      return [{
-        id:String(attempt.id || reviewId('review-attempt')),
-        cardId:String(attempt.cardId || ''),
-        pageId:String(attempt.pageId || runtimePageId || ''),
-        mapViewId:String(attempt.mapViewId || ''),
-        cardType:String(attempt.cardType || 'block'),
-        rating,
-        reviewedAt:String(attempt.reviewedAt || new Date().toISOString()),
-        attemptCount:Math.max(1, Number(attempt.attemptCount) || 1)
-      }];
-    }) : [];
-    const sessions = Array.isArray(value?.sessions) ? value.sessions.flatMap(session => {
-      if(!session || typeof session !== 'object') return [];
-      return [{
-        id:String(session.id || reviewId('review-session')),
-        pageId:String(session.pageId || runtimePageId || ''),
-        mapViewId:String(session.mapViewId || ''),
-        startedAt:String(session.startedAt || new Date().toISOString()),
-        completedAt:String(session.completedAt || ''),
-        reviewedCount:Math.max(0, Number(session.reviewedCount) || 0),
-        gotIt:Math.max(0, Number(session.gotIt) || 0),
-        almost:Math.max(0, Number(session.almost) || 0),
-        missed:Math.max(0, Number(session.missed) || 0),
-        cardIds:Array.isArray(session.cardIds) ? session.cardIds.map(String).filter(Boolean) : [],
-        mode:REVIEW_SESSION_MODES.has(session.mode) ? session.mode : 'normal',
-        filter:REVIEW_FILTER_LABELS[session.filter] ? session.filter : 'all'
-      }];
-    }) : [];
-    return {version:REVIEW_STATE_VERSION, attempts, sessions};
+    return normalizeReviewStoreData(value, {fallbackPageId:runtimePageId || ''});
   }
   function mapPageStatePayload(){
     syncCurrentPage();
@@ -673,129 +654,32 @@ import {
     return reviewStore.sessions.filter(session => session.pageId === runtimePageId && session.mapViewId === mapViewId);
   }
   function relationshipReviewCardId(edgeId){
-    return `${currentMapViewId()}:relationship:${edgeId}`;
+    return relationshipReviewCardIdForMap(currentMapViewId(), edgeId);
   }
   function clearRelationshipReviewAttempts(edgeId){
-    const cardId = relationshipReviewCardId(edgeId);
-    reviewStore.attempts = reviewStore.attempts.filter(attempt =>
-      !(attempt.pageId === runtimePageId && attempt.mapViewId === currentMapViewId() && attempt.cardId === cardId)
-    );
-  }
-  function normalizeReviewFilter(filter){
-    return REVIEW_FILTER_LABELS[filter] ? filter : 'all';
-  }
-  function reviewAttemptTime(attempt){
-    const time = Date.parse(attempt?.reviewedAt || '');
-    return Number.isFinite(time) ? time : 0;
-  }
-  function reviewAttemptCount(attempt){
-    return Math.max(1, Number(attempt?.attemptCount) || 1);
+    reviewStore.attempts = filterOutRelationshipReviewAttempts(reviewStore.attempts, {
+      pageId:runtimePageId,
+      mapViewId:currentMapViewId(),
+      edgeId
+    });
   }
   function latestReviewAttemptsByCard(cardIds=null){
-    const validIds = cardIds ? new Set(cardIds) : null;
-    const latest = new Map();
-    currentReviewAttempts().forEach((attempt, order) => {
-      if(validIds && !validIds.has(attempt.cardId)) return;
-      const time = reviewAttemptTime(attempt);
-      const attemptCount = reviewAttemptCount(attempt);
-      const existing = latest.get(attempt.cardId);
-      if(
-        !existing ||
-        attemptCount > existing.__attemptCount ||
-        (attemptCount === existing.__attemptCount && (time > existing.__time || (time === existing.__time && order > existing.__order)))
-      ){
-        latest.set(attempt.cardId, Object.assign({}, attempt, {__attemptCount:attemptCount, __time:time, __order:order}));
-      }
-    });
-    return latest;
+    return latestReviewAttemptsByCardFromAttempts(currentReviewAttempts(), cardIds);
   }
   function filterReviewCards(cards, filter=reviewMode.selectedFilter){
-    const selected = normalizeReviewFilter(filter);
-    if(selected === 'all') return cards.slice();
-    return cards.filter(card => card.type === selected);
+    return filterReviewCardsByType(cards, filter);
   }
   function buildWeakReviewCards(cards){
-    const cardIds = cards.map(card => card.id);
-    const latest = latestReviewAttemptsByCard(cardIds);
-    const order = new Map(cards.map((card, index) => [card.id, index]));
-    const priority = {missed:0, almost:1};
-    return cards.filter(card => {
-      const attempt = latest.get(card.id);
-      return attempt?.rating === 'missed' || attempt?.rating === 'almost';
-    }).sort((a, b) => {
-      const aAttempt = latest.get(a.id);
-      const bAttempt = latest.get(b.id);
-      const ratingDiff = priority[aAttempt.rating] - priority[bAttempt.rating];
-      if(ratingDiff) return ratingDiff;
-      const timeDiff = reviewAttemptTime(aAttempt) - reviewAttemptTime(bAttempt);
-      if(timeDiff) return timeDiff;
-      return (order.get(a.id) || 0) - (order.get(b.id) || 0);
-    });
+    return buildWeakReviewCardsFromAttempts(cards, currentReviewAttempts());
   }
   function buildReviewNextCards(cards){
-    const cardIds = cards.map(card => card.id);
-    const latest = latestReviewAttemptsByCard(cardIds);
-    const order = new Map(cards.map((card, index) => [card.id, index]));
-    const priority = {missed:0, almost:1, unreviewed:2};
-    function priorityMeta(card){
-      const attempt = latest.get(card.id);
-      if(attempt?.rating === 'missed' || attempt?.rating === 'almost'){
-        return {bucket:attempt.rating, time:reviewAttemptTime(attempt)};
-      }
-      if(!attempt) return {bucket:'unreviewed', time:0};
-      return null;
-    }
-    return cards.map(card => ({card, meta:priorityMeta(card)}))
-      .filter(item => item.meta)
-      .sort((a, b) => {
-        const bucketDiff = priority[a.meta.bucket] - priority[b.meta.bucket];
-        if(bucketDiff) return bucketDiff;
-        if(a.meta.bucket !== 'unreviewed'){
-          const timeDiff = a.meta.time - b.meta.time;
-          if(timeDiff) return timeDiff;
-        }
-        return (order.get(a.card.id) || 0) - (order.get(b.card.id) || 0);
-      })
-      .map(item => item.card);
+    return buildReviewNextCardsFromAttempts(cards, currentReviewAttempts());
   }
   function reviewStats(cards=generateReviewCards()){
-    const cardIds = cards.map(card => card.id);
-    const latest = latestReviewAttemptsByCard(cardIds);
-    const attempts = currentReviewAttempts().filter(attempt => cardIds.includes(attempt.cardId));
-    const sessions = currentReviewSessions();
-    const completedSessions = sessions.filter(session => session.completedAt);
-    const latestValues = Array.from(latest.values());
-    const missedCards = latestValues.filter(attempt => attempt.rating === 'missed').length;
-    const almostCards = latestValues.filter(attempt => attempt.rating === 'almost').length;
-    const unreviewedCards = cards.filter(card => !latest.has(card.id)).length;
-    const weakCards = missedCards + almostCards;
-    return {
-      totalCards:cards.length,
-      reviewedCards:latest.size,
-      weakCards,
-      missedCards,
-      almostCards,
-      unreviewedCards,
-      priorityCards:missedCards + almostCards + unreviewedCards,
-      attempts,
-      latest,
-      lastAttempt:attempts[attempts.length - 1] || null,
-      lastSession:completedSessions[completedSessions.length - 1] || null
-    };
+    return reviewStatsFromData(cards, currentReviewAttempts(), currentReviewSessions());
   }
   function reviewHistoryText(cards=generateReviewCards()){
-    const stats = reviewStats(cards);
-    const base = `${reviewCardCountLabel(stats.totalCards)} · ${stats.reviewedCards} reviewed · ${stats.weakCards} weak · ${stats.missedCards} missed · ${stats.almostCards} almost · ${stats.unreviewedCards} new`;
-    if(!stats.totalCards) return 'No review cards yet.';
-    if(stats.lastSession){
-      const label = stats.lastSession.mode === 'weak' ? 'Last weak review' : (stats.lastSession.mode === 'next' ? 'Last Review next' : 'Last review');
-      return `${base}. ${label}: ${stats.lastSession.reviewedCount} reviewed, Got it ${stats.lastSession.gotIt}, Almost ${stats.lastSession.almost}, Missed ${stats.lastSession.missed}.`;
-    }
-    if(stats.lastAttempt){
-      const lastLabel = REVIEW_RATING_LABELS[stats.lastAttempt.rating] || stats.lastAttempt.rating;
-      return `${base}. Latest rating: ${lastLabel}.`;
-    }
-    return `${base}. No review attempts yet.`;
+    return reviewHistoryTextForData(cards, currentReviewAttempts(), currentReviewSessions());
   }
   async function saveReviewState(){
     if(!runtimePageInitialized || !runtimePageId) return null;
@@ -808,206 +692,14 @@ import {
       return null;
     }
   }
-  function nodeReviewTitle(node){
-    if(!node) return 'this block';
-    const documentRecord = node.nodeType === 'document' ? documentById(node.documentId) : null;
-    return clean(documentRecord?.title || node.title || 'Untitled block') || 'this block';
-  }
-  function nodeReviewBody(node){
-    if(!node) return '';
-    const documentRecord = node.nodeType === 'document' ? documentById(node.documentId) : null;
-    return clean(node.body || documentRecord?.description || '');
-  }
-  function edgeReviewCue(edge){
-    const style = relationStyles[edge?.relation] || relationStyles.causes;
-    const label = clean(edge?.label || '');
-    if(label && label !== style.label) return `${label} (${style.label})`;
-    return style.label;
-  }
-  function edgeReviewAnswer(edge){
-    const style = relationStyles[edge?.relation] || relationStyles.causes;
-    const lines = [];
-    if(clean(edge?.label)) lines.push(`Label: ${clean(edge.label)}`);
-    lines.push(`Relationship type: ${style.label}`);
-    if(style.note) lines.push(`Meaning cue: ${style.note}`);
-    if(edge?.strength) lines.push(`Importance: ${edge.strength} of 5`);
-    return lines.join('\n');
-  }
-  function connectionsForNode(nodeId){
-    return data.edges.flatMap(edge => {
-      if(edge.from !== nodeId && edge.to !== nodeId) return [];
-      const otherId = edge.from === nodeId ? edge.to : edge.from;
-      const other = byId(otherId);
-      if(!other) return [];
-      return [{edge, other}];
-    });
-  }
-  function isSupportBlock(node){
-    if(!node) return false;
-    const type = clean(node.nodeType || '').toLowerCase();
-    const tag = clean(node.tag || '').toLowerCase();
-    return type === 'document' || type === 'evidence' || tag === 'document' || tag === 'source' || tag === 'evidence';
-  }
-  function supportBlockMetadata(node){
-    if(!node) return '';
-    const documentRecord = node.nodeType === 'document' ? documentById(node.documentId) : null;
-    const parts = [];
-    parts.push(nodeReviewTitle(node));
-    if(documentRecord?.sourceLabel || documentRecord?.type){
-      parts.push(`${documentRecord.sourceLabel || documentRecord.type}`);
-    }
-    const description = clean(documentRecord?.description || node.body || '');
-    if(description) parts.push(description);
-    return parts.join('\n');
-  }
-  function conciseConnectionAnswer(connections, limit=5){
-    const listed = connections.slice(0, limit).map(({edge, other}) => `${nodeReviewTitle(other)} — ${edgeReviewCue(edge)}`);
-    if(connections.length > limit) listed.push(`Plus ${connections.length - limit} more connection${connections.length - limit === 1 ? '' : 's'}.`);
-    return listed.join('\n');
-  }
-  function reviewVisualState(state={}){
-    const highlight = state.highlight || {};
-    const mask = state.mask || {};
-    return {
-      highlight:{
-        nodes:Array.from(new Set(highlight.nodes || [])).filter(nodeId => !!byId(nodeId)),
-        edges:Array.from(new Set(highlight.edges || [])).filter(edgeId => !!edgeById(edgeId))
-      },
-      mask:{
-        nodeBodies:Array.from(new Set(mask.nodeBodies || [])).filter(nodeId => !!byId(nodeId)),
-        nodeAllContent:Array.from(new Set(mask.nodeAllContent || [])).filter(nodeId => !!byId(nodeId)),
-        edgeLabels:Array.from(new Set(mask.edgeLabels || [])).filter(edgeId => !!edgeById(edgeId))
-      }
-    };
-  }
-  function looksLikeQuestionText(value){
-    return /[?？]\s*$/.test(clean(value));
-  }
-  function questionReviewPayload(title, body){
-    const cleanTitle = clean(title);
-    const cleanBody = clean(body);
-    if(!cleanTitle || !cleanBody) return null;
-    if(looksLikeQuestionText(cleanTitle)){
-      if(cleanBody.toLowerCase() !== cleanTitle.toLowerCase() && !looksLikeQuestionText(cleanBody)){
-        return {prompt:cleanTitle, answer:cleanBody, maskBody:true};
-      }
-      return null;
-    }
-    if(looksLikeQuestionText(cleanBody)) return null;
-    return {prompt:`Answer from memory: ${cleanTitle}`, answer:cleanBody, maskBody:true};
-  }
-  function makeReviewCard(card){
-    const preReveal = reviewVisualState(card.preReveal || {highlight:card.highlight, mask:card.mask});
-    const postReveal = reviewVisualState(card.postReveal || {highlight:card.highlight});
-    return {
-      id:card.id,
-      type:card.type,
-      prompt:card.prompt,
-      answer:card.answer,
-      preReveal,
-      postReveal,
-      highlight:postReveal.highlight
-    };
-  }
   function generateReviewCards(){
-    const cards = [];
-    data.nodes.forEach(node => {
-      const title = nodeReviewTitle(node);
-      const body = nodeReviewBody(node);
-      if(!clean(title) || !body) return;
-      const connections = connectionsForNode(node.id);
-      const nodeType = clean(node.nodeType || 'concept').toLowerCase();
-      let prompt = `Explain: ${title}`;
-      let answer = body;
-      let maskBody = true;
-      if(nodeType === 'question'){
-        const questionPayload = questionReviewPayload(title, body);
-        if(!questionPayload) return;
-        prompt = questionPayload.prompt;
-        answer = questionPayload.answer;
-        maskBody = questionPayload.maskBody;
-      }
-      if((nodeType === 'document' || nodeType === 'evidence') && connections.length){
-        prompt = `What does this source or evidence support: ${title}?`;
-        answer = `${body}\n\nConnected to:\n${conciseConnectionAnswer(connections, 4)}`;
-        maskBody = true;
-      }
-      cards.push(makeReviewCard({
-        id:`${currentMapViewId()}:block:${node.id}`,
-        type:'block',
-        prompt,
-        answer,
-        preReveal:{highlight:{nodes:[node.id], edges:[]}, mask:{nodeBodies:maskBody ? [node.id] : []}},
-        postReveal:{highlight:{nodes:[node.id], edges:[]}}
-      }));
-    });
-    data.edges.forEach(edge => {
-      const from = byId(edge.from);
-      const to = byId(edge.to);
-      if(!from || !to) return;
-      cards.push(makeReviewCard({
-        id:relationshipReviewCardId(edge.id),
-        type:'relationship',
-        prompt:`What connects ${nodeReviewTitle(from)} to ${nodeReviewTitle(to)}?`,
-        answer:edgeReviewAnswer(edge),
-        preReveal:{highlight:{nodes:[from.id, to.id], edges:[edge.id]}, mask:{edgeLabels:[edge.id]}},
-        postReveal:{highlight:{nodes:[from.id, to.id], edges:[edge.id]}}
-      }));
-    });
-    data.nodes.forEach(node => {
-      const connections = connectionsForNode(node.id);
-      if(connections.length < 2) return;
-      cards.push(makeReviewCard({
-        id:`${currentMapViewId()}:neighbor:${node.id}`,
-        type:'neighbor',
-        prompt:`What is connected to ${nodeReviewTitle(node)}, and why?`,
-        answer:conciseConnectionAnswer(connections, 6),
-        preReveal:{
-          highlight:{nodes:[node.id], edges:[]},
-          mask:{nodeAllContent:connections.map(item => item.other.id), edgeLabels:connections.map(item => item.edge.id)}
-        },
-        postReveal:{highlight:{nodes:[node.id, ...connections.map(item => item.other.id)], edges:connections.map(item => item.edge.id)}}
-      }));
-    });
-    const supportByTarget = new Map();
-    const supportSeen = new Set();
-    function addSupportReviewCandidate(support, target, edge){
-      if(!support || !target || !edge || support.id === target.id) return;
-      const key = `${target.id}:${support.id}:${edge.id}`;
-      if(supportSeen.has(key)) return;
-      supportSeen.add(key);
-      if(!supportByTarget.has(target.id)) supportByTarget.set(target.id, {target, supports:[]});
-      supportByTarget.get(target.id).supports.push({support, edge});
-    }
-    data.edges.forEach(edge => {
-      const from = byId(edge.from);
-      const to = byId(edge.to);
-      if(!from || !to) return;
-      const evidenceRelation = edge.relation === 'evidence';
-      if(isSupportBlock(from) || evidenceRelation) addSupportReviewCandidate(from, to, edge);
-      if(isSupportBlock(to)) addSupportReviewCandidate(to, from, edge);
-    });
-    supportByTarget.forEach(({target, supports}) => {
-      if(!supports.length) return;
-      cards.push(makeReviewCard({
-        id:`${currentMapViewId()}:source:${target.id}`,
-        type:'source',
-        prompt:`What source or evidence supports ${nodeReviewTitle(target)}?`,
-        answer:supports.map(({support, edge}) => `${supportBlockMetadata(support)}\nConnection: ${edgeReviewCue(edge)}`).join('\n\n'),
-        preReveal:{
-          highlight:{nodes:[target.id], edges:[]},
-          mask:{nodeAllContent:supports.map(item => item.support.id), edgeLabels:supports.map(item => item.edge.id)}
-        },
-        postReveal:{
-          highlight:{nodes:[target.id, ...supports.map(item => item.support.id)], edges:supports.map(item => item.edge.id)}
-        }
-      }));
-    });
-    const seen = new Set();
-    return cards.filter(card => {
-      if(!card.prompt || !card.answer || seen.has(card.id)) return false;
-      seen.add(card.id);
-      return true;
+    return createMapReviewCards({
+      mapViewId:currentMapViewId(),
+      nodes:data.nodes,
+      edges:data.edges,
+      documents:projectDocuments,
+      hasNode:nodeId => !!byId(nodeId),
+      hasEdge:edgeId => !!edgeById(edgeId)
     });
   }
   function clearReviewHighlights(){
@@ -1070,9 +762,6 @@ import {
   function currentReviewCard(){
     if(!reviewMode.active || !reviewMode.session || reviewMode.session.completed || !reviewMode.cards.length) return null;
     return reviewMode.cards[reviewMode.index] || null;
-  }
-  function reviewCardCountLabel(count){
-    return `${count} card${count === 1 ? '' : 's'}`;
   }
   function updateReviewFilterControls(){
     const selected = normalizeReviewFilter(reviewMode.selectedFilter);

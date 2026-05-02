@@ -62,7 +62,7 @@ The map editor is the central diagram workspace. It preserves canvas-first behav
 - collision-aware automatic placement for port quick-add, paste, duplicate, and document blocks
 - dynamic relationship re-anchoring when connected blocks move
 
-The map runtime still lives at `public/prototypes/current/mindmap.html`. Stage 5A2 keeps that route and behavior intact while externalizing the runtime assets into sibling files: `public/prototypes/current/mindmap.css` for map styles and `public/prototypes/current/mindmap.js` for the browser entrypoint. Stage 5A4 begins the JavaScript modularization by moving only low-risk constants, string/DOM-target utilities, and geometry helpers into sibling modules while leaving stateful runtime systems in `mindmap.js`. This is not a React rewrite, TypeScript conversion, Accessible Reader integration, or full JavaScript subsystem split.
+The map runtime still lives at `public/prototypes/current/mindmap.html`. Stage 5A2 keeps that route and behavior intact while externalizing the runtime assets into sibling files: `public/prototypes/current/mindmap.css` for map styles and `public/prototypes/current/mindmap.js` for the browser entrypoint. Stage 5A4 begins the JavaScript modularization by moving only low-risk constants, string/DOM-target utilities, and geometry helpers into sibling modules while leaving stateful runtime systems in `mindmap.js`. Stage 5A5 moves pure review normalization, queue, stats, card-generation, and visual-state helper logic into `public/prototypes/current/mindmapReviewHelpers.js`; review panel DOM/event wiring, save behavior, and session mutation remain in `mindmap.js`. This is not a React rewrite, TypeScript conversion, Accessible Reader integration, or full JavaScript subsystem split.
 
 The Sources & blocks panel supports:
 
@@ -77,6 +77,8 @@ Document blocks preserve `documentId`, can be dragged, can be linked, and persis
 ## Map Review Mode
 
 The map editor includes a local-first `Review this map` mode for active recall.
+
+Pure review helper logic now lives in `public/prototypes/current/mindmapReviewHelpers.js`, while `mindmap.js` still owns runtime state, rendering, storage, and review UI wiring. Stage 5A1/5A3 TypeScript helpers remain unwired from the browser runtime.
 
 Review cards are generated from the current map without AI:
 

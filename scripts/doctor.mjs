@@ -42,6 +42,7 @@ const required = [
   'public/prototypes/current/mindmapConstants.js',
   'public/prototypes/current/mindmapDomUtils.js',
   'public/prototypes/current/mindmapGeometry.js',
+  'public/prototypes/current/mindmapReviewHelpers.js',
   'public/prototypes/current/lesson.html',
   'scripts/review-package-config.mjs',
   'scripts/create-review-zip.mjs',
@@ -336,6 +337,7 @@ expectIncludes('public/prototypes/current/mindmap.js', [
   './mindmapConstants.js',
   './mindmapDomUtils.js',
   './mindmapGeometry.js',
+  './mindmapReviewHelpers.js',
   'data-workbench-document-id',
   'documentId',
   'debugInput',
@@ -368,6 +370,18 @@ expectIncludes('public/prototypes/current/mindmapGeometry.js', [
   'export function rectsOverlap',
   'export function portPoint',
   'export function edgeGeometry',
+]);
+
+expectIncludes('public/prototypes/current/mindmapReviewHelpers.js', [
+  './mindmapConstants.js',
+  './mindmapDomUtils.js',
+  'export function normalizeReviewStore',
+  'export function createMapReviewCards',
+  'export function buildReviewNextCards',
+  'export function buildWeakReviewCards',
+  'export function reviewStats',
+  'export function reviewHistoryText',
+  'export function relationshipReviewCardId',
 ]);
 
 expectIncludes('public/prototypes/current/lesson.html', [
