@@ -63,6 +63,7 @@ test.describe('mindmap runtime asset extraction', () => {
       './mindmapDomUtils.js',
       './mindmapGeometry.js',
       './mindmapReviewHelpers.js',
+      './mindmapStorageHelpers.js',
     ]) {
       expect(js).toContain(marker);
     }
@@ -75,18 +76,21 @@ test.describe('mindmap runtime asset extraction', () => {
     const domUtils = readSource('public/prototypes/current/mindmapDomUtils.js');
     const geometry = readSource('public/prototypes/current/mindmapGeometry.js');
     const reviewHelpers = readSource('public/prototypes/current/mindmapReviewHelpers.js');
+    const storageHelpers = readSource('public/prototypes/current/mindmapStorageHelpers.js');
 
     expect(html).toContain('<script type="module" src="./mindmap.js"></script>');
     expect(html).not.toContain('src="./mindmapConstants.js"');
     expect(html).not.toContain('src="./mindmapDomUtils.js"');
     expect(html).not.toContain('src="./mindmapGeometry.js"');
     expect(html).not.toContain('src="./mindmapReviewHelpers.js"');
+    expect(html).not.toContain('src="./mindmapStorageHelpers.js"');
 
     for (const marker of [
       './mindmapConstants.js',
       './mindmapDomUtils.js',
       './mindmapGeometry.js',
       './mindmapReviewHelpers.js',
+      './mindmapStorageHelpers.js',
     ]) {
       expect(js).toContain(marker);
     }
@@ -130,6 +134,20 @@ test.describe('mindmap runtime asset extraction', () => {
       'export function reviewHistoryText',
     ]) {
       expect(reviewHelpers).toContain(marker);
+    }
+
+    for (const marker of [
+      './workspace-store.js',
+      './mindmapConstants.js',
+      './mindmapDomUtils.js',
+      './mindmapGeometry.js',
+      'export function normalizeMap',
+      'export function normalizeWorkspace',
+      'export function buildMapPageStatePayload',
+      'export function buildWorkspaceExportPayload',
+      'export function scheduleAutosave',
+    ]) {
+      expect(storageHelpers).toContain(marker);
     }
   });
 

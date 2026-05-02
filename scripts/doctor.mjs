@@ -43,6 +43,7 @@ const required = [
   'public/prototypes/current/mindmapDomUtils.js',
   'public/prototypes/current/mindmapGeometry.js',
   'public/prototypes/current/mindmapReviewHelpers.js',
+  'public/prototypes/current/mindmapStorageHelpers.js',
   'public/prototypes/current/lesson.html',
   'scripts/review-package-config.mjs',
   'scripts/create-review-zip.mjs',
@@ -338,6 +339,7 @@ expectIncludes('public/prototypes/current/mindmap.js', [
   './mindmapDomUtils.js',
   './mindmapGeometry.js',
   './mindmapReviewHelpers.js',
+  './mindmapStorageHelpers.js',
   'data-workbench-document-id',
   'documentId',
   'debugInput',
@@ -382,6 +384,18 @@ expectIncludes('public/prototypes/current/mindmapReviewHelpers.js', [
   'export function reviewStats',
   'export function reviewHistoryText',
   'export function relationshipReviewCardId',
+]);
+
+expectIncludes('public/prototypes/current/mindmapStorageHelpers.js', [
+  './workspace-store.js',
+  './mindmapConstants.js',
+  './mindmapDomUtils.js',
+  './mindmapGeometry.js',
+  'export function normalizeMap',
+  'export function normalizeWorkspace',
+  'export function buildMapPageStatePayload',
+  'export function buildWorkspaceExportPayload',
+  'export function scheduleAutosave',
 ]);
 
 expectIncludes('public/prototypes/current/lesson.html', [

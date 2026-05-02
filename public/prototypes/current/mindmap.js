@@ -1,6 +1,4 @@
 import {
-  CURRENT_MAP_WORKSPACE_STORAGE_KEY,
-  LEGACY_MAP_WORKSPACE_STORAGE_KEYS,
   SEED_MAP_PAGE_ID,
   SEED_PROJECT_ID,
   getPageContext,
@@ -27,7 +25,6 @@ import {
   REVIEW_RATING_LABELS,
   REVIEW_SESSION_MODES,
   colors,
-  defaultMap,
   edgeShapes,
   nodeTypes,
   oppositePort,
@@ -69,6 +66,22 @@ import {
   reviewId,
   reviewStats as reviewStatsFromData,
 } from './mindmapReviewHelpers.js';
+import {
+  appendImportedMapPage,
+  blankMap,
+  blankPageWorkspace,
+  buildMapPageStatePayload,
+  buildWorkspaceExportPayload,
+  cloneDefault,
+  loadWorkspaceFallback,
+  makePage,
+  normalizeMap,
+  normalizeWorkspace,
+  safeFileName,
+  saveWorkspaceMirror,
+  scheduleAutosave,
+  workspaceFromPageStateData,
+} from './mindmapStorageHelpers.js';
 
 (function(){
   'use strict';
@@ -202,11 +215,9 @@ import {
 
   const runtimeParams = new URLSearchParams(window.location.search);
   const runtimePageId = runtimeParams.get('pageId') || SEED_MAP_PAGE_ID;
-  const workspaceKey = CURRENT_MAP_WORKSPACE_STORAGE_KEY;
-  const legacyStorageKeys = LEGACY_MAP_WORKSPACE_STORAGE_KEYS;
   const cssZoomOK = !!(document.documentElement && 'zoom' in document.documentElement.style);
 
-  let workspace = loadWorkspaceFallback();
+  let workspace = loadWorkspaceFallback(localStorage);
   let data = activePage().map;
   let view = Object.assign({x:0,y:0,scale:1}, data.view || {});
   let selectedId = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
@@ -475,64 +486,6 @@ import {
     }
   }
 
-  function cloneDefault(){ return JSON.parse(JSON.stringify(defaultMap)); }
-  function normalizeMap(map){
-    const base = cloneDefault();
-    if(!map || !Array.isArray(map.nodes) || map.nodes.length === 0) return base;
-    if(!Array.isArray(map.edges)) map.edges = [];
-    map.version = 19;
-    map.view = Object.assign({x:0,y:0,scale:1}, map.view || {});
-    map.nodes = map.nodes.map((n,i) => {
-      const shape = shapes.includes(n.shape) ? n.shape : 'card';
-      let w = clamp(Number(n.w) || 268, 160, 640);
-      let h = clamp(Number(n.h) || 145, 95, 520);
-      if(shape === 'oval'){ w = Math.max(w, 340); h = Math.max(h, 172); }
-      const nodeType = nodeTypes.includes(n.nodeType) ? n.nodeType : (n.documentId ? 'document' : 'concept');
-      return {
-        id: String(n.id || ('node-'+i)),
-        title: String(n.title || 'Untitled block'),
-        body: String(n.body || 'Rewrite this in your own words.'),
-        group: colors.includes(n.group) ? n.group : 'blue',
-        shape,
-        importance: clamp(Number(n.importance) || 2, 1, 3),
-        x: Number.isFinite(+n.x) ? +n.x : i*40,
-        y: Number.isFinite(+n.y) ? +n.y : i*40,
-        w,
-        h,
-        tag: String(n.tag || (nodeType === 'document' ? 'document' : 'custom')),
-        nodeType,
-        documentId: nodeType === 'document' ? String(n.documentId || '') : ''
-      };
-    });
-    const ids = new Set(map.nodes.map(n => n.id));
-    map.edges = map.edges.filter(e => ids.has(e.from) && ids.has(e.to)).map((e,i) => {
-      let shape = edgeShapes.includes(e.shape) ? e.shape : 'curve';
-      // Older files used a large “loop” arc. Convert it to a calm adaptive curve so it does not sweep across the canvas.
-      if(shape === 'loop') shape = 'curve';
-      return {
-        id: String(e.id || ('edge-'+i)),
-        from: e.from,
-        to: e.to,
-        relation: relationStyles[e.relation] ? e.relation : (e.type === 'loop' ? 'loop' : 'causes'),
-        strength: clamp(Number(e.strength) || 3, 1, 5),
-        shape,
-        fromPort: ports.includes(e.fromPort) ? e.fromPort : 'auto',
-        toPort: ports.includes(e.toPort) ? e.toPort : 'auto',
-        label: String(e.label || '')
-      };
-    });
-    return map;
-  }
-  function pageId(){ return 'page-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7); }
-  function makePage(title, map){ return { id: pageId(), title: clean(title || 'New page') || 'New page', map: normalizeMap(map || blankMap()) }; }
-  function blankMap(){
-    return normalizeMap({
-      version:19,
-      view:{x:0,y:0,scale:1},
-      nodes:[{id:'core', title:'Main idea', body:'Write the central idea here, then add linked blocks around it.', group:'blue', shape:'card', importance:3, x:-120, y:-40, w:310, h:168, tag:'anchor'}],
-      edges:[]
-    });
-  }
   function activePage(){
     if(!workspace.pages.length) workspace.pages.push({id:'page-main', title:'Debt-power map', map: cloneDefault()});
     let p = workspace.pages.find(x => x.id === workspace.activePageId);
@@ -543,65 +496,11 @@ import {
     const p = workspace.pages.find(x => x.id === workspace.activePageId);
     if(p){ data.view = view; p.map = data; }
   }
-  function normalizeWorkspace(ws){
-    if(!ws || !Array.isArray(ws.pages) || !ws.pages.length){
-      return {version:19, activePageId:'page-main', pages:[{id:'page-main', title:'Debt-power map', map:cloneDefault()}]};
-    }
-    const pages = ws.pages.map((p,i) => ({
-      id:String(p.id || ('page-'+i)),
-      title:clean(p.title || ('Page ' + (i+1))) || ('Page ' + (i+1)),
-      map:normalizeMap(p.map || p)
-    }));
-    const active = pages.some(p => p.id === ws.activePageId) ? ws.activePageId : pages[0].id;
-    return {version:19, activePageId:active, pages};
-  }
-  function resetViewsForLegacyWorkspace(ws){
-    const normalized = normalizeWorkspace(ws);
-    normalized.pages.forEach(p => {
-      if(p && p.map) p.map.view = {x:0, y:0, scale:1};
-    });
-    return normalized;
-  }
-  function fallbackSeededWorkspace(title='Debt-power map'){
-    return normalizeWorkspace({version:19, activePageId:'page-main', pages:[{id:'page-main', title, map:cloneDefault()}]});
-  }
-  function blankPageWorkspace(title='Untitled map'){
-    return normalizeWorkspace({version:19, activePageId:'page-main', pages:[{id:'page-main', title, map:blankMap()}]});
-  }
-  function loadWorkspaceFallback(){
-    try{
-      const saved = localStorage.getItem(workspaceKey);
-      if(saved) return normalizeWorkspace(JSON.parse(saved));
-      for(const key of legacyStorageKeys){
-        const legacy = localStorage.getItem(key);
-        if(legacy){
-          const parsed = JSON.parse(legacy);
-          if(parsed && Array.isArray(parsed.pages)) return resetViewsForLegacyWorkspace(parsed);
-          const migrated = normalizeMap(parsed);
-          migrated.view = {x:0,y:0,scale:1};
-          return normalizeWorkspace({version:19, activePageId:'page-main', pages:[{id:'page-main', title:'Debt-power map', map:migrated}]});
-        }
-      }
-    }catch(e){}
-    return fallbackSeededWorkspace();
-  }
-  function workspaceFromPageStateData(pageStateData){
-    if(pageStateData?.kind === 'map-workspace' && pageStateData.workspace){
-      return normalizeWorkspace(pageStateData.workspace);
-    }
-    if(pageStateData?.workspace && Array.isArray(pageStateData.workspace.pages)){
-      return normalizeWorkspace(pageStateData.workspace);
-    }
-    if(Array.isArray(pageStateData?.pages)){
-      return normalizeWorkspace(pageStateData);
-    }
-    return null;
-  }
   async function persistWorkspaceState(msg='Saved'){
     try{
       const statePayload = mapPageStatePayload();
       if(runtimePageId === SEED_MAP_PAGE_ID){
-        localStorage.setItem(workspaceKey, JSON.stringify(workspace));
+        saveWorkspaceMirror(localStorage, workspace);
       }
       if(runtimePageInitialized && runtimePageId){
         await savePageState(runtimePageId, 'map', statePayload);
@@ -613,10 +512,9 @@ import {
     }
   }
   function save(msg='Saved'){
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
+    saveTimer = scheduleAutosave(saveTimer, () => {
       void persistWorkspaceState(msg);
-    }, 140);
+    }, {delay:140});
   }
   function setStatus(text){ saveStatus.textContent = text; }
   function showToast(text){
@@ -636,13 +534,11 @@ import {
   }
   function mapPageStatePayload(){
     syncCurrentPage();
-    workspace.version = 19;
-    return {
-      kind:'map-workspace',
+    return buildMapPageStatePayload({
       workspace,
       starterHidden,
       review:normalizeReviewStore(reviewStore)
-    };
+    });
   }
   function currentMapViewId(){ return String(workspace.activePageId || activePage().id || 'page-main'); }
   function currentReviewAttempts(){
@@ -1097,7 +993,7 @@ import {
       if(storedWorkspace){
         workspace = storedWorkspace;
       }else if(context.pageState?.data?.kind === 'seeded-debt-power-map' || runtimePageId === SEED_MAP_PAGE_ID){
-        workspace = loadWorkspaceFallback();
+        workspace = loadWorkspaceFallback(localStorage);
         await savePageState(runtimePageId, 'map', mapPageStatePayload());
       }else{
         workspace = blankPageWorkspace(context.page?.title || 'Untitled map');
@@ -4655,7 +4551,6 @@ import {
     data.nodes.forEach(n => { if(positions[n.id]){ n.x=positions[n.id][0]; n.y=positions[n.id][1]; } else { const col = custom % 4, row = Math.floor(custom/4); n.x = -820 + col*330; n.y = 930 + row*210; custom++; } });
     render(); commitMapCommand('Tidied map', before, {render:false}); recenter();
   }
-  function safeFileName(name){ return clean(name || 'learning-map').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'learning-map'; }
   function downloadJson(payload, filename, toastText){
     const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
     const a = document.createElement('a');
@@ -4671,7 +4566,7 @@ import {
   }
   function exportWorkspace(){
     syncCurrentPage();
-    const payload = {version:20, exportedAt:new Date().toISOString(), activePageId:workspace.activePageId, pages:workspace.pages};
+    const payload = buildWorkspaceExportPayload(workspace);
     downloadJson(payload, 'learning-map-all-pages-workspace.json', 'All map views exported');
   }
   function importMap(file){
@@ -4684,9 +4579,7 @@ import {
           workspace = normalizeWorkspace(parsed);
         }else{
           syncCurrentPage();
-          const p = makePage(file.name ? file.name.replace(/\.json$/i,'') : 'Imported page', parsed);
-          workspace.pages.push(p);
-          workspace.activePageId = p.id;
+          appendImportedMapPage(workspace, file.name, parsed);
         }
         data = activePage().map; view = Object.assign({x:0,y:0,scale:1}, data.view);
         const importedSelection = data.nodes.some(n => n.id === 'core') ? 'core' : (data.nodes[0]?.id || null);
