@@ -11,7 +11,8 @@ These are small, high-leverage directions to consider after the current main bra
 - Stage 5A4: split only low-risk `mindmap.js` constants, string/DOM-target utilities, and geometry helpers into sibling modules while keeping `mindmap.js` as the browser entrypoint and preserving behavior.
 - Stage 5A5: extract pure review-runtime helpers into `mindmapReviewHelpers.js` while leaving review DOM/session/save wiring in `mindmap.js`; keep Stage 5A1/5A3 helpers unwired from the browser runtime.
 - Stage 5A6: extract low-risk map storage, serialization, import/export payload, and autosave scheduling helpers into `mindmapStorageHelpers.js`; keep DOM/FileReader/IndexedDB wiring in `mindmap.js`.
-- Later modernization: continue splitting `mindmap.js` one subsystem at a time, such as gestures, rendering, placement, or relationship editing; do not rewrite the map in React.
+- Stage 5A7: docs-only runtime modernization health check recommends a narrow relationship editing helper split next, with menu/context-menu helpers as the fallback if relationship helpers prove too coupled.
+- Later modernization: continue splitting `mindmap.js` one subsystem at a time; defer gestures, rendering, runtime contract wiring, and storage side-effect wiring until safer seams are proven.
 - Later only: if integration becomes likely, prepare targeted Accessible Reader graph/workspace boundaries while keeping Accessible Reader read-only until explicitly approved.
 - Later only: actual integration, host UI decisions, backend persistence, and migration planning.
 
