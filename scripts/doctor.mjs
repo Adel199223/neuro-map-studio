@@ -46,6 +46,7 @@ const required = [
   'public/prototypes/current/mindmapStorageHelpers.js',
   'public/prototypes/current/mindmapRelationshipHelpers.js',
   'public/prototypes/current/mindmapMenuHelpers.js',
+  'public/prototypes/current/mindmapDocumentHelpers.js',
   'public/prototypes/current/lesson.html',
   'scripts/review-package-config.mjs',
   'scripts/create-review-zip.mjs',
@@ -344,6 +345,7 @@ expectIncludes('public/prototypes/current/mindmap.js', [
   './mindmapStorageHelpers.js',
   './mindmapRelationshipHelpers.js',
   './mindmapMenuHelpers.js',
+  './mindmapDocumentHelpers.js',
   'data-workbench-document-id',
   'documentId',
   'debugInput',
@@ -419,6 +421,14 @@ expectIncludes('public/prototypes/current/mindmapMenuHelpers.js', [
   'export function buildRelationshipContextMenuItems',
   'export function buildInsertBetweenMenuItems',
   'export function buildPortSideMenuItems',
+]);
+
+expectIncludes('public/prototypes/current/mindmapDocumentHelpers.js', [
+  'export function findDocumentById',
+  'export function buildDocumentPickerItems',
+  'export function buildDocumentNodeOptions',
+  'export function buildRelationshipDocumentInsertTemplate',
+  'export function extractDocumentRefsFromNodes',
 ]);
 
 expectIncludes('public/prototypes/current/lesson.html', [

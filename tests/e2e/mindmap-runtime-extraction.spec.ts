@@ -66,6 +66,7 @@ test.describe('mindmap runtime asset extraction', () => {
       './mindmapStorageHelpers.js',
       './mindmapRelationshipHelpers.js',
       './mindmapMenuHelpers.js',
+      './mindmapDocumentHelpers.js',
     ]) {
       expect(js).toContain(marker);
     }
@@ -81,6 +82,7 @@ test.describe('mindmap runtime asset extraction', () => {
     const storageHelpers = readSource('public/prototypes/current/mindmapStorageHelpers.js');
     const relationshipHelpers = readSource('public/prototypes/current/mindmapRelationshipHelpers.js');
     const menuHelpers = readSource('public/prototypes/current/mindmapMenuHelpers.js');
+    const documentHelpers = readSource('public/prototypes/current/mindmapDocumentHelpers.js');
 
     expect(html).toContain('<script type="module" src="./mindmap.js"></script>');
     expect(html).not.toContain('src="./mindmapConstants.js"');
@@ -90,6 +92,7 @@ test.describe('mindmap runtime asset extraction', () => {
     expect(html).not.toContain('src="./mindmapStorageHelpers.js"');
     expect(html).not.toContain('src="./mindmapRelationshipHelpers.js"');
     expect(html).not.toContain('src="./mindmapMenuHelpers.js"');
+    expect(html).not.toContain('src="./mindmapDocumentHelpers.js"');
 
     for (const marker of [
       './mindmapConstants.js',
@@ -99,6 +102,7 @@ test.describe('mindmap runtime asset extraction', () => {
       './mindmapStorageHelpers.js',
       './mindmapRelationshipHelpers.js',
       './mindmapMenuHelpers.js',
+      './mindmapDocumentHelpers.js',
     ]) {
       expect(js).toContain(marker);
     }
@@ -178,6 +182,16 @@ test.describe('mindmap runtime asset extraction', () => {
       'export function buildPortSideMenuItems',
     ]) {
       expect(menuHelpers).toContain(marker);
+    }
+
+    for (const marker of [
+      'export function findDocumentById',
+      'export function buildDocumentPickerItems',
+      'export function buildDocumentNodeOptions',
+      'export function buildRelationshipDocumentInsertTemplate',
+      'export function extractDocumentRefsFromNodes',
+    ]) {
+      expect(documentHelpers).toContain(marker);
     }
   });
 

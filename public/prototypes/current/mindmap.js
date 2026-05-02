@@ -106,6 +106,16 @@ import {
   buildRelationshipToPortMenuItems,
   buildRelationshipTypeMenuItems,
 } from './mindmapMenuHelpers.js';
+import {
+  buildDocumentDetailView,
+  buildDocumentNodeOptions,
+  buildDocumentPickerItems,
+  buildDocumentPlacementPending,
+  buildRelationshipDocumentInsertTemplate,
+  buildWorkbenchDocumentItems,
+  findDocumentById,
+  projectDocumentCountLabel,
+} from './mindmapDocumentHelpers.js';
 
 (function(){
   'use strict';
@@ -552,7 +562,7 @@ import {
       updateOverlayOffsets();
     }, 1600);
   }
-  function documentById(documentId){ return projectDocuments.find(document => document.id === documentId) || null; }
+  function documentById(documentId){ return findDocumentById(projectDocuments, documentId); }
   function normalizeReviewStore(value={}){
     return normalizeReviewStoreData(value, {fallbackPageId:runtimePageId || ''});
   }
@@ -3765,12 +3775,12 @@ import {
       return;
     }
     documentPickerList.innerHTML = '';
-    projectDocuments.forEach(doc => {
+    buildDocumentPickerItems(projectDocuments).forEach(doc => {
       const button = document.createElement('button');
       button.className = 'document-picker-item';
       button.type = 'button';
       button.dataset.documentId = doc.id;
-      button.innerHTML = `<strong>${escapeHtml(doc.title)}</strong><span>${escapeHtml(doc.type.toUpperCase())} · ${escapeHtml(doc.description || 'Project document')}</span>`;
+      button.innerHTML = `<strong>${escapeHtml(doc.title)}</strong><span>${escapeHtml(doc.typeLabel)} · ${escapeHtml(doc.description)}</span>`;
       button.addEventListener('pointerdown', e => e.stopPropagation());
       button.addEventListener('pointerup', e => e.stopPropagation());
       button.addEventListener('click', e => {
@@ -3841,16 +3851,16 @@ import {
       return;
     }
     workbenchDocumentList.innerHTML = '';
-    projectDocuments.forEach(doc => {
+    buildWorkbenchDocumentItems(projectDocuments).forEach(doc => {
       const row = document.createElement('article');
       row.className = 'workbench-document';
       row.innerHTML = `
         <div class="workbench-document-top">
           <div>
             <strong>${escapeHtml(doc.title)}</strong>
-            <span>${escapeHtml(doc.description || doc.sourceLabel || 'Project document')}</span>
+            <span>${escapeHtml(doc.summary)}</span>
           </div>
-          <span class="workbench-document-type">${escapeHtml(String(doc.type || 'source').toUpperCase())}</span>
+          <span class="workbench-document-type">${escapeHtml(doc.typeLabel)}</span>
         </div>
         <button class="workbench-source-action" type="button" data-workbench-document-id="${escapeHtml(doc.id)}">Add as document block</button>
       `;
@@ -4055,15 +4065,7 @@ import {
       return null;
     }
     const size = documentBlockSize();
-    startPlacementMode({
-      kind:'document',
-      label:'document block',
-      previewTitle:documentRecord.title || 'Document block',
-      w:size.w,
-      h:size.h,
-      documentId:docId,
-      toast:'Document block added'
-    }, {sourceButton});
+    startPlacementMode(buildDocumentPlacementPending(documentRecord, size), {sourceButton});
     return documentRecord;
   }
   function addWorkbenchBlock(type, options={}){
@@ -4102,7 +4104,7 @@ import {
     starterAddDocument.textContent = hasDocuments ? 'Add source/document block' : 'Add a document first';
     starterAddDocument.disabled = !hasDocuments;
     starterDocumentHint.textContent = hasDocuments
-      ? `${projectDocuments.length} project ${projectDocuments.length === 1 ? 'document' : 'documents'} available.`
+      ? projectDocumentCountLabel(projectDocuments.length)
       : 'Add document metadata on the project page before making document blocks.';
   }
   function addStarterQuestion(){
@@ -4146,24 +4148,7 @@ import {
     const position = options.topLeft && worldPoint
       ? worldPoint
       : chooseDocumentBlockPosition(worldPoint, size.w, size.h);
-    const node = addNodeAt(position.x, position.y, {
-      title:documentRecord.title,
-      body:documentRecord.description || 'Add a note about why this document matters here.',
-      group:'violet',
-      shape:'note',
-      tag:documentRecord.type,
-      w:size.w,
-      h:size.h,
-      nodeType:'document',
-      documentId:documentRecord.id,
-      linkFrom:options.linkFrom || '',
-      relation:options.relation || 'causes',
-      fromPort:options.fromPort || 'auto',
-      toPort:options.toPort || 'auto',
-      historyLabel:options.historyLabel || 'Added document block',
-      toast:options.toast || 'Document block added',
-      focus:options.focus !== false
-    });
+    const node = addNodeAt(position.x, position.y, buildDocumentNodeOptions(documentRecord, {...options, ...size}));
     temporarilyPassThroughZoomDock();
     requestAnimationFrame(() => positionSelectionShelf());
     return node;
@@ -4172,9 +4157,10 @@ import {
     const documentId = typeof nodeOrDocumentId === 'string' ? nodeOrDocumentId : nodeOrDocumentId?.documentId;
     const documentRecord = documentById(documentId);
     if(!documentRecord){ showToast('Document details unavailable'); return; }
-    documentDetailTitle.textContent = documentRecord.title;
-    documentDetailMeta.textContent = `${documentRecord.type.toUpperCase()} · ${documentRecord.sourceLabel || 'Project document'}${documentRecord.tags?.length ? ' · ' + documentRecord.tags.join(', ') : ''}`;
-    documentDetailDescription.textContent = documentRecord.description || 'No description yet.';
+    const details = buildDocumentDetailView(documentRecord);
+    documentDetailTitle.textContent = details.title;
+    documentDetailMeta.textContent = details.meta;
+    documentDetailDescription.textContent = details.description;
     documentPicker.hidden = true;
     documentDetailCard.hidden = false;
   }
@@ -4269,17 +4255,7 @@ import {
       const documentRecord = documentById(options.documentId);
       if(!documentRecord){ showToast('Document not found'); return null; }
       const size = documentBlockSize();
-      return {
-        title:documentRecord.title,
-        body:documentRecord.description || 'Add a note about why this document matters here.',
-        group:'violet',
-        shape:'note',
-        tag:documentRecord.type,
-        nodeType:'document',
-        documentId:documentRecord.id,
-        w:size.w,
-        h:size.h
-      };
+      return buildRelationshipDocumentInsertTemplate(documentRecord, size);
     }
     const normalizedType = ['concept', 'question', 'evidence'].includes(blockType) ? blockType : 'concept';
     return workbenchBlockConfig(normalizedType);
