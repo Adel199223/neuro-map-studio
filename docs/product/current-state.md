@@ -59,6 +59,7 @@ The map editor is the central diagram workspace. It preserves canvas-first behav
 - connection-port quick-add for linked Concept, Question, Evidence, and Document blocks, plus Connect existing block targeting
 - selected relationship `Change source` / `Change target` reconnect targeting with undo/redo
 - selected relationship `Insert block between`, which creates a midpoint Concept, Question, Evidence, or Document block and splits the relationship in one undoable command
+- in-app selected relationship label editing with compact label, relationship type, strength, and route details in the selection toolbar
 - collision-aware automatic placement for port quick-add, paste, duplicate, and document blocks
 - dynamic relationship re-anchoring when connected blocks move
 
@@ -90,6 +91,8 @@ Review cards are generated from the current map without AI:
 - aggregate source/evidence recall
 
 Answers remain hidden until Reveal, including map canvas text that could leak the answer. Weak cards are derived from the latest local rating per card: `Missed` and `Almost` stay weak, and `Got it` graduates a card out of the weak queue.
+
+Relationship label, type, and strength edits clear affected relationship review attempts when the review answer content changes. Route/shape edits remain undoable visual edits and do not reset review attempts.
 
 The review panel supports:
 

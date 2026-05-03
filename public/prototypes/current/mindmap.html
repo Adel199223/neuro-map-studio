@@ -204,7 +204,10 @@
       <button id="shelfToggle" class="selection-toggle" type="button" title="Collapse selected item toolbar" aria-label="Collapse selected item toolbar">▾</button>
       <div class="selection-meta">
         <span id="selectionLabel">Selected:</span>
-        <strong id="selectedTitle">none</strong>
+        <div class="selection-title-wrap">
+          <strong id="selectedTitle">none</strong>
+          <small id="selectedDetail" hidden></small>
+        </div>
       </div>
       <div class="selection-actions" id="selectionActions">
         <button id="shelfAddLinked" class="selection-action" type="button" title="Add linked block" aria-label="Add linked block from selected block">＋↗</button>
@@ -229,6 +232,12 @@
         <button id="shelfClear" class="selection-action utility" type="button" title="Clear selection" aria-label="Clear map selection">×</button>
         <button id="shelfDelete" class="selection-action warn" type="button" title="Delete selected item" aria-label="Delete selected item">⌫</button>
       </div>
+      <form class="edge-label-editor" id="edgeLabelEditor" hidden>
+        <label for="edgeLabelInput">Label</label>
+        <input id="edgeLabelInput" type="text" autocomplete="off" spellcheck="false" aria-label="Relationship label"/>
+        <button id="edgeLabelSave" class="edge-label-save" type="submit" title="Save relationship label" aria-label="Save relationship label">Save</button>
+        <button id="edgeLabelCancel" class="edge-label-cancel" type="button" title="Cancel relationship label edit" aria-label="Cancel relationship label edit">Cancel</button>
+      </form>
     </div>
 
     <div class="connect-banner" id="connectBanner" role="status" aria-live="polite">

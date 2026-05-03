@@ -144,7 +144,12 @@ import {
   const selectionShelf = document.getElementById('selectionShelf');
   const selectionActions = document.getElementById('selectionActions');
   const selectedTitle = document.getElementById('selectedTitle');
+  const selectedDetail = document.getElementById('selectedDetail');
   const selectionLabel = document.getElementById('selectionLabel');
+  const edgeLabelEditor = document.getElementById('edgeLabelEditor');
+  const edgeLabelInput = document.getElementById('edgeLabelInput');
+  const edgeLabelSave = document.getElementById('edgeLabelSave');
+  const edgeLabelCancel = document.getElementById('edgeLabelCancel');
   const shelfToggle = document.getElementById('shelfToggle');
   const shelfAddLinked = document.getElementById('shelfAddLinked');
   const shelfEdit = document.getElementById('shelfEdit');
@@ -276,6 +281,7 @@ import {
   let pendingEdgeDeleteId = null;
   let suppressSelectionShelf = false;
   let selectionShelfShown = false;
+  let edgeLabelEditorState = null;
   let longPressState = null;
   const activeTouchPoints = new Map();
   let touchGesture = null;
@@ -1191,6 +1197,91 @@ import {
     if(selectedEdgeIds.size) return 'edge';
     if(selectedNodeIds.size) return 'node';
     return 'selection';
+  }
+  function edgeStyle(edge){
+    return relationStyles[edge?.relation] || relationStyles.causes;
+  }
+  function edgeVisibleLabel(edge){
+    const style = edgeStyle(edge);
+    return clean(edge?.label || '') || style.label;
+  }
+  function edgeDetailText(edge){
+    const style = edgeStyle(edge);
+    const strength = Math.max(1, Math.min(5, Number(edge?.strength) || 3));
+    const route = clean(edge?.shape || 'curve') || 'curve';
+    return `${style.label} · strength ${strength}/5 · ${route}`;
+  }
+  function edgeDetailTitle(edge){
+    if(!edge) return '';
+    const fromTitle = byId(edge.from)?.title || 'Source block';
+    const toTitle = byId(edge.to)?.title || 'Target block';
+    return `${fromTitle} to ${toTitle} · ${edgeDetailText(edge)}`;
+  }
+  function hideEdgeLabelEditor(options = {}){
+    const previousEdgeId = edgeLabelEditorState?.edgeId;
+    edgeLabelEditorState = null;
+    if(edgeLabelEditor) edgeLabelEditor.hidden = true;
+    if(edgeLabelInput) edgeLabelInput.value = '';
+    selectionShelf?.classList.remove('edge-label-editing');
+    positionSelectionShelf();
+    if(options.focus && previousEdgeId && selectedEdgeId === previousEdgeId && shelfLabel){
+      requestAnimationFrame(() => shelfLabel.focus());
+    }
+  }
+  function openEdgeLabelEditor(edgeId){
+    const edge = edgeById(edgeId);
+    if(!edge || !edgeLabelEditor || !edgeLabelInput) return;
+    closeMenu();
+    if(selectedEdgeId !== edge.id || selectedNodeIds.size){
+      setSelectionFromIds([], [edge.id], 'edge-label-editor-open');
+    }
+    shelfCollapsed = false;
+    const currentLabel = edgeVisibleLabel(edge);
+    edgeLabelEditorState = {
+      edgeId: edge.id,
+      originalVisibleLabel: currentLabel
+    };
+    edgeLabelInput.value = currentLabel;
+    edgeLabelInput.title = `Relationship label: ${currentLabel}`;
+    edgeLabelInput.setAttribute('aria-label', `Relationship label for ${edgeDetailTitle(edge)}`);
+    if(edgeLabelSave){
+      edgeLabelSave.title = 'Save relationship label';
+      edgeLabelSave.setAttribute('aria-label', 'Save relationship label');
+    }
+    if(edgeLabelCancel){
+      edgeLabelCancel.title = 'Cancel relationship label edit';
+      edgeLabelCancel.setAttribute('aria-label', 'Cancel relationship label edit');
+    }
+    edgeLabelEditor.hidden = false;
+    selectionShelf?.classList.add('edge-label-editing');
+    updateSelectionUI('edge-label-editor-open');
+    requestAnimationFrame(() => {
+      edgeLabelInput.focus();
+      edgeLabelInput.select();
+      positionSelectionShelf();
+    });
+  }
+  function saveEdgeLabelEditor(){
+    const state = edgeLabelEditorState;
+    const edge = state ? edgeById(state.edgeId) : null;
+    if(!state || !edge || !edgeLabelInput){
+      hideEdgeLabelEditor({focus:true});
+      return;
+    }
+    const nextLabel = clean(edgeLabelInput.value);
+    const nextVisibleLabel = nextLabel || edgeStyle(edge).label;
+    if(nextVisibleLabel === state.originalVisibleLabel){
+      hideEdgeLabelEditor({focus:true});
+      return;
+    }
+    const before = beginMapCommand();
+    edge.label = nextLabel;
+    clearRelationshipReviewAttempts(edge.id);
+    hideEdgeLabelEditor({focus:false});
+    render();
+    if(commitMapCommand('Line label changed', before, {render:false})){
+      showToast('Line label updated. Ctrl+Z to undo.');
+    }
   }
   function isTextEditingActive(){
     return isEditingElement(document.activeElement);
@@ -3095,10 +3186,20 @@ import {
     shelfToggle.setAttribute('aria-label', shelfToggle.title);
     shelfCenter.title = 'Zoom to selection';
     shelfCenter.setAttribute('aria-label', 'Zoom to selection');
+    if(edgeLabelEditorState && (!edge || edgeLabelEditorState.edgeId !== edge.id)){
+      hideEdgeLabelEditor({focus:false});
+    }
+    if(selectedDetail){
+      selectedDetail.hidden = true;
+      selectedDetail.textContent = '';
+      selectedDetail.title = '';
+    }
+    selectedTitle.title = '';
     if(node){
       pendingEdgeDeleteId = null;
       selectionLabel.textContent = 'Selection:';
       selectedTitle.textContent = '1 block';
+      selectedTitle.title = node.title || 'Selected block';
       selectionShelf.dataset.mode = 'node';
       selectionShelf.setAttribute('aria-label', 'Selection toolbar for selected block');
       setButtonVisible(shelfAddLinked, true);
@@ -3131,9 +3232,17 @@ import {
     }else if(edge){
       if(pendingEdgeDeleteId && pendingEdgeDeleteId !== edge.id) pendingEdgeDeleteId = null;
       selectionLabel.textContent = 'Selection:';
-      selectedTitle.textContent = '1 line';
+      const visibleLabel = edgeVisibleLabel(edge);
+      const detailText = edgeDetailText(edge);
+      selectedTitle.textContent = visibleLabel;
+      selectedTitle.title = edgeDetailTitle(edge);
+      if(selectedDetail){
+        selectedDetail.hidden = false;
+        selectedDetail.textContent = detailText;
+        selectedDetail.title = detailText;
+      }
       selectionShelf.dataset.mode = 'edge';
-      selectionShelf.setAttribute('aria-label', 'Selection toolbar for selected relationship line');
+      selectionShelf.setAttribute('aria-label', `Selection toolbar for selected relationship line: ${visibleLabel}, ${detailText}`);
       setButtonVisible(shelfAddLinked, false);
       setButtonVisible(shelfEdit, false);
       setButtonVisible(shelfCopy, true);
@@ -3165,6 +3274,7 @@ import {
       pendingEdgeDeleteId = null;
       selectionLabel.textContent = 'Selection:';
       selectedTitle.textContent = selectionSummary();
+      selectedTitle.title = selectionSummary();
       selectionShelf.dataset.mode = currentSelectionMode();
       selectionShelf.setAttribute('aria-label', 'Selection toolbar for selected blocks and relationship lines');
       setButtonVisible(shelfAddLinked, false);
@@ -3218,8 +3328,8 @@ import {
       return;
     }
     if(selectedEdgeId){
-      const e = edgeById(selectedEdgeId), style = e && relationStyles[e.relation];
-      if(e) promptText.textContent = `Teach-back: explain why “${byId(e.from)?.title || 'block'}” ${e.label || style.label} “${byId(e.to)?.title || 'block'}”.`;
+      const e = edgeById(selectedEdgeId);
+      if(e) promptText.textContent = `Teach-back: explain why “${byId(e.from)?.title || 'block'}” ${edgeVisibleLabel(e)} “${byId(e.to)?.title || 'block'}”.`;
       return;
     }
     if(selectedId){
@@ -4242,11 +4352,31 @@ import {
   function setNodeShape(nodeId, shape){ const n = byId(nodeId); if(!n) return; const before = beginMapCommand(); n.shape = shape; render(); commitMapCommand('Shape changed', before, {render:false}); }
   function setNodeImportance(nodeId, val){ const n = byId(nodeId); if(!n) return; const before = beginMapCommand(); n.importance = clamp(Number(val),1,3); render(); commitMapCommand('Importance changed', before, {render:false}); }
   function setNodeSize(nodeId, preset){ const n = byId(nodeId), s = sizePresets[preset]; if(!n || !s) return; const before = beginMapCommand(); n.w = s.w; n.h = s.h; render(); commitMapCommand('Size changed', before, {render:false}); }
-  function setEdgeRelation(edgeId, relation){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); Object.assign(e, patchRelationshipRelation(e, relation)); render(); commitMapCommand('Line type changed', before, {render:false}); }
-  function setEdgeStrength(edgeId, strength){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); Object.assign(e, patchRelationshipStrength(e, strength)); render(); commitMapCommand('Line strength changed', before, {render:false}); }
+  function setEdgeRelation(edgeId, relation){
+    const e = edgeById(edgeId);
+    if(!e) return;
+    const patched = patchRelationshipRelation(e, relation);
+    if(patched.relation === e.relation) return;
+    const before = beginMapCommand();
+    Object.assign(e, patched);
+    clearRelationshipReviewAttempts(e.id);
+    render();
+    commitMapCommand('Line type changed', before, {render:false});
+  }
+  function setEdgeStrength(edgeId, strength){
+    const e = edgeById(edgeId);
+    if(!e) return;
+    const patched = patchRelationshipStrength(e, strength);
+    if(patched.strength === e.strength) return;
+    const before = beginMapCommand();
+    Object.assign(e, patched);
+    clearRelationshipReviewAttempts(e.id);
+    render();
+    commitMapCommand('Line strength changed', before, {render:false});
+  }
   function setEdgeShape(edgeId, shape){ const e = edgeById(edgeId); if(!e) return; const before = beginMapCommand(); Object.assign(e, patchRelationshipShape(e, shape)); render(); commitMapCommand('Line route changed', before, {render:false}); }
   function setEdgePort(edgeId, end, port){ const e = edgeById(edgeId); if(!e || !ports.includes(port)) return; const before = beginMapCommand(); Object.assign(e, patchRelationshipPort(e, end, port)); render(); if(commitMapCommand('Connection side changed', before, {render:false})) showToast('Connection side changed'); }
-  function setEdgeLabel(edgeId){ const e = edgeById(edgeId); if(!e) return; const style = relationStyles[e.relation]; const txt = prompt('Short label for this link:', e.label || style.label); if(txt === null) return; const before = beginMapCommand(); e.label = clean(txt); render(); commitMapCommand('Line label changed', before, {render:false}); }
+  function setEdgeLabel(edgeId){ openEdgeLabelEditor(edgeId); }
   function relationshipInsertMenuPoint(edge, anchor={}){
     if(anchor.button) return menuPointFromButton(anchor.button);
     const source = anchor.source || inputDebugState.lastPointer;
@@ -5312,22 +5442,50 @@ import {
   shelfPaste.addEventListener('click', pasteClipboard);
   shelfDuplicate.addEventListener('click', duplicateSelection);
   shelfConnect.addEventListener('click', () => selectedId && startConnect(selectedId));
-  shelfStyle.addEventListener('click', () => {
+  shelfStyle.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
     if(!selectedId) return;
     openMenuFromButton(shelfStyle, 'Block style', buildBlockStyleMenuItems(), {type:'node', id:selectedId});
   });
   shelfCenter.addEventListener('click', zoomToSelection);
   shelfFocus.addEventListener('click', toggleFocus);
   shelfLabel.addEventListener('click', () => selectedEdgeId && setEdgeLabel(selectedEdgeId));
-  shelfRelation.addEventListener('click', () => {
+  edgeLabelEditor?.addEventListener('submit', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    saveEdgeLabelEditor();
+  });
+  edgeLabelEditor?.addEventListener('keydown', event => {
+    event.stopPropagation();
+    if(event.key === 'Escape'){
+      event.preventDefault();
+      hideEdgeLabelEditor({focus:true});
+    }
+  });
+  edgeLabelEditor?.addEventListener('pointerdown', event => event.stopPropagation(), true);
+  edgeLabelEditor?.addEventListener('pointerup', event => event.stopPropagation(), true);
+  edgeLabelEditor?.addEventListener('click', event => event.stopPropagation());
+  edgeLabelCancel?.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    hideEdgeLabelEditor({focus:true});
+  });
+  shelfRelation.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
     if(!selectedEdgeId) return;
     openMenuFromButton(shelfRelation, 'Relationship type', buildRelationshipTypeMenuItems(), {type:'edge', id:selectedEdgeId});
   });
-  shelfStrength.addEventListener('click', () => {
+  shelfStrength.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
     if(!selectedEdgeId) return;
     openMenuFromButton(shelfStrength, 'Importance / thickness', buildRelationshipStrengthMenuItems(), {type:'edge', id:selectedEdgeId});
   });
-  shelfRoute.addEventListener('click', () => {
+  shelfRoute.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
     if(!selectedEdgeId) return;
     openMenuFromButton(shelfRoute, 'Line route', buildRelationshipRouteMenuItems(), {type:'edge', id:selectedEdgeId});
   });
@@ -5338,11 +5496,15 @@ import {
     e.stopPropagation();
     if(selectedEdgeId) showInsertBetweenMenu(selectedEdgeId, {button:shelfInsertBetween, source:inputDebugState.lastPointer});
   });
-  shelfFromPort.addEventListener('click', () => {
+  shelfFromPort.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
     if(!selectedEdgeId) return;
     openMenuFromButton(shelfFromPort, 'Source connection side', buildRelationshipFromPortMenuItems(), {type:'edge', id:selectedEdgeId});
   });
-  shelfToPort.addEventListener('click', () => {
+  shelfToPort.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
     if(!selectedEdgeId) return;
     openMenuFromButton(shelfToPort, 'Target connection side', buildRelationshipToPortMenuItems(), {type:'edge', id:selectedEdgeId});
   });

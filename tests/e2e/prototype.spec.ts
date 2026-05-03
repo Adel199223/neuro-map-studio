@@ -640,6 +640,16 @@ async function selectRelationship(page: Page, edgeId = 'e2') {
   await waitForStableBoundingBox(page.locator('#selectionShelf'), `selection toolbar for relationship ${edgeId}`);
 }
 
+async function openRelationshipLabelEditor(page: Page, edgeId = 'e2') {
+  await selectRelationship(page, edgeId);
+  await page.locator('#shelfLabel').click();
+  const editor = page.locator('#edgeLabelEditor');
+  const input = page.locator('#edgeLabelInput');
+  await expect(editor).toBeVisible();
+  await expect(input).toBeFocused();
+  return { editor, input };
+}
+
 async function openRelationshipContextMenu(page: Page, edgeId = 'e2') {
   const label = page.locator(`#edgeLabelLayer .edge-label[data-edge-id="${edgeId}"]`);
   const box = await visibleBoundingBox(label, `relationship context menu ${edgeId}`);
@@ -3405,6 +3415,9 @@ test.describe('current standalone prototypes', () => {
     await resetMindmap(page);
 
     await selectRelationship(page, 'e2');
+    const shelf = page.locator('#selectionShelf');
+    await expect(shelf.locator('#selectedTitle')).toContainText(/creates/i);
+    await expect(shelf.locator('#selectedDetail')).toContainText(/causes · strength 5\/5 · curve/i);
     await expect(page.getByRole('button', { name: /^Insert block between$/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Change source$/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Change target$/i })).toBeVisible();
@@ -3413,6 +3426,140 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#contextMenu').getByRole('button', { name: /^Insert block between$/i })).toBeVisible();
     await expect(page.locator('#contextMenu').getByRole('button', { name: /^Change source$/i })).toBeVisible();
     await expect(page.locator('#contextMenu').getByRole('button', { name: /^Change target$/i })).toBeVisible();
+  });
+
+  test('relationship label editor saves a visible label and stays undoable', async ({ page }) => {
+    await resetMindmap(page);
+
+    const { input } = await openRelationshipLabelEditor(page, 'e2');
+    await expect(input).toHaveValue('creates');
+    await input.fill('creates pressure');
+    await page.locator('#edgeLabelSave').click();
+    await expect(page.locator('#edgeLabelEditor')).not.toBeVisible();
+    await expect(page.locator('#edgeLabelLayer .edge-label[data-edge-id="e2"]')).toContainText(/creates pressure/i);
+    let mapState = await waitForSeedMapState(
+      page,
+      (currentMap) => currentMap?.edges.find((edge) => edge.id === 'e2')?.label === 'creates pressure',
+      'relationship label editor save',
+    );
+    expect(seedEdge(mapState, 'e2').label).toBe('creates pressure');
+
+    await page.locator('#stage').focus();
+    await page.keyboard.press('Control+Z');
+    mapState = await waitForSeedMapState(
+      page,
+      (currentMap) => currentMap?.edges.find((edge) => edge.id === 'e2')?.label === 'creates',
+      'undo relationship label edit',
+    );
+    expect(seedEdge(mapState, 'e2').label).toBe('creates');
+    await expect(page.locator('#edgeLabelLayer .edge-label[data-edge-id="e2"]')).toContainText(/^creates$/i);
+
+    await page.keyboard.press('Control+Shift+Z');
+    mapState = await waitForSeedMapState(
+      page,
+      (currentMap) => currentMap?.edges.find((edge) => edge.id === 'e2')?.label === 'creates pressure',
+      'redo relationship label edit',
+    );
+    expect(seedEdge(mapState, 'e2').label).toBe('creates pressure');
+  });
+
+  test('relationship label editor cancels without changing label history', async ({ page }) => {
+    await resetMindmap(page);
+
+    let editor = await openRelationshipLabelEditor(page, 'e2');
+    await editor.input.fill('ignored label');
+    await page.locator('#edgeLabelCancel').click();
+    await expect(page.locator('#edgeLabelEditor')).not.toBeVisible();
+    expect(seedEdge(await getSeedMapState(page), 'e2').label).toBe('creates');
+    await expect(page.locator('#edgeLabelLayer .edge-label[data-edge-id="e2"]')).toContainText(/^creates$/i);
+
+    editor = await openRelationshipLabelEditor(page, 'e2');
+    await editor.input.fill('ignored escape');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#edgeLabelEditor')).not.toBeVisible();
+    expect(seedEdge(await getSeedMapState(page), 'e2').label).toBe('creates');
+
+    await page.locator('#stage').focus();
+    await page.keyboard.press('Control+Z');
+    expect(seedEdge(await getSeedMapState(page), 'e2').label).toBe('creates');
+  });
+
+  test('relationship label editor guards map shortcuts while focused', async ({ page }) => {
+    await resetMindmap(page);
+
+    const beforeMap = await getSeedMapState(page);
+    const { input } = await openRelationshipLabelEditor(page, 'e2');
+    await input.fill('temporary edit');
+    await page.keyboard.press('Control+A');
+    await page.keyboard.press('Control+Z');
+
+    expect(seedEdge(await getSeedMapState(page), 'e2').label).toBe(seedEdge(beforeMap, 'e2').label);
+    await waitForSelectedMapIds(page, { nodes: [], edges: ['e2'] });
+    await expect(input).toBeFocused();
+  });
+
+  test('relationship context menu opens the label editor', async ({ page }) => {
+    await resetMindmap(page);
+
+    await openRelationshipContextMenu(page, 'e2');
+    await page.locator('#contextMenu').getByRole('button', { name: /Rename link label/i }).click();
+    await expect(page.locator('#contextMenu')).toHaveAttribute('aria-hidden', 'true');
+    await expect(page.locator('#edgeLabelEditor')).toBeVisible();
+    await expect(page.locator('#edgeLabelInput')).toHaveValue('creates');
+  });
+
+  test('mobile touch relationship label editor opens without duplicate menus', async ({ page }, testInfo) => {
+    await resetMindmap(page);
+    const pointerType = testInfo.project.name === 'mobile-chrome' ? 'touch' : 'pen';
+
+    await pointerTap(page.locator('#edgeLabelLayer .edge-label[data-edge-id="e2"]'), { pointerType });
+    await expect(page.locator('#selectionShelf')).toBeVisible();
+    await pointerTap(page.locator('#shelfLabel'), { pointerType });
+    await expect(page.locator('#edgeLabelEditor')).toBeVisible();
+    await expect(page.locator('#edgeLabelInput')).toHaveValue('creates');
+    await expect(page.locator('#contextMenu')).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  test('relationship type strength and route controls still update and undo cleanly', async ({ page }) => {
+    await resetMindmap(page);
+
+    await selectRelationship(page, 'e2');
+    await page.locator('#shelfRelation').click();
+    await page.locator('#contextMenu').getByRole('button', { name: /^controls$/i }).click();
+    let mapState = await waitForSeedMapState(
+      page,
+      (currentMap) => currentMap?.edges.find((edge) => edge.id === 'e2')?.relation === 'controls',
+      'relationship type update',
+    );
+    expect(seedEdge(mapState, 'e2').relation).toBe('controls');
+
+    await page.locator('#shelfStrength').click();
+    await page.locator('#contextMenu').getByRole('button', { name: /^2$/i }).click();
+    mapState = await waitForSeedMapState(
+      page,
+      (currentMap) => currentMap?.edges.find((edge) => edge.id === 'e2')?.strength === 2,
+      'relationship strength update',
+    );
+    expect(seedEdge(mapState, 'e2').strength).toBe(2);
+
+    await page.locator('#shelfRoute').click();
+    await page.locator('#contextMenu').getByRole('button', { name: /^straight$/i }).click();
+    mapState = await waitForSeedMapState(
+      page,
+      (currentMap) => currentMap?.edges.find((edge) => edge.id === 'e2')?.shape === 'straight',
+      'relationship route update',
+    );
+    expect(seedEdge(mapState, 'e2').shape).toBe('straight');
+    await expect(page.locator('#selectionShelf #selectedDetail')).toContainText(/controls · strength 2\/5 · straight/i);
+
+    await page.locator('#stage').focus();
+    await page.keyboard.press('Control+Z');
+    mapState = await waitForSeedMapState(
+      page,
+      (currentMap) => currentMap?.edges.find((edge) => edge.id === 'e2')?.shape === 'curve',
+      'undo relationship route update',
+    );
+    expect(seedEdge(mapState, 'e2').shape).toBe('curve');
   });
 
   test('Insert block between adds a concept at the relationship midpoint and stays undoable', async ({ page }) => {
@@ -3603,6 +3750,38 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator(`#edgeLabelLayer .edge-label[data-edge-id="${splitEdge!.id}"]`)).toHaveClass(
       /review-label-hidden/,
     );
+    await page.locator('#reviewExit').click();
+  });
+
+  test('Review Next and relationship masking reflect updated relationship labels', async ({ page }) => {
+    await resetMindmap(page);
+
+    const { input } = await openRelationshipLabelEditor(page, 'e1');
+    await expect(input).toHaveValue('start here');
+    await input.fill('evidence path changed');
+    await page.locator('#edgeLabelSave').click();
+    await waitForSeedMapState(
+      page,
+      (currentMap) => currentMap?.edges.find((edge) => edge.id === 'e1')?.label === 'evidence path changed',
+      'updated review relationship label',
+    );
+    await page.locator('#shelfClear').click();
+    await expect(page.locator('#selectionShelf')).not.toBeVisible();
+
+    await openReviewPanel(page);
+    await page.locator('#reviewFilterOptions button[data-review-filter="relationship"]').click();
+    await page.locator('#reviewStartNext').click();
+    await expect(page.locator('#reviewCard')).toHaveAttribute('data-card-type', 'relationship');
+    await expect(page.locator('#reviewPrompt')).toContainText(/Core claim/i);
+    await expect(page.locator('#reviewPrompt')).toContainText(/Money starts as debt/i);
+    const relationshipLabel = page.locator('#edgeLabelLayer .edge-label[data-edge-id="e1"]');
+    await expect(relationshipLabel).toHaveClass(/review-label-hidden/);
+    await expectVisuallyMasked(relationshipLabel);
+
+    await page.locator('#reviewReveal').click();
+    await expect(page.locator('#reviewAnswer')).toContainText(/Label: evidence path changed/i);
+    await expect(relationshipLabel).not.toHaveClass(/review-label-hidden/);
+    await expectVisuallyUnmasked(relationshipLabel);
     await page.locator('#reviewExit').click();
   });
 
@@ -4275,6 +4454,8 @@ test.describe('current standalone prototypes', () => {
 	    await selectRelationship(page, 'e2');
 	    const shelf = page.locator('#selectionShelf');
 	    await waitForStableBoundingBox(shelf, 'selected link toolbar controls');
+	    await expect(shelf.locator('#selectedTitle')).toContainText(/creates/i);
+	    await expect(shelf.locator('#selectedDetail')).toContainText(/causes · strength 5\/5 · curve/i);
 	    await expect(shelf.getByRole('button', { name: /edit selected link label/i })).toBeVisible();
 	    await expect(shelf.getByRole('button', { name: /change selected link relationship type/i })).toBeVisible();
 	    await expect(shelf.getByRole('button', { name: /change selected link route/i })).toBeVisible();

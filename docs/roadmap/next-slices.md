@@ -36,7 +36,8 @@ These are small, high-leverage directions to consider after the current main bra
 
 ## Relationship Editing
 
-- Polish relationship label editing and port-side controls.
+- Relationship label/details polish: selected relationship labels now edit in the selection toolbar instead of `prompt()`, with compact label/type/strength/route details and review-attempt cleanup for answer-changing edits.
+- Continue polishing port-side controls only after live tablet use confirms the new label editor remains stable.
 - Harden endpoint reconnect and Insert block between after real tablet use, then consider freeform endpoint dragging only if it stays low-risk.
 - Consider a hover-only midpoint affordance only after the explicit Insert block between action stays stable.
 - Make link meaning easier to scan without adding visual clutter.
