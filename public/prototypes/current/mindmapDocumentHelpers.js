@@ -24,21 +24,43 @@ export function documentDescription(documentRecord, fallback = 'Project document
   return String(documentRecord?.description || fallback);
 }
 
+export function documentMetaLine(documentRecord) {
+  return `${documentTypeLabel(documentRecord)} · ${documentSourceLabel(documentRecord)}`;
+}
+
+export function documentUsageLabel(count = 0) {
+  const safeCount = Math.max(0, Number(count) || 0);
+  if (!safeCount) return 'Not on this map yet';
+  return safeCount === 1 ? 'Referenced on this map' : `Referenced on this map (${safeCount})`;
+}
+
 export function buildDocumentPickerItems(documents = []) {
   return documents.map((documentRecord) => ({
     id: documentRecord.id,
     title: documentTitle(documentRecord),
     typeLabel: documentTypeLabel(documentRecord),
+    sourceLabel: documentSourceLabel(documentRecord),
+    meta: documentMetaLine(documentRecord),
     description: documentDescription(documentRecord, 'Project document'),
   }));
 }
 
-export function buildWorkbenchDocumentItems(documents = []) {
+function documentUsageCount(usageCounts, documentId) {
+  if (!usageCounts || !documentId) return 0;
+  if (usageCounts instanceof Map) return Number(usageCounts.get(documentId)) || 0;
+  return Number(usageCounts[documentId]) || 0;
+}
+
+export function buildWorkbenchDocumentItems(documents = [], usageCounts = {}) {
   return documents.map((documentRecord) => ({
     id: documentRecord.id,
     title: documentTitle(documentRecord),
     typeLabel: documentTypeLabel(documentRecord),
+    sourceLabel: documentSourceLabel(documentRecord),
+    meta: documentMetaLine(documentRecord),
     summary: documentDescription(documentRecord, documentSourceLabel(documentRecord)),
+    usageCount: documentUsageCount(usageCounts, documentRecord.id),
+    usageLabel: documentUsageLabel(documentUsageCount(usageCounts, documentRecord.id)),
   }));
 }
 
@@ -95,8 +117,11 @@ export function buildDocumentDetailView(documentRecord) {
   const tagSuffix = tags.length ? ` · ${tags.join(', ')}` : '';
   return {
     title: documentTitle(documentRecord),
+    typeLabel: documentTypeLabel(documentRecord),
+    sourceLabel: documentSourceLabel(documentRecord),
     meta: `${documentTypeLabel(documentRecord)} · ${documentSourceLabel(documentRecord)}${tagSuffix}`,
     description: documentDescription(documentRecord, 'No description yet.'),
+    tags,
   };
 }
 

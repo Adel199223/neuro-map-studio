@@ -92,6 +92,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .preview-line{position:absolute;left:18px;right:18px;bottom:34px;height:8px;border-radius:999px;background:rgba(103,93,81,.18)}
 .preview-line.short{right:42%;bottom:18px}
 .soft,.empty-state{background:rgba(255,253,247,.72);border:1px dashed var(--border);border-radius:18px;padding:14px}
+.page-document-link{display:grid;gap:4px}
+.page-document-link p{margin:0;color:var(--muted);font-size:.92rem}
 .empty-state{display:grid;gap:10px}
 .status{min-height:1.5rem;color:var(--muted);font-weight:900}
 .links-list{display:grid;gap:8px;margin-top:10px}
@@ -343,6 +345,20 @@ function pageOpenLabel(page){
   return 'Open page';
 }
 
+function relationshipLabel(relationship){
+  return {
+    source:'Source',
+    attachment:'Attachment',
+    related:'Related',
+    evidence:'Evidence',
+    'further-reading':'Further reading'
+  }[relationship] || String(relationship || 'Reference').replace(/-/g, ' ');
+}
+
+function documentMetaLabel(documentRecord){
+  return `${String(documentRecord?.type || 'source').toUpperCase()} · ${documentRecord?.sourceLabel || 'Document'}`;
+}
+
 function docsForPage(page){
   const links = bundle.pageDocumentLinks.filter(link => link.pageId === page.id);
   return links.map(link => ({link, document: bundle.documents.find(document => document.id === link.documentId)})).filter(item => item.document);
@@ -560,9 +576,14 @@ function render(){
   const linksList = document.getElementById('linksList');
   linksList.innerHTML = bundle.pageDocumentLinks.map(link => {
     const page = bundle.pages.find(item => item.id === link.pageId);
-    const document = bundle.documents.find(item => item.id === link.documentId);
-    if(!page || !document) return '';
-    return `<div class="soft"><strong>${escapeHtml(page.title)}</strong> uses <strong>${escapeHtml(document.title)}</strong> as ${escapeHtml(link.relationship)}.</div>`;
+    const documentRecord = bundle.documents.find(item => item.id === link.documentId);
+    if(!page || !documentRecord) return '';
+    const relationship = relationshipLabel(link.relationship);
+    return `<div class="soft page-document-link">
+      <span class="badge">${escapeHtml(relationship)}</span>
+      <span><strong>${escapeHtml(page.title)}</strong> references <strong>${escapeHtml(documentRecord.title)}</strong>.</span>
+      <p>${escapeHtml(documentMetaLabel(documentRecord))}</p>
+    </div>`;
   }).join('') || '<div class="soft">No page-document links yet.</div>';
 
   selectTab(activeTab);

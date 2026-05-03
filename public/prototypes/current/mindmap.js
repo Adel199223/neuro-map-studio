@@ -113,6 +113,8 @@ import {
   buildDocumentPlacementPending,
   buildRelationshipDocumentInsertTemplate,
   buildWorkbenchDocumentItems,
+  documentMetaLine,
+  extractDocumentRefsFromNodes,
   findDocumentById,
   projectDocumentCountLabel,
 } from './mindmapDocumentHelpers.js';
@@ -2824,14 +2826,21 @@ import {
       if(nodeType === 'document'){
         const badge = document.createElement('span');
         badge.className = 'document-type-badge';
-        badge.textContent = documentRecord ? documentRecord.type.toUpperCase() : 'DOCUMENT';
+        badge.textContent = documentRecord?.type ? documentRecord.type.toUpperCase() : 'DOCUMENT';
+        const referenceMeta = document.createElement('span');
+        referenceMeta.className = 'document-reference-meta';
+        referenceMeta.textContent = documentRecord
+          ? `Document reference · ${documentMetaLine(documentRecord)}`
+          : 'Document reference · Missing source';
         const detailButton = document.createElement('button');
         detailButton.className = 'document-detail-button';
         detailButton.type = 'button';
         detailButton.dataset.action = 'document-detail';
-        detailButton.textContent = 'Details';
-        detailButton.setAttribute('aria-label', 'Open document details');
-        content.append(badge, detailButton);
+        detailButton.textContent = 'Source details';
+        const detailsLabel = `Open source details for ${documentRecord?.title || n.title || 'document reference'}`;
+        detailButton.title = detailsLabel;
+        detailButton.setAttribute('aria-label', detailsLabel);
+        content.append(badge, referenceMeta, detailButton);
       }
       el.append(content, resize);
       ['top','right','bottom','left'].forEach(side => {
@@ -3771,7 +3780,7 @@ import {
   function renderDocumentPicker(){
     if(!documentPickerList) return;
     if(!projectDocuments.length){
-      documentPickerList.innerHTML = '<div class="document-picker-item"><strong>No documents yet</strong><span>Add document metadata on the project page first.</span></div>';
+      documentPickerList.innerHTML = '<div class="document-picker-item"><strong>No project documents yet</strong><span>Add one from the project Documents tab, then place it here.</span></div>';
       return;
     }
     documentPickerList.innerHTML = '';
@@ -3780,7 +3789,13 @@ import {
       button.className = 'document-picker-item';
       button.type = 'button';
       button.dataset.documentId = doc.id;
-      button.innerHTML = `<strong>${escapeHtml(doc.title)}</strong><span>${escapeHtml(doc.typeLabel)} · ${escapeHtml(doc.description)}</span>`;
+      button.title = `Add ${doc.title || 'document'} as a document block`;
+      button.setAttribute('aria-label', button.title);
+      button.innerHTML = `
+        <strong>${escapeHtml(doc.title)}</strong>
+        <span class="document-picker-meta">${escapeHtml(doc.meta)}</span>
+        <span class="document-picker-summary">${escapeHtml(doc.description)}</span>
+      `;
       button.addEventListener('pointerdown', e => e.stopPropagation());
       button.addEventListener('pointerup', e => e.stopPropagation());
       button.addEventListener('click', e => {
@@ -3847,22 +3862,28 @@ import {
       if(documentHint) documentHint.textContent = hasDocuments ? 'Reference a project source' : 'Add a source first';
     }
     if(!hasDocuments){
-      workbenchDocumentList.innerHTML = '<div class="workbench-empty">Add a document in the project first.</div>';
+      workbenchDocumentList.innerHTML = '<div class="workbench-empty">No project documents yet. Add one from the project Documents tab, then place it here.</div>';
       return;
     }
     workbenchDocumentList.innerHTML = '';
-    buildWorkbenchDocumentItems(projectDocuments).forEach(doc => {
+    const documentUsageCounts = extractDocumentRefsFromNodes(data.nodes).reduce((counts, ref) => {
+      counts[ref.documentId] = (counts[ref.documentId] || 0) + 1;
+      return counts;
+    }, {});
+    buildWorkbenchDocumentItems(projectDocuments, documentUsageCounts).forEach(doc => {
       const row = document.createElement('article');
       row.className = 'workbench-document';
       row.innerHTML = `
         <div class="workbench-document-top">
           <div>
             <strong>${escapeHtml(doc.title)}</strong>
+            <span class="workbench-document-meta">${escapeHtml(doc.meta)}</span>
             <span>${escapeHtml(doc.summary)}</span>
           </div>
           <span class="workbench-document-type">${escapeHtml(doc.typeLabel)}</span>
         </div>
-        <button class="workbench-source-action" type="button" data-workbench-document-id="${escapeHtml(doc.id)}">Add as document block</button>
+        <span class="workbench-document-usage">${escapeHtml(doc.usageLabel)}</span>
+        <button class="workbench-source-action" type="button" data-workbench-document-id="${escapeHtml(doc.id)}" aria-label="Add ${escapeHtml(doc.title || 'document')} as document block. ${escapeHtml(doc.usageLabel)}">Add as document block</button>
       `;
       workbenchDocumentList.appendChild(row);
     });

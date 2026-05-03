@@ -72,7 +72,9 @@ The Sources & blocks panel supports:
 - Document block placement
 - adding project source documents as document blocks
 
-Document blocks preserve `documentId`, can be dragged, can be linked, and persist after reload.
+Sources & blocks document rows show the project document type, source label, short description, and whether that document is already referenced on the current map. Document picker rows and map document blocks use the same derived metadata so learners can scan source context without duplicating document records.
+
+Document blocks preserve `documentId`, can be dragged, can be linked, and persist after reload. Document blocks display a low-noise source-reference cue and open source details from the existing project document metadata.
 
 ## Map Review Mode
 

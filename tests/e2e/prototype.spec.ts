@@ -2131,7 +2131,10 @@ test.describe('current standalone prototypes', () => {
     await page.locator('.project-card').filter({ hasText: 'Backup import project' }).getByRole('link', { name: /Open project/i }).click();
     await expect(page.getByRole('heading', { name: /Imported notes page/i })).toBeVisible();
     await page.getByRole('tab', { name: /^Utilities$/i }).click();
-    await expect(page.getByText(/Imported notes page uses Imported source as related/i)).toBeVisible();
+    const importedLink = page.locator('#linksList .page-document-link').filter({ hasText: 'Imported source' });
+    await expect(importedLink).toContainText(/Related/i);
+    await expect(importedLink).toContainText(/Imported notes page references Imported source/i);
+    await expect(importedLink).toContainText(/NOTE · Note/i);
   });
 
   test('workspace backup import rejects invalid JSON without replacing local data', async ({ page }) => {
@@ -2216,13 +2219,19 @@ test.describe('current standalone prototypes', () => {
     await page.locator('#linkDocumentSelect').selectOption({ label: 'Central bank explainer' });
     await page.locator('#linkForm').getByLabel(/Relationship/i).selectOption('evidence');
     await page.locator('#linkForm').getByRole('button', { name: /Attach document to page/i }).click();
-    await expect(page.getByText(/Debt-power map uses Central bank explainer as evidence/i)).toBeVisible();
+    const createdLink = page.locator('#linksList .page-document-link').filter({ hasText: 'Central bank explainer' });
+    await expect(createdLink).toContainText(/Evidence/i);
+    await expect(createdLink).toContainText(/Debt-power map references Central bank explainer/i);
+    await expect(createdLink).toContainText(/WEB · Web source/i);
 
     await page.reload();
     await page.getByRole('tab', { name: /^Documents$/i }).click();
     await expect(page.getByRole('heading', { name: /Central bank explainer/i })).toBeVisible();
     await page.getByRole('tab', { name: /^Utilities$/i }).click();
-    await expect(page.getByText(/Debt-power map uses Central bank explainer as evidence/i)).toBeVisible();
+    const persistedLink = page.locator('#linksList .page-document-link').filter({ hasText: 'Central bank explainer' });
+    await expect(persistedLink).toContainText(/Evidence/i);
+    await expect(persistedLink).toContainText(/Debt-power map references Central bank explainer/i);
+    await expect(persistedLink).toContainText(/WEB · Web source/i);
   });
 
   test('project hub remains readable at medium width', async ({ page }) => {
@@ -2561,13 +2570,25 @@ test.describe('current standalone prototypes', () => {
     await page.locator('#pageForm').getByRole('button', { name: /Create page/i }).click();
 
     await expect(page.locator('#workbenchDrawer')).toBeVisible();
-    await page.locator('#workbenchDocumentList [data-workbench-document-id]').first().click();
+    const sourceRow = page.locator('#workbenchDocumentList .workbench-document').filter({ hasText: /Simon Dixon debt-power interview\/model/i }).first();
+    await expect(sourceRow).toContainText(/NOTE · Interview \/ notes/i);
+    await expect(sourceRow).toContainText(/Not on this map yet/i);
+    await sourceRow.locator('[data-workbench-document-id]').click();
     await expect(page.locator('#placementOverlay')).toContainText(/Tap the canvas to place document block/i);
     await clickCanvasAt(page, { xRatio: 0.45, yRatio: 0.52 });
 
     const documentNode = page.locator('.map-node.type-document').first();
     await expect(documentNode).toContainText(/Simon Dixon debt-power interview\/model/i);
+    await expect(documentNode).toContainText(/Document reference · NOTE · Interview \/ notes/i);
+    await expect(documentNode.getByRole('button', { name: /open source details/i })).toBeVisible();
     await expect(documentNode.locator('.document-type-badge')).not.toHaveText('');
+    if (await page.locator('#workbenchDrawer').isHidden()) {
+      await page.locator('#btnWorkbenchToggle').click({ force: true });
+      await expect(page.locator('#workbenchDrawer')).toBeVisible();
+    }
+    await expect(sourceRow).toContainText(/Referenced on this map/i);
+    await page.locator('#btnWorkbenchClose').click();
+    await expect(page.locator('#workbenchDrawer')).toBeHidden();
     const documentNodeId = await documentNode.getAttribute('data-id');
     const documentId = await documentNode.getAttribute('data-document-id');
     expect(documentNodeId).toBeTruthy();
@@ -4183,14 +4204,18 @@ test.describe('current standalone prototypes', () => {
     const after = await documentNode.boundingBox();
     expect(after?.x).not.toBe(before?.x);
 
+    await expect(documentNode).toContainText(/Document reference · NOTE · Interview \/ notes/i);
+    await documentNode.getByRole('button', { name: /open source details/i }).click();
+    await expect(page.locator('#documentDetailCard')).toBeVisible();
+    await expect(page.locator('#documentDetailCard')).toContainText(/Simon Dixon debt-power interview\/model/i);
+    await expect(page.locator('#documentDetailCard')).toContainText(/NOTE · Interview \/ notes/i);
+    await page.locator('#documentDetailClose').click();
+    await expect(page.locator('#documentDetailCard')).toBeHidden();
+
     await page.locator('.map-node[data-id="core"]').click();
     await page.locator('#btnConnect').click();
     await documentNode.click();
     await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
-
-    await documentNode.getByRole('button', { name: /open document details/i }).click();
-    await expect(page.locator('#documentDetailCard')).toBeVisible();
-    await expect(page.locator('#documentDetailCard')).toContainText(/Simon Dixon debt-power interview\/model/i);
   });
 
   test('new linked block edges re-anchor after moving under zoom', async ({ page }) => {

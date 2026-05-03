@@ -6,7 +6,7 @@
 - Repo: `https://github.com/Adel199223/neuro-map-studio`
 - Local WSL path: `/home/fa507/dev/neuro-map-studio-codex`
 - Source-of-truth branch: `main`
-- Latest shipped feature baseline: Stage 5A10 document helper split on top of Stage 5A9 menu helper split, Stage 5A8 relationship helper split, Stage 5A7 modernization health check, Stage 5A6 storage helper split, Stage 5A5 review helper split, Stage 5A4 low-risk `mindmap.js` module split, Stage 5A3 runtime-to-portable snapshot parity fixtures, Stage 5A2 mindmap runtime CSS/JS extraction, Stage 5A1 pure portable contract/model/review helpers, and the Stage 5A0 compatibility audit. For the exact current commit, run `git rev-parse main`.
+- Latest shipped feature baseline: Sources & blocks / document references polish after the Stage 5A13 product-vs-modernization direction checkpoint, Stage 5A12 test/flake hardening, Stage 5A10 document helper split, Stage 5A9 menu helper split, Stage 5A8 relationship helper split, Stage 5A7 modernization health check, Stage 5A6 storage helper split, Stage 5A5 review helper split, Stage 5A4 low-risk `mindmap.js` module split, Stage 5A3 runtime-to-portable snapshot parity fixtures, Stage 5A2 mindmap runtime CSS/JS extraction, Stage 5A1 pure portable contract/model/review helpers, and the Stage 5A0 compatibility audit. For the exact current commit, run `git rev-parse main`.
 - Previous Stage 3A2 baseline retained for doctor checks: `7b062803a309b21daeda74e11a6b0183931d0f58`
 - Remote source of truth: `origin/main`.
 
@@ -31,6 +31,7 @@ Preserve:
 - guided page starters
 - Sources & blocks panel and placement mode
 - document blocks with preserved `documentId`
+- clearer source/document metadata in the Sources & blocks panel, document picker, map document blocks, source details, and page-document references
 - map undo/redo, multi-select, bulk delete, copy/paste/duplicate, and keyboard shortcut guards
 - connection-port quick-add for linked blocks, Connect existing block targeting from ports, selected relationship Change source / Change target reconnect, selected relationship Insert block between, dynamic relationship re-anchoring, and collision-aware placement
 - group drag for selected blocks, arrow-key nudge, Zoom to selection, and desktop/trackpad box selection

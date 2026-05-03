@@ -33,9 +33,11 @@ test.describe('mindmap document helper extraction', () => {
   test('finds documents by id and formats safe document labels', async () => {
     const {
       documentDescription,
+      documentMetaLine,
       documentSourceLabel,
       documentTitle,
       documentTypeLabel,
+      documentUsageLabel,
       findDocumentById,
       hasProjectDocuments,
     } = await loadHelpers();
@@ -54,6 +56,11 @@ test.describe('mindmap document helper extraction', () => {
     expect(documentSourceLabel(documentRecords[1])).toBe('Project document');
     expect(documentDescription(documentRecords[0], 'Project document')).toBe('Interview notes about debt cycles.');
     expect(documentDescription(documentRecords[1], 'Project document')).toBe('Project document');
+    expect(documentMetaLine(documentRecords[0])).toBe('INTERVIEW · Podcast');
+    expect(documentMetaLine(documentRecords[1])).toBe('SOURCE · Project document');
+    expect(documentUsageLabel(0)).toBe('Not on this map yet');
+    expect(documentUsageLabel(1)).toBe('Referenced on this map');
+    expect(documentUsageLabel(3)).toBe('Referenced on this map (3)');
   });
 
   test('builds picker and workbench descriptors without mutating document records', async () => {
@@ -65,28 +72,40 @@ test.describe('mindmap document helper extraction', () => {
         id: 'doc-1',
         title: 'Debt power interview',
         typeLabel: 'INTERVIEW',
+        sourceLabel: 'Podcast',
+        meta: 'INTERVIEW · Podcast',
         description: 'Interview notes about debt cycles.',
       },
       {
         id: 'doc-2',
         title: '',
         typeLabel: 'SOURCE',
+        sourceLabel: 'Project document',
+        meta: 'SOURCE · Project document',
         description: 'Project document',
       },
     ]);
 
-    expect(buildWorkbenchDocumentItems(documentRecords)).toEqual([
+    expect(buildWorkbenchDocumentItems(documentRecords, { 'doc-1': 2 })).toEqual([
       {
         id: 'doc-1',
         title: 'Debt power interview',
         typeLabel: 'INTERVIEW',
+        sourceLabel: 'Podcast',
+        meta: 'INTERVIEW · Podcast',
         summary: 'Interview notes about debt cycles.',
+        usageCount: 2,
+        usageLabel: 'Referenced on this map (2)',
       },
       {
         id: 'doc-2',
         title: '',
         typeLabel: 'SOURCE',
+        sourceLabel: 'Project document',
+        meta: 'SOURCE · Project document',
         summary: 'Project document',
+        usageCount: 0,
+        usageLabel: 'Not on this map yet',
       },
     ]);
 
@@ -197,13 +216,19 @@ test.describe('mindmap document helper extraction', () => {
 
     expect(buildDocumentDetailView(documentRecords[0])).toEqual({
       title: 'Debt power interview',
+      typeLabel: 'INTERVIEW',
+      sourceLabel: 'Podcast',
       meta: 'INTERVIEW · Podcast · debt, macro',
       description: 'Interview notes about debt cycles.',
+      tags: ['debt', 'macro'],
     });
     expect(buildDocumentDetailView(documentRecords[1])).toEqual({
       title: '',
+      typeLabel: 'SOURCE',
+      sourceLabel: 'Project document',
       meta: 'SOURCE · Project document',
       description: 'No description yet.',
+      tags: [],
     });
 
     expect(isDocumentNode(nodes[0])).toBe(true);

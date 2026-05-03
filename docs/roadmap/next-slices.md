@@ -24,9 +24,8 @@ These are small, high-leverage directions to consider after the current main bra
 
 ## Source And Document Workflow
 
-- Make source/document metadata easier to review while mapping.
-- Improve document block affordances without adding PDF/DOCX parsing.
-- Add clearer page-document reference management.
+- Sources & blocks / document references polish: source/document metadata is easier to scan while mapping, document blocks show clearer reference context, and page-document references include relationship/type/source context without adding PDF/DOCX parsing.
+- Next product polish can build on that clarity with safer document-reference management and review workflows while preserving `documentId` behavior.
 
 ## Review And Retrieval Pages
 
