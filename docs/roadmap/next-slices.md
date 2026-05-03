@@ -15,7 +15,8 @@ These are small, high-leverage directions to consider after the current main bra
 - Stage 5A8: extract pure relationship data helpers into `mindmapRelationshipHelpers.js` while leaving DOM targeting, menu rendering, prompts, render/save/history wiring, and S Pen/touch flows in `mindmap.js`.
 - Stage 5A9: extract pure menu/context-menu descriptor builders into `mindmapMenuHelpers.js` while leaving menu DOM rendering, positioning, action dispatch, long-press behavior, and S Pen/touch flows in `mindmap.js`.
 - Stage 5A10: extract pure document/source lookup, descriptor, template, detail-view, and document-reference helpers into `mindmapDocumentHelpers.js` while leaving document picker DOM rendering, Sources & blocks panel wiring, store calls, pending placement orchestration, and save/history/render/status behavior in `mindmap.js`.
-- Later modernization: continue splitting `mindmap.js` one subsystem at a time; defer gestures, rendering, runtime contract wiring, and storage side-effect wiring until safer seams are proven.
+- Stage 5A11: post-document health check recommends test/flake hardening before further runtime module splits; pausing modernization for product work is the fallback if refactor risk outweighs value.
+- Later modernization: continue splitting `mindmap.js` one subsystem at a time only after hardening; defer gestures, rendering, selection/toolbar, runtime contract wiring, and storage side-effect wiring until safer seams are proven.
 - Later only: if integration becomes likely, prepare targeted Accessible Reader graph/workspace boundaries while keeping Accessible Reader read-only until explicitly approved.
 - Later only: actual integration, host UI decisions, backend persistence, and migration planning.
 
