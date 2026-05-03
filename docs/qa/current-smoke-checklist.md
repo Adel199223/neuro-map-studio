@@ -65,3 +65,7 @@ Use this for quick validation on local dev or GitHub Pages.
 - [ ] GitHub Pages root returns HTTP 200.
 - [ ] Project, page, lesson, map, and debug URLs return HTTP 200.
 - [ ] `?debugInput=1` opens diagnostics on the map runtime.
+
+## Focused Playwright Runs
+
+- Run focused Playwright invocations sequentially. For repeat flake evidence, prefer `--workers=1` and avoid parallel independent commands against the same Vite dev-server port.

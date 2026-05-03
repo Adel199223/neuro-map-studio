@@ -91,6 +91,60 @@ async function waitForNoBoxOverlap(first: Locator, second: Locator, description:
   return expectNoBoxOverlap(first, second, description, margin);
 }
 
+async function waitForAnimationFrames(page: Page, frameCount = 2) {
+  await page.evaluate((frames) => {
+    return new Promise<void>((resolve) => {
+      let remaining = frames;
+      const step = () => {
+        remaining -= 1;
+        if (remaining <= 0) resolve();
+        else requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
+  }, frameCount);
+}
+
+async function waitForMapRenderSettled(page: Page) {
+  const readCounts = () =>
+    page.evaluate(() => ({
+      nodes: document.querySelectorAll('.map-node').length,
+      edges: document.querySelectorAll('#edgeLayer g.edge-group').length,
+      labels: document.querySelectorAll('#edgeLabelLayer .edge-label').length,
+    }));
+
+  await waitForAnimationFrames(page);
+  await expect
+    .poll(async () => {
+      const before = await readCounts();
+      await waitForAnimationFrames(page);
+      const after = await readCounts();
+      return before.nodes === after.nodes && before.edges === after.edges && before.labels === after.labels;
+    })
+    .toBe(true);
+}
+
+async function waitForStableBoundingBox(locator: Locator, description: string) {
+  await locator.waitFor({ state: 'visible' });
+  await expect
+    .poll(async () => {
+      const before = await locator.boundingBox();
+      await waitForAnimationFrames(locator.page());
+      const after = await locator.boundingBox();
+      if (!before || !after) return false;
+      return (
+        Math.abs(before.x - after.x) < 0.5 &&
+        Math.abs(before.y - after.y) < 0.5 &&
+        Math.abs(before.width - after.width) < 0.5 &&
+        Math.abs(before.height - after.height) < 0.5
+      );
+    }, { message: `Waiting for stable bounding box: ${description}` })
+    .toBe(true);
+  const box = await locator.boundingBox();
+  if (!box) throw new Error(`Could not determine stable locator bounding box for ${description}.`);
+  return box;
+}
+
 async function expectWorkbenchControlsClearOfZoom(page: Page, description: string) {
   const zoomControls = page.locator('#zoomDock .toolbar-group');
   await expectNoBoxOverlap(page.locator('#btnWorkbenchClose'), zoomControls, `${description} close control`, 4);
@@ -385,6 +439,25 @@ async function getSelectedMapIds(page: Page) {
   }));
 }
 
+type SelectedMapIds = Awaited<ReturnType<typeof getSelectedMapIds>>;
+
+async function waitForSelectedMapIds(page: Page, expected: SelectedMapIds) {
+  await expect.poll(async () => getSelectedMapIds(page)).toEqual(expected);
+  return getSelectedMapIds(page);
+}
+
+async function waitForSingleSelectedNode(page: Page) {
+  await expect
+    .poll(async () => {
+      const selected = await getSelectedMapIds(page);
+      return { nodes: selected.nodes.length, edges: selected.edges.length };
+    })
+    .toEqual({ nodes: 1, edges: 0 });
+  const selected = await getSelectedMapIds(page);
+  expect(selected.nodes[0]).toBeTruthy();
+  return selected.nodes[0];
+}
+
 async function getSeedMapState(page: Page) {
   await page.waitForTimeout(250);
   return page.evaluate(async () => {
@@ -436,6 +509,20 @@ async function getSeedMapState(page: Page) {
 type SeedMapState = NonNullable<Awaited<ReturnType<typeof getSeedMapState>>>;
 type SeedMapNode = SeedMapState['nodes'][number];
 type SeedMapEdge = SeedMapState['edges'][number];
+
+async function waitForSeedMapState(
+  page: Page,
+  predicate: (mapState: SeedMapState | null) => boolean,
+  description: string,
+) {
+  await expect
+    .poll(async () => {
+      const mapState = await getSeedMapState(page);
+      return predicate(mapState);
+    }, { message: `Waiting for map state: ${description}` })
+    .toBe(true);
+  return getSeedMapState(page);
+}
 
 function seedNode(map: SeedMapState | null, nodeId: string): SeedMapNode {
   const node = map?.nodes.find((entry) => entry.id === nodeId);
@@ -505,10 +592,17 @@ async function quickAddConceptFromPort(page: Page, nodeId = 'public', side: 'top
   await page.locator('#contextMenu').getByRole('button', { name: /Concept block/i }).click();
   await expect(page.locator('.map-node')).toHaveCount(beforeCounts.nodes + 1);
   await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(beforeCounts.edges + 1);
-  const selected = await getSelectedMapIds(page);
-  expect(selected.nodes).toHaveLength(1);
-  expect(selected.edges).toHaveLength(0);
-  return selected.nodes[0];
+  const selectedNodeId = await waitForSingleSelectedNode(page);
+  await expect(page.locator(`.map-node[data-id="${selectedNodeId}"]`)).toBeVisible();
+  await waitForSeedMapState(
+    page,
+    (mapState) =>
+      Boolean(mapState?.nodes.some((node) => node.id === selectedNodeId)) &&
+      (mapState?.edges.length ?? 0) === beforeCounts.edges + 1,
+    `quick-add concept ${selectedNodeId}`,
+  );
+  await waitForMapRenderSettled(page);
+  return selectedNodeId;
 }
 
 async function connectExistingFromPort(
@@ -542,6 +636,8 @@ async function selectRelationship(page: Page, edgeId = 'e2') {
   await expect(label).toBeVisible();
   await syntheticClick(label);
   await expect(page.locator(`#edgeLayer g.edge-group[data-edge-id="${edgeId}"] .edge`)).toHaveClass(/selected/);
+  await waitForSelectedMapIds(page, { nodes: [], edges: [edgeId] });
+  await waitForStableBoundingBox(page.locator('#selectionShelf'), `selection toolbar for relationship ${edgeId}`);
 }
 
 async function openRelationshipContextMenu(page: Page, edgeId = 'e2') {
@@ -578,20 +674,36 @@ async function openInsertBetweenMenu(page: Page, edgeId = 'e2') {
   await expect(page.locator('#contextMenu')).toHaveAttribute('aria-hidden', 'false');
   await expect(page.locator('#contextMenu')).toContainText(/Insert block between/i);
   await expect(page.locator('#contextMenu')).toContainText(/Concept block/i);
+  await waitForStableBoundingBox(page.locator('#contextMenu'), `Insert block between menu for ${edgeId}`);
 }
 
 async function insertConceptBetween(page: Page, edgeId = 'e2') {
   const beforeMap = await getSeedMapState(page);
+  const beforeEdge = seedEdge(beforeMap, edgeId);
   const beforeNodeCount = beforeMap?.nodes.length ?? 0;
   const beforeEdgeCount = beforeMap?.edges.length ?? 0;
   await openInsertBetweenMenu(page, edgeId);
   await page.locator('#contextMenu').getByRole('button', { name: /^Concept block$/i }).click();
   await expect(page.locator('.map-node')).toHaveCount(beforeNodeCount + 1);
   await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(beforeEdgeCount + 1);
-  const selected = await getSelectedMapIds(page);
-  expect(selected.nodes).toHaveLength(1);
-  expect(selected.edges).toHaveLength(0);
-  return selected.nodes[0];
+  const selectedNodeId = await waitForSingleSelectedNode(page);
+  await waitForSeedMapState(
+    page,
+    (mapState) => {
+      const firstSplit = mapState?.edges.find((edge) => edge.from === beforeEdge.from && edge.to === selectedNodeId);
+      const secondSplit = mapState?.edges.find((edge) => edge.from === selectedNodeId && edge.to === beforeEdge.to);
+      return (
+        (mapState?.nodes.length ?? 0) === beforeNodeCount + 1 &&
+        (mapState?.edges.length ?? 0) === beforeEdgeCount + 1 &&
+        mapState?.edges.some((edge) => edge.id === edgeId) === false &&
+        Boolean(firstSplit?.id) &&
+        Boolean(secondSplit?.id)
+      );
+    },
+    `Insert block between split for ${edgeId}`,
+  );
+  await waitForMapRenderSettled(page);
+  return selectedNodeId;
 }
 
 async function getPortAffordanceState(page: Page, nodeId: string) {
@@ -1412,31 +1524,34 @@ async function highlightedReviewNodeIds(page: Page) {
 }
 
 async function expectNodeClearOfOtherBlocks(page: Page, nodeId: string, margin = 8) {
-  const overlaps = await page.evaluate(
-    ({ targetNodeId, gap }) => {
-      const rectOf = (element: Element) => {
-        const rect = element.getBoundingClientRect();
-        return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
-      };
-      const target = document.querySelector(`.map-node[data-id="${CSS.escape(targetNodeId)}"]`);
-      if (!target) throw new Error(`Missing target block ${targetNodeId}`);
-      const targetRect = rectOf(target);
-      return Array.from(document.querySelectorAll('.map-node'))
-        .filter((element) => element !== target)
-        .filter((element) => {
-          const rect = rectOf(element);
-          return (
-            targetRect.left < rect.right + gap &&
-            targetRect.right > rect.left - gap &&
-            targetRect.top < rect.bottom + gap &&
-            targetRect.bottom > rect.top - gap
-          );
-        })
-        .map((element) => (element as HTMLElement).dataset.id || '');
-    },
-    { targetNodeId: nodeId, gap: margin },
-  );
-  expect(overlaps).toEqual([]);
+  await expect
+    .poll(async () =>
+      page.evaluate(
+        ({ targetNodeId, gap }) => {
+          const rectOf = (element: Element) => {
+            const rect = element.getBoundingClientRect();
+            return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
+          };
+          const target = document.querySelector(`.map-node[data-id="${CSS.escape(targetNodeId)}"]`);
+          if (!target) throw new Error(`Missing target block ${targetNodeId}`);
+          const targetRect = rectOf(target);
+          return Array.from(document.querySelectorAll('.map-node'))
+            .filter((element) => element !== target)
+            .filter((element) => {
+              const rect = rectOf(element);
+              return (
+                targetRect.left < rect.right + gap &&
+                targetRect.right > rect.left - gap &&
+                targetRect.top < rect.bottom + gap &&
+                targetRect.bottom > rect.top - gap
+              );
+            })
+            .map((element) => (element as HTMLElement).dataset.id || '');
+        },
+        { targetNodeId: nodeId, gap: margin },
+      ),
+    )
+    .toEqual([]);
 }
 
 function mapNodeRect(node: { x: number; y: number; w?: number; h?: number }) {
@@ -3308,18 +3423,41 @@ test.describe('current standalone prototypes', () => {
       expect(split.fromPort).toBe('auto');
       expect(split.toPort).toBe('auto');
     }
-    expect(await getSelectedMapIds(page)).toEqual({ nodes: [insertedNodeId], edges: [] });
+    await waitForSelectedMapIds(page, { nodes: [insertedNodeId], edges: [] });
 
     await page.locator('#stage').focus();
     await page.keyboard.press('Control+Z');
-    mapState = await getSeedMapState(page);
+    mapState = await waitForSeedMapState(
+      page,
+      (currentMap) =>
+        Boolean(currentMap) &&
+        !currentMap!.nodes.some((node) => node.id === insertedNodeId) &&
+        currentMap!.edges.length === beforeEdgeCount &&
+        currentMap!.edges.some(
+          (edge) => edge.id === beforeEdge.id && edge.from === beforeEdge.from && edge.to === beforeEdge.to,
+        ),
+      'undo restores original relationship after Insert block between',
+    );
     expect(mapState?.nodes.some((node) => node.id === insertedNodeId)).toBe(false);
     expect(mapState?.edges).toHaveLength(beforeEdgeCount);
     expect(seedEdge(mapState, beforeEdge.id).from).toBe(beforeEdge.from);
     expect(seedEdge(mapState, beforeEdge.id).to).toBe(beforeEdge.to);
 
     await page.keyboard.press('Control+Shift+Z');
-    mapState = await getSeedMapState(page);
+    mapState = await waitForSeedMapState(
+      page,
+      (currentMap) => {
+        const firstSplit = currentMap?.edges.find((edge) => edge.from === beforeEdge.from && edge.to === insertedNodeId);
+        const secondSplit = currentMap?.edges.find((edge) => edge.from === insertedNodeId && edge.to === beforeEdge.to);
+        return (
+          Boolean(currentMap?.nodes.some((node) => node.id === insertedNodeId)) &&
+          Boolean(firstSplit?.id) &&
+          Boolean(secondSplit?.id) &&
+          currentMap?.edges.some((edge) => edge.id === beforeEdge.id) === false
+        );
+      },
+      'redo restores split relationships after Insert block between',
+    );
     expect(mapState?.nodes.some((node) => node.id === insertedNodeId)).toBe(true);
     firstSplit = mapState?.edges.find((edge) => edge.from === beforeEdge.from && edge.to === insertedNodeId);
     secondSplit = mapState?.edges.find((edge) => edge.from === insertedNodeId && edge.to === beforeEdge.to);
@@ -3358,24 +3496,37 @@ test.describe('current standalone prototypes', () => {
     const beforeEdge = seedEdge(beforeMap, 'e2');
 
     await openInsertBetweenMenu(page, 'e2');
-    await page.locator('#contextMenu').getByRole('button', { name: /^Document block$/i }).click();
-    await expect(page.locator('#documentPicker')).toBeVisible();
-    await page.locator('#documentPicker').getByRole('button', { name: /Simon Dixon debt-power/i }).click();
+	    await page.locator('#contextMenu').getByRole('button', { name: /^Document block$/i }).click();
+	    await expect(page.locator('#documentPicker')).toBeVisible();
+	    await page.locator('#documentPicker').getByRole('button', { name: /Simon Dixon debt-power/i }).click();
 
-    const selected = await getSelectedMapIds(page);
-    expect(selected.nodes).toHaveLength(1);
-    const documentNodeId = selected.nodes[0];
-    await expect(page.locator(`.map-node.type-document[data-id="${documentNodeId}"]`)).toHaveAttribute(
-      'data-document-id',
-      'simon-dixon-debt-power',
-    );
-    await expectNodeClearOfOtherBlocks(page, documentNodeId, 8);
+	    const documentNodeId = await waitForSingleSelectedNode(page);
+	    await expect(page.locator(`.map-node.type-document[data-id="${documentNodeId}"]`)).toHaveAttribute(
+	      'data-document-id',
+	      'simon-dixon-debt-power',
+	    );
+	    await expectNodeClearOfOtherBlocks(page, documentNodeId, 8);
 
-    let mapState = await getSeedMapState(page);
-    let persistedDocumentNode = mapState!.nodes.find((node) => node.id === documentNodeId);
-    expect(persistedDocumentNode?.documentId).toBe('simon-dixon-debt-power');
-    expect(persistedDocumentNode?.nodeType).toBe('document');
-    expect(mapState?.edges.some((edge) => edge.id === beforeEdge.id)).toBe(false);
+	    let mapState = await waitForSeedMapState(
+	      page,
+	      (currentMap) => {
+	        const documentNode = currentMap?.nodes.find((node) => node.id === documentNodeId);
+	        const firstSplit = currentMap?.edges.find((edge) => edge.from === beforeEdge.from && edge.to === documentNodeId);
+	        const secondSplit = currentMap?.edges.find((edge) => edge.from === documentNodeId && edge.to === beforeEdge.to);
+	        return (
+	          documentNode?.documentId === 'simon-dixon-debt-power' &&
+	          documentNode?.nodeType === 'document' &&
+	          currentMap?.edges.some((edge) => edge.id === beforeEdge.id) === false &&
+	          Boolean(firstSplit?.id) &&
+	          Boolean(secondSplit?.id)
+	        );
+	      },
+	      'document Insert block between preserves documentId and split relationships',
+	    );
+	    let persistedDocumentNode = mapState!.nodes.find((node) => node.id === documentNodeId);
+	    expect(persistedDocumentNode?.documentId).toBe('simon-dixon-debt-power');
+	    expect(persistedDocumentNode?.nodeType).toBe('document');
+	    expect(mapState?.edges.some((edge) => edge.id === beforeEdge.id)).toBe(false);
     expect(mapState?.edges.find((edge) => edge.from === beforeEdge.from && edge.to === documentNodeId)).toBeTruthy();
     expect(mapState?.edges.find((edge) => edge.from === documentNodeId && edge.to === beforeEdge.to)).toBeTruthy();
 
@@ -3399,15 +3550,20 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#contextMenu')).toHaveAttribute('aria-hidden', 'false');
     await pointerTap(page.locator('#contextMenu').getByRole('button', { name: /^Concept block$/i }), {
       pointerType: 'pen',
-    });
+	    });
 
-    await expect(page.locator('#contextMenu')).toHaveAttribute('aria-hidden', 'true');
-    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
-    const mapState = await getSeedMapState(page);
-    expect(mapState?.edges.some((edge) => edge.id === 'e2')).toBe(false);
-    const selected = await getSelectedMapIds(page);
-    expect(selected.nodes).toHaveLength(1);
-  });
+	    await expect(page.locator('#contextMenu')).toHaveAttribute('aria-hidden', 'true');
+	    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
+	    const selectedNodeId = await waitForSingleSelectedNode(page);
+	    const mapState = await waitForSeedMapState(
+	      page,
+	      (currentMap) =>
+	        currentMap?.edges.some((edge) => edge.id === 'e2') === false &&
+	        Boolean(currentMap?.nodes.some((node) => node.id === selectedNodeId)),
+	      'pen-style relationship insert creates one split',
+	    );
+	    expect(mapState?.edges.some((edge) => edge.id === 'e2')).toBe(false);
+	  });
 
   test('Review Next and relationship masking reflect inserted relationships', async ({ page }) => {
     await resetMindmap(page);
@@ -3937,6 +4093,11 @@ test.describe('current standalone prototypes', () => {
     await page.getByRole('button', { name: /zoom in/i }).click();
     await page.getByRole('button', { name: /zoom in/i }).click();
     await page.getByRole('button', { name: /zoom in/i }).click();
+    await waitForMapRenderSettled(page);
+    await waitForStableBoundingBox(page.locator('.toolbar'), 'high zoom toolbar before quick-add');
+    await waitForStableBoundingBox(page.locator('#zoomDock .toolbar-group'), 'high zoom controls before quick-add');
+    await waitForStableBoundingBox(page.locator('#workbenchDrawer'), 'high zoom Sources & blocks panel before quick-add');
+    await waitForStableBoundingBox(page.locator('#inputDebugPanel'), 'high zoom input diagnostics before quick-add');
 
     const newNodeId = await quickAddConceptFromPort(page, 'core', 'right');
     const newNode = page.locator(`.map-node[data-id="${newNodeId}"]`);
@@ -4083,20 +4244,21 @@ test.describe('current standalone prototypes', () => {
     expect(attachment!).toBeLessThan(28);
   });
 
-  test('selected link toolbar exposes relationship controls', async ({ page }) => {
-    await resetMindmap(page);
+	  test('selected link toolbar exposes relationship controls', async ({ page }) => {
+	    await resetMindmap(page);
 
-    await selectRelationship(page, 'e2');
-    await expect(page.locator('#selectionShelf')).toBeVisible();
-    await expect(page.getByRole('button', { name: /edit selected link label/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /change selected link relationship type/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /change selected link route/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /^Insert block between$/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /^Change source$/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /^Change target$/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /change selected link source connection side/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /change selected link target connection side/i })).toBeVisible();
-  });
+	    await selectRelationship(page, 'e2');
+	    const shelf = page.locator('#selectionShelf');
+	    await waitForStableBoundingBox(shelf, 'selected link toolbar controls');
+	    await expect(shelf.getByRole('button', { name: /edit selected link label/i })).toBeVisible();
+	    await expect(shelf.getByRole('button', { name: /change selected link relationship type/i })).toBeVisible();
+	    await expect(shelf.getByRole('button', { name: /change selected link route/i })).toBeVisible();
+	    await expect(shelf.getByRole('button', { name: /^Insert block between$/i })).toBeVisible();
+	    await expect(shelf.getByRole('button', { name: /^Change source$/i })).toBeVisible();
+	    await expect(shelf.getByRole('button', { name: /^Change target$/i })).toBeVisible();
+	    await expect(shelf.getByRole('button', { name: /change selected link source connection side/i })).toBeVisible();
+	    await expect(shelf.getByRole('button', { name: /change selected link target connection side/i })).toBeVisible();
+	  });
 
   test('multi-selected block drag moves selected blocks together and stays undoable', async ({ page }) => {
     await resetMindmap(page);
@@ -4509,15 +4671,17 @@ test.describe('current standalone prototypes', () => {
     await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(15);
   });
 
-  test('map keyboard shortcuts do not run while editing block text', async ({ page }) => {
-    await resetMindmap(page);
+	  test('map keyboard shortcuts do not run while editing block text', async ({ page }) => {
+	    await resetMindmap(page);
 
-    await syntheticClick(page.locator('.map-node[data-id="core"]'));
-    const title = page.locator('.map-node[data-id="core"] .node-title');
-    await expect
-      .poll(async () =>
-        title.evaluate((element) => {
-          const target = element as HTMLElement;
+	    await syntheticClick(page.locator('.map-node[data-id="core"]'));
+	    const beforeMap = await getSeedMapState(page);
+	    await waitForSelectedMapIds(page, { nodes: ['core'], edges: [] });
+	    const title = page.locator('.map-node[data-id="core"] .node-title');
+	    await expect
+	      .poll(async () =>
+	        title.evaluate((element) => {
+	          const target = element as HTMLElement;
           target.focus();
           const range = document.createRange();
           range.selectNodeContents(target);
@@ -4526,16 +4690,25 @@ test.describe('current standalone prototypes', () => {
           selection?.addRange(range);
           return document.activeElement === target;
         }),
-      )
-      .toBe(true);
-    await page.keyboard.press('Control+A');
-    await expect(page.locator('.map-node.selected')).toHaveCount(1);
-    await expect(page.locator('#edgeLayer .edge.selected')).toHaveCount(0);
+	      )
+	      .toBe(true);
+	    await page.keyboard.press('Control+A');
+	    await waitForSelectedMapIds(page, { nodes: ['core'], edges: [] });
+	    await waitForSeedMapState(
+	      page,
+	      (mapState) => mapState?.nodes.length === beforeMap?.nodes.length && mapState?.edges.length === beforeMap?.edges.length,
+	      'Control+A while editing keeps map selection and data stable',
+	    );
 
-    await page.keyboard.press('Delete');
-    await expect(page.locator('.map-node')).toHaveCount(13);
-    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(14);
-  });
+	    await page.keyboard.press('Delete');
+	    await waitForSeedMapState(
+	      page,
+	      (mapState) => mapState?.nodes.length === beforeMap?.nodes.length && mapState?.edges.length === beforeMap?.edges.length,
+	      'Delete while editing keeps map data stable',
+	    );
+	    await expect(page.locator('.map-node')).toHaveCount(beforeMap?.nodes.length ?? 13);
+	    await expect(page.locator('#edgeLayer g.edge-group')).toHaveCount(beforeMap?.edges.length ?? 14);
+	  });
 
   test('selected toolbar dismisses on canvas and Escape, stays usable inside, and returns after drag', async ({ page }) => {
     await resetMindmap(page);
