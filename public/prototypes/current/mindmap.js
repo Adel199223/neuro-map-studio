@@ -2988,6 +2988,45 @@ import {
     });
     applyReviewHighlights();
   }
+  function updateEdgeElements(edge, layout, group, label){
+    if(!edge || !layout || !group || !label) return false;
+    const hit = group.querySelector('.edge-hit');
+    const path = group.querySelector('.edge');
+    if(!hit || !path) return false;
+    const width = layout.style.base + edge.strength*.58;
+    const edgeHighlighted = path.classList.contains('review-highlight');
+    const labelHighlighted = label.classList.contains('review-highlight');
+    const labelHidden = label.classList.contains('review-label-hidden');
+    hit.dataset.edgeId = edge.id;
+    hit.setAttribute('d', layout.path);
+    hit.setAttribute('stroke-width', String(Math.max(window.matchMedia('(pointer:coarse)').matches ? EDGE_HIT_WIDTH_COARSE : EDGE_HIT_WIDTH, width + 12)));
+    path.setAttribute('class', 'edge' + (selectedEdgeIds.has(edge.id) ? ' selected' : '') + (edgeHighlighted ? ' review-highlight' : ''));
+    path.setAttribute('d', layout.path);
+    path.setAttribute('stroke', layout.style.color);
+    path.setAttribute('stroke-width', String(width));
+    if(layout.style.dash) path.setAttribute('stroke-dasharray', layout.style.dash);
+    else path.removeAttribute('stroke-dasharray');
+    label.className = 'edge-label' + (selectedEdgeIds.has(edge.id) ? ' selected' : '') + (labelHighlighted ? ' review-highlight' : '') + (labelHidden ? ' review-label-hidden' : '');
+    label.dataset.edgeId = edge.id;
+    label.style.left = layout.mid.x + 'px';
+    label.style.top = layout.mid.y + 'px';
+    label.style.borderColor = layout.style.color + '66';
+    label.textContent = edge.label || layout.style.label;
+    label.title = 'Right-click or long-press to modify this relationship, connection side, or line route';
+    return true;
+  }
+  function renderDirtyEdges(edgeIds){
+    let needsFullRender = false;
+    (edgeIds || []).forEach(edgeId => {
+      const edge = edgeById(edgeId);
+      const layout = getEdgeLayout(edge);
+      const selector = `[data-edge-id="${CSS.escape(edgeId)}"]`;
+      const group = edgeLayer.querySelector(`g.edge-group${selector}`);
+      const label = edgeLabelLayer.querySelector(`.edge-label${selector}`);
+      if(!updateEdgeElements(edge, layout, group, label)) needsFullRender = true;
+    });
+    if(needsFullRender) renderEdges();
+  }
   function getSelectionAnchor(){
     syncSelectionAliases();
     const selectedNodes = Array.from(selectedNodeIds).map(nodeId => byId(nodeId)).filter(Boolean);
@@ -5011,8 +5050,17 @@ import {
       const preserveSelectionForDrag = selectedNodeIds.has(n.id) && (selectedNodeIds.size > 1 || selectedEdgeIds.size > 0);
       if(preserveSelectionForDrag) syncSelectionAliases();
       else select(n.id, 'drag-start');
-      const dragItems = Array.from(selectedNodeIds).map(nodeId => byId(nodeId)).filter(Boolean).map(node => ({id:node.id, x:node.x, y:node.y}));
-      if(!dragItems.some(item => item.id === n.id)) dragItems.push({id:n.id, x:n.x, y:n.y});
+      const dragItems = Array.from(selectedNodeIds).map(nodeId => byId(nodeId)).filter(Boolean).map(node => ({
+        id:node.id,
+        x:node.x,
+        y:node.y,
+        element:nodeLayer.querySelector(`[data-id="${CSS.escape(node.id)}"]`)
+      }));
+      if(!dragItems.some(item => item.id === n.id)) dragItems.push({id:n.id, x:n.x, y:n.y, element:el});
+      const draggedNodeIds = new Set(dragItems.map(item => item.id));
+      const dragEdgeIds = dragItems.length > 1
+        ? data.edges.filter(edge => draggedNodeIds.has(edge.from) || draggedNodeIds.has(edge.to)).map(edge => edge.id)
+        : [];
       dragNode = {
         id:n.id,
         pointerId:e.pointerId,
@@ -5021,6 +5069,7 @@ import {
         x:n.x,
         y:n.y,
         items:dragItems,
+        edgeIds:dragEdgeIds,
         handle,
         captureTarget:nodeLayer,
         captureAcquired:false,
@@ -5052,18 +5101,24 @@ import {
     e.preventDefault();
     const dx = (e.clientX - dragNode.sx) / view.scale;
     const dy = (e.clientY - dragNode.sy) / view.scale;
-    (dragNode.items || [{id:dragNode.id, x:dragNode.x, y:dragNode.y}]).forEach(item => {
+    const dragItems = dragNode.items || [{id:dragNode.id, x:dragNode.x, y:dragNode.y}];
+    dragItems.forEach(item => {
       const n = byId(item.id);
       if(!n) return;
       n.x = Math.round(item.x + dx);
       n.y = Math.round(item.y + dy);
-      const el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`);
+      let el = item.element;
+      if(!el || !el.isConnected || el.dataset.id !== n.id){
+        el = nodeLayer.querySelector(`[data-id="${CSS.escape(n.id)}"]`);
+        item.element = el;
+      }
       if(el){
         el.style.left = n.x + 'px';
         el.style.top = n.y + 'px';
       }
     });
-    renderEdges();
+    if(dragItems.length > 1) renderDirtyEdges(dragNode.edgeIds);
+    else renderEdges();
   });
   nodeLayer.addEventListener('pointerup', e => { cancelLongPress(e.pointerId, 'pointerup', e); if(resizeNode && resizeNode.pointerId === e.pointerId){ const activeResize = resizeNode; setGestureLock('node-resize', false); finishDragInteraction(e.pointerId, 'pointerup', activeResize.handle); logInputDebug('resize-end', e, {mode:'node'}); resizeNode=null; suppressSelectionShelf = false; renderEdges(); updateSelectionUI('resize-end'); commitMapCommand('Resized block', activeResize.beforeCommand, {render:false}); showToast('Resized'); } finishNodeDrag(e, 'pointerup'); });
   nodeLayer.addEventListener('pointercancel', e => { cancelLongPress(e.pointerId, 'pointercancel', e); if(resizeNode && resizeNode.pointerId === e.pointerId){ const activeResize = resizeNode; setGestureLock('node-resize', false); finishDragInteraction(e.pointerId, 'pointercancel', activeResize.handle); logInputDebug('resize-end', e, {mode:'node', reason:'pointercancel'}); resizeNode=null; suppressSelectionShelf = false; renderEdges(); updateSelectionUI('resize-cancel'); commitMapCommand('Resized block', activeResize.beforeCommand, {render:false}); } finishNodeDrag(e, 'pointercancel'); });
